@@ -274,7 +274,7 @@ var _mem={};var _lsOk=false;
 try{localStorage.setItem('__t','1');localStorage.removeItem('__t');_lsOk=true;}catch(e){_lsOk=false;}
 function lsGet(k){try{if(_lsOk)return localStorage.getItem(k);}catch(e){}return _mem[k]||null;}
 function lsSet(k,v){try{if(_lsOk)localStorage.setItem(k,v);}catch(e){}_mem[k]=v;}
-var LS_KEY='topspin_v5';
+var LS_KEY='topspin_v3';
 var DEF_SET={startRating:1000,kFactor:32};
 
 // === АДМИН ===
