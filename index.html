@@ -225,12 +225,20 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 <body>
 <div class="orb o1"></div><div class="orb o2"></div>
 <header class="topbar">
+  <div id="adminBadge" style="display:none;background:var(--orange);color:#241203;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;margin-left:10px;">🔑 АДМИН</div>
   <div class="brand" data-action="tab" data-tab="arena">
     <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
       <circle cx="32" cy="32" r="31" fill="#0e1e34" stroke="#31517e" stroke-width="2"/>
       <path d="M8 16 A29 29 0 0 1 24 4.5" stroke="#ff8b1f" stroke-width="3" fill="none" stroke-linecap="round"/>
       <g transform="rotate(-30 30 31)"><rect x="26.6" y="39" width="9" height="16" rx="4.5" fill="#e3a067"/><ellipse cx="31" cy="26" rx="15" ry="16.5" fill="#e8452c"/><path d="M20 17a15 16.5 0 0 1 16-5" stroke="#ff9d86" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/></g>
       <circle cx="47.5" cy="14.5" r="5.2" fill="#ffa41b"/><circle cx="45.8" cy="12.8" r="1.6" fill="#ffe0a3"/>
+      <button class="iconbtn" id="exitAdminBtn" data-action="exitAdminMode" title="Выйти из режима админа" style="display:none;margin-left:5px;">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <polyline points="16 17 21 12 16 7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+</button>
     </svg>
     <div><h1>ТОП-<em>СПИН</em></h1><small>центр турниров</small></div>
   </div>
@@ -259,6 +267,8 @@ var DEF_SET={startRating:1000,kFactor:32};
 function loadState(){try{var s=JSON.parse(lsGet(LS_KEY));if(s&&s.players){s.settings=Object.assign({},DEF_SET,s.settings||{});s.awards=s.awards||[];s.tournaments=s.tournaments||[];s.matches=s.matches||[];return s;}}catch(e){}return null;}
 var state=loadState()||{players:[],tournaments:[],matches:[],awards:[],settings:Object.assign({},DEF_SET)};
 var ui={tab:'arena',tournamentId:null,playerId:null,ratingSort:'r'};
+  var ADMIN_PASSWORD = localStorage.getItem('adminPassword') || '1234';
+var isAdminMode = false;
 var __cb=null,__emo='🏆',__rmid=null,__pendingAvatar=null;
 function save(){lsSet(LS_KEY,JSON.stringify(state));}
 function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);}
@@ -508,7 +518,15 @@ function render(){
   var ps=document.getElementById('pSearch');
   if(ps)ps.addEventListener('input',function(){filterPlayers(this.value);});
   startTick();
-  try{window.scrollTo(0,0);}catch(e){}
+  try{window.scrollTo(0,0);}catch(e){}// Показать индикатор режима админа
+var adminBadge=document.getElementById('adminBadge');
+if(adminBadge){
+  adminBadge.style.display=isAdminMode?'inline-block':'none';
+}// Показать кнопку выхода из режима админа
+var exitAdminBtn=document.getElementById('exitAdminBtn');
+if(exitAdminBtn){
+  exitAdminBtn.style.display=isAdminMode?'grid':'none';
+}
 }
 function setTab(t){ui.tab=t;ui.tournamentId=null;ui.playerId=null;render();}
 function openTournament(id){ui.tab='tournaments';ui.tournamentId=id;render();}
@@ -526,6 +544,7 @@ function closeModal(){var mr=$('#modal-root');mr.innerHTML='';mr.style.display='
 function confirmBox(msg,cb){__cb=cb;modal('<h3>Подтверждение</h3><p class="mut" style="margin-top:6px">'+msg+'</p><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn danger" data-action="confirmYes">Да, выполнить</button></div>');}
 function toast(msg,type){var t=document.createElement('div');t.className='toast '+(type||'');t.textContent=msg;$('#toast-root').appendChild(t);requestAnimationFrame(function(){t.classList.add('in');});setTimeout(function(){t.classList.remove('in');setTimeout(function(){t.remove();},320);},2600);}
 function playerModal(pid){
+  if(!checkAdminPassword())return;
   var p=pid?player(pid):null;
   __pendingAvatar=p&&p.avatar?p.avatar:null;
   var urlPrefill=(p&&p.avatar&&String(p.avatar).indexOf('http')===0)?esc(p.avatar):'';
@@ -566,10 +585,16 @@ function savePlayer(pid){
   else{state.players.push({id:uid(),firstName:f,lastName:l,avatar:av});toast('Игрок добавлен','ok');}
   save();closeModal();render();
 }
-function delPlayer(pid){var has=state.matches.some(function(m){return(m.playerAId===pid||m.playerBId===pid)&&matchWinner(m);});confirmBox(has?'У игрока есть сыгранные матчи — они будут удалены. Продолжить?':'Удалить игрока?',function(){state.players=state.players.filter(function(p){return p.id!==pid;});state.matches=state.matches.filter(function(m){return m.playerAId!==pid&&m.playerBId!==pid;});state.awards=state.awards.filter(function(a){return a.playerId!==pid;});state.tournaments.forEach(function(t){t.playerIds=(t.playerIds||[]).filter(function(x){return x!==pid;});});save();ui.playerId=null;render();toast('Игрок удалён');});}
-function tournamentModal(tid){var t=tid?tourn(tid):null;var today=new Date().toISOString().slice(0,10);modal('<h3>'+(t?'Редактировать турнир':'Новый турнир')+'</h3><label>Название</label><input id="tn" value="'+(t?esc(t.name):'')+'" placeholder="Например: Кубок осени"><label>Дата соревнований</label><input id="td" type="date" value="'+(t?t.date:today)+'"><div class="frm2"><div><label>Начало встреч</label><input id="ts" type="time" value="'+(t?t.startTime:'10:00')+'"></div><div><label>Окончание</label><input id="te" type="time" value="'+(t?t.endTime:'14:00')+'"></div></div><label>Формат матча</label><select id="tb"><option value="5" '+((!t||t.bestOf!=='3')?'selected':'')+'>До 3 выигранных сетов (5)</option><option value="3" '+((t&&t.bestOf==='3')?'selected':'')+'>До 2 выигранных сетов (3)</option></select><div class="mut small" style="margin-top:10px">⏱ Ввод результатов откроется автоматически после времени окончания.</div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveTournament" data-id="'+(tid||'')+'">Сохранить</button></div>');}
+function delPlayer(pid){
+  if(!checkAdminPassword())return;
+  var has=state.matches.some(function(m){return(m.playerAId===pid||m.playerBId===pid)&&matchWinner(m);});confirmBox(has?'У игрока есть сыгранные матчи — они будут удалены. Продолжить?':'Удалить игрока?',function(){state.players=state.players.filter(function(p){return p.id!==pid;});state.matches=state.matches.filter(function(m){return m.playerAId!==pid&&m.playerBId!==pid;});state.awards=state.awards.filter(function(a){return a.playerId!==pid;});state.tournaments.forEach(function(t){t.playerIds=(t.playerIds||[]).filter(function(x){return x!==pid;});});save();ui.playerId=null;render();toast('Игрок удалён');});}
+function tournamentModal(tid){
+  if(!checkAdminPassword())return;
+  var t=tid?tourn(tid):null;var today=new Date().toISOString().slice(0,10);modal('<h3>'+(t?'Редактировать турнир':'Новый турнир')+'</h3><label>Название</label><input id="tn" value="'+(t?esc(t.name):'')+'" placeholder="Например: Кубок осени"><label>Дата соревнований</label><input id="td" type="date" value="'+(t?t.date:today)+'"><div class="frm2"><div><label>Начало встреч</label><input id="ts" type="time" value="'+(t?t.startTime:'10:00')+'"></div><div><label>Окончание</label><input id="te" type="time" value="'+(t?t.endTime:'14:00')+'"></div></div><label>Формат матча</label><select id="tb"><option value="5" '+((!t||t.bestOf!=='3')?'selected':'')+'>До 3 выигранных сетов (5)</option><option value="3" '+((t&&t.bestOf==='3')?'selected':'')+'>До 2 выигранных сетов (3)</option></select><div class="mut small" style="margin-top:10px">⏱ Ввод результатов откроется автоматически после времени окончания.</div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveTournament" data-id="'+(tid||'')+'">Сохранить</button></div>');}
 function saveTournament(tid){var n=$('#tn').value.trim(),d=$('#td').value,s=$('#ts').value,e=$('#te').value,b=$('#tb').value;if(!n||!d){toast('Укажите название и дату','err');return;}if(e&&s&&e<=s)toast('Внимание: окончание раньше начала','err');if(tid){var t=tourn(tid);Object.assign(t,{name:n,date:d,startTime:s,endTime:e,bestOf:b});toast('Турнир обновлён','ok');}else{state.tournaments.push({id:uid(),name:n,date:d,startTime:s,endTime:e,bestOf:b,playerIds:[],closed:false});toast('Турнир создан','ok');}save();closeModal();render();}
-function delTournament(tid){confirmBox('Удалить турнир вместе со всеми встречами и наградами?',function(){state.tournaments=state.tournaments.filter(function(t){return t.id!==tid;});state.matches=state.matches.filter(function(m){return m.tournamentId!==tid;});state.awards=state.awards.filter(function(a){return a.tournamentId!==tid;});save();ui.tournamentId=null;render();toast('Турнир удалён');});}
+function delTournament(tid){
+  if(!checkAdminPassword())return;
+  confirmBox('Удалить турнир вместе со всеми встречами и наградами?',function(){state.tournaments=state.tournaments.filter(function(t){return t.id!==tid;});state.matches=state.matches.filter(function(m){return m.tournamentId!==tid;});state.awards=state.awards.filter(function(a){return a.tournamentId!==tid;});save();ui.tournamentId=null;render();toast('Турнир удалён');});}
 function closeTournamentNow(tid){var t=tourn(tid);t.closed=true;save();render();toast('Турнир завершён','ok');}
 function reopenTournament(tid){var t=tourn(tid);t.closed=false;save();render();toast('Турнир снова открыт');}
 function addParticipantModal(tid){
@@ -592,14 +617,22 @@ function addAllParticipants(tid){
   state.players.forEach(function(p){if(t.playerIds.indexOf(p.id)<0){t.playerIds.push(p.id);added++;}});
   save();render();toast('Добавлено: '+added,'ok');
 }
-function removeParticipant(tid,pid){var t=tourn(tid);var played=state.matches.some(function(m){return m.tournamentId===tid&&(m.playerAId===pid||m.playerBId===pid)&&matchWinner(m);});if(played){toast('У игрока есть сыгранные матчи в турнире','err');return;}state.matches=state.matches.filter(function(m){return!(m.tournamentId===tid&&(m.playerAId===pid||m.playerBId===pid));});t.playerIds=t.playerIds.filter(function(x){return x!==pid;});save();render();}
+function removeParticipant(tid,pid){
+  if(!checkAdminPassword())return;
+  var t=tourn(tid);var played=state.matches.some(function(m){return m.tournamentId===tid&&(m.playerAId===pid||m.playerBId===pid)&&matchWinner(m);});if(played){toast('У игрока есть сыгранные матчи в турнире','err');return;}state.matches=state.matches.filter(function(m){return!(m.tournamentId===tid&&(m.playerAId===pid||m.playerBId===pid));});t.playerIds=t.playerIds.filter(function(x){return x!==pid;});save();render();}
 function matchModal(tid,mid){var t=tourn(tid);var m=mid?state.matches.find(function(x){return x.id===mid;}):null;var pool=(t.playerIds&&t.playerIds.length)?t.playerIds:state.players.map(function(p){return p.id;});var opts=pool.map(function(id){return'<option value="'+id+'">'+esc(pNameRaw(id))+'</option>';}).join('');modal('<h3>'+(m?'Редактировать встречу':'Новая встреча')+'</h3><div class="mut small" style="margin:4px 0 2px">'+esc(t.name)+' • '+fmtDate(t.date)+'</div><label>Игрок 1</label><select id="mA">'+opts+'</select><label>Игрок 2</label><select id="mB">'+opts+'</select><label>Время встречи</label><input id="mTime" type="time" value="'+(m?(m.time||''):(t.startTime||''))+'"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveMatch" data-tid="'+tid+'" data-id="'+(mid||'')+'">Сохранить</button></div>'+(m?'<button class="btn danger w100" style="margin-top:8px" data-action="delMatch" data-id="'+m.id+'">Удалить встречу</button>':''));if(m){$('#mA').value=m.playerAId;$('#mB').value=m.playerBId;}}
-function saveMatch(tid,mid){var a=$('#mA').value,b=$('#mB').value,tm=$('#mTime').value;if(!a||!b||a===b){toast('Выберите двух разных игроков','err');return;}if(mid){var m=state.matches.find(function(x){return x.id===mid;});m.playerAId=a;m.playerBId=b;m.time=tm;}else state.matches.push({id:uid(),tournamentId:tid,playerAId:a,playerBId:b,time:tm,sets:null});save();closeModal();render();toast('Сохранено','ok');}
-function delMatch(mid){confirmBox('Удалить встречу?',function(){state.matches=state.matches.filter(function(m){return m.id!==mid;});save();render();});}
+function saveMatch(tid,mid){
+  if(!checkAdminPassword())return;
+  var a=$('#mA').value,b=$('#mB').value,tm=$('#mTime').value;if(!a||!b||a===b){toast('Выберите двух разных игроков','err');return;}if(mid){var m=state.matches.find(function(x){return x.id===mid;});m.playerAId=a;m.playerBId=b;m.time=tm;}else state.matches.push({id:uid(),tournamentId:tid,playerAId:a,playerBId:b,time:tm,sets:null});save();closeModal();render();toast('Сохранено','ok');}
+function delMatch(mid){
+  if(!checkAdminPassword())return;
+  confirmBox('Удалить встречу?',function(){state.matches=state.matches.filter(function(m){return m.id!==mid;});save();render();});}
 function roundRobin(ids){var a=[].concat(ids);if(a.length%2)a.push(null);var n=a.length,res=[];for(var r=0;r<n-1;r++){for(var i=0;i<n/2;i++){var x=a[i],y=a[n-1-i];if(x&&y)res.push(r%2?[y,x]:[x,y]);}a.splice(1,0,a.pop());}return res;}
 function addMinutes(hm,mins){var parts=(hm||'10:00').split(':');var tot=(((+parts[0])*60+(+parts[1])+mins)%1440+1440)%1440;return p2(Math.floor(tot/60))+':'+p2(tot%60);}
 function genRRModal(tid){modal('<h3>Круговая система</h3><p class="mut small" style="margin-top:6px">Каждый участник сыграет с каждым.</p><label>Интервал между встречами (мин)</label><input id="rrStep" type="number" value="15" min="5" max="120"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="runGenRR" data-tid="'+tid+'">Создать расписание</button></div>');}
-function runGenRR(tid){var t=tourn(tid);var step=Math.max(5,parseInt($('#rrStep').value)||15);var pairs=roundRobin(t.playerIds||[]);state.matches=state.matches.filter(function(m){return m.tournamentId!==tid||(m.sets&&m.sets.length&&matchWinner(m));});pairs.forEach(function(pr,i){state.matches.push({id:uid(),tournamentId:tid,playerAId:pr[0],playerBId:pr[1],time:addMinutes(t.startTime,step*i),sets:null});});save();closeModal();render();toast('Создано встреч: '+pairs.length,'ok');}
+function runGenRR(tid){
+  if(!checkAdminPassword())return;
+  var t=tourn(tid);var step=Math.max(5,parseInt($('#rrStep').value)||15);var pairs=roundRobin(t.playerIds||[]);state.matches=state.matches.filter(function(m){return m.tournamentId!==tid||(m.sets&&m.sets.length&&matchWinner(m));});pairs.forEach(function(pr,i){state.matches.push({id:uid(),tournamentId:tid,playerAId:pr[0],playerBId:pr[1],time:addMinutes(t.startTime,step*i),sets:null});});save();closeModal();render();toast('Создано встреч: '+pairs.length,'ok');}
 function resultSheet(mid){var m=state.matches.find(function(x){return x.id===mid;});var t=tourn(m.tournamentId);if(tStatus(t)!=='finished'){toast('Результаты — после окончания ('+(t.endTime||'—')+')','err');return;}__rmid=mid;var sets=(m.sets&&m.sets.length)?m.sets:[[null,null]];modal('<h3>Результат матча</h3><div class="mut small">до '+needSets(t)+' выигранных сетов • '+esc(t.name)+'</div><div class="vshead" style="margin-top:12px"><div class="side">'+pName(m.playerAId)+'</div><div class="vs">VS</div><div class="side r">'+pName(m.playerBId)+'</div></div><div id="setsWrap">'+sets.map(function(s,i){return setRowHtml(i,s[0],s[1]);}).join('')+'</div><button class="btn ghost sm" data-action="addSet">＋ Сет</button><div class="tally" id="tallyBox"></div><div class="rprev" id="rprev"></div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveResult">💾 Сохранить счёт</button></div>'+(m.sets?'<button class="btn danger w100" style="margin-top:8px" data-action="clearResult">Убрать результат</button>':''));resultPreview();}
 function setRowHtml(i,a,b){return'<div class="setrow"><span class="setlabel">Сет '+(i+1)+'</span><input type="number" inputmode="numeric" min="0" max="99" class="setin pa" value="'+((a==null)?'':a)+'" placeholder="—" oninput="resultPreview()"><span class="colon">:</span><input type="number" inputmode="numeric" min="0" max="99" class="setin pb" value="'+((b==null)?'':b)+'" placeholder="—" oninput="resultPreview()"><button class="iconbtn rm" data-action="rmSet">✕</button></div>';}
 function addSetRow(){var m=state.matches.find(function(x){return x.id===__rmid;});var t=tourn(m.tournamentId);var wrap=$('#setsWrap');var maxSets=String(t.bestOf)==='3'?3:5;if(wrap.children.length>=maxSets){toast('Больше сетов не нужно','err');return;}wrap.insertAdjacentHTML('beforeend',setRowHtml(wrap.children.length,null,null));resultPreview();}
@@ -611,8 +644,35 @@ function awardModal(){if(!state.players.length){toast('Сначала добав
 function pickEmoji(btn,e){__emo=e;document.querySelectorAll('.emopt').forEach(function(b){b.classList.toggle('on',b===btn);});}
 function saveAward(){var pid=$('#awP').value,title=$('#awT').value.trim()||'Специальная награда',tid=$('#awTid').value||null;state.awards.push({id:uid(),playerId:pid,title:title,emoji:__emo,tournamentId:tid,date:new Date().toISOString().slice(0,10)});save();closeModal();render();toast('Награда вручена 🎉','ok');}
 function delAward(id){confirmBox('Удалить награду?',function(){state.awards=state.awards.filter(function(a){return a.id!==id;});save();render();});}
-function awardPodium(tid){var t=tourn(tid);var st=standings(tid);if(st.length<3){toast('Нужно минимум 3 участника с матчами','err');return;}var defs=[['🥇','Чемпион турнира'],['🥈','Серебряный призёр'],['🥉','Бронзовый призёр']];var added=0;defs.forEach(function(d,i){if(!state.awards.some(function(a){return a.tournamentId===tid&&a.title===d[1];})){state.awards.push({id:uid(),tournamentId:tid,playerId:st[i].pid,title:d[1],emoji:d[0],date:t.date});added++;}});save();render();toast(added?('Вручено наград: '+added+' 🏆'):'Призёры уже награждены','ok');}
-function settingsModal(){modal('<h3>Настройки</h3><label>Стартовый рейтинг</label><input id="setR" type="number" value="'+state.settings.startRating+'" min="100" max="3000"><label>K-фактор (чувствительность рейтинга)</label><input id="setK" type="number" value="'+state.settings.kFactor+'" min="8" max="64"><div class="row-actions"><button class="btn primary" style="flex:1" data-action="saveSettings">Сохранить</button></div><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="exportData">⤓ Экспорт данных</button><button class="btn ghost" style="flex:1" data-action="importData">⤒ Импорт</button></div><input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="importFile(this)"><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="demo">Демо-данные</button><button class="btn danger" style="flex:1" data-action="resetAll">Сбросить всё</button></div><div class="mut small" style="margin-top:14px">Данные хранятся на этом устройстве. Режим: '+(_lsOk?'нормальный':'только в этой сессии')+'</div>');}
+function awardPodium(tid){
+  if(!checkAdminPassword())return;
+  var t=tourn(tid);var st=standings(tid);if(st.length<3){toast('Нужно минимум 3 участника с матчами','err');return;}var defs=[['🥇','Чемпион турнира'],['🥈','Серебряный призёр'],['🥉','Бронзовый призёр']];var added=0;defs.forEach(function(d,i){if(!state.awards.some(function(a){return a.tournamentId===tid&&a.title===d[1];})){state.awards.push({id:uid(),tournamentId:tid,playerId:st[i].pid,title:d[1],emoji:d[0],date:t.date});added++;}});save();render();toast(added?('Вручено наград: '+added+' 🏆'):'Призёры уже награждены','ok');}
+function settingsModal(){
+  if(!checkAdminPassword())return;
+  
+  modal('<h3>Настройки рейтинга (только админ)</h3>'+
+    '<label>Стартовый рейтинг</label>'+
+    '<input id="setR" type="number" value="'+state.settings.startRating+'" min="100" max="3000">'+
+    '<label>K-фактор (чувствительность рейтинга)</label>'+
+    '<input id="setK" type="number" value="'+state.settings.kFactor+'" min="8" max="64">'+
+    '<div class="row-actions">'+
+      '<button class="btn primary" style="flex:1" data-action="saveSettings">Сохранить</button>'+
+    '</div>'+
+    '<div class="row-actions">'+
+      '<button class="btn ghost" style="flex:1" data-action="changeAdminPass">🔒 Сменить пароль админа</button>'+
+      '<button class="btn danger" style="flex:1" data-action="exitAdminMode">🚪 Выйти из режима админа</button>'+
+    '</div>'+
+    '<div class="row-actions">'+
+      '<button class="btn ghost" style="flex:1" data-action="exportData">⤓ Экспорт данных</button>'+
+      '<button class="btn ghost" style="flex:1" data-action="importData">⤒ Импорт</button>'+
+    '</div>'+
+    '<input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="importFile(this)">'+
+    '<div class="row-actions">'+
+      '<button class="btn ghost" style="flex:1" data-action="demo">Демо-данные</button>'+
+      '<button class="btn danger" style="flex:1" data-action="resetAll">Сбросить всё</button>'+
+    '</div>'+
+    '<div class="mut small" style="margin-top:14px">⚠️ Настройки доступны только администратору. Режим: '+(_lsOk?'нормальный':'только в этой сессии')+'</div>');
+}
 function saveSettings(){state.settings.startRating=Math.min(3000,Math.max(100,parseInt($('#setR').value)||1000));state.settings.kFactor=Math.min(64,Math.max(8,parseInt($('#setK').value)||32));save();closeModal();render();toast('Настройки сохранены','ok');}
 function exportData(){try{var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='topspin-backup.json';document.body.appendChild(a);a.click();a.remove();toast('Файл резервной копии создан','ok');}catch(e){toast('Не удалось создать файл','err');}}
 function importFile(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!d.players||!d.tournaments)throw 0;state=Object.assign({settings:Object.assign({},DEF_SET)},d);state.settings=Object.assign({},DEF_SET,d.settings||{});save();closeModal();render();toast('Данные импортированы','ok');}catch(e){toast('Файл не подходит','err');}};r.readAsText(f);}
@@ -621,6 +681,10 @@ function loadDemo(){confirmBox('Загрузить демонстрационн�
 function dispatch(el){
   var act=el.dataset.action;var id=el.dataset.id;var tid=el.dataset.tid;
   switch(act){
+    case'verifyAdminPass':verifyAdminPass();break;
+    case'changeAdminPass':changeAdminPassword();break;
+    case'saveAdminPass':saveAdminPass();break;
+    case'exitAdminMode':exitAdminMode();break;
     case'tab':setTab(el.dataset.tab);break;
     case'settings':settingsModal();break;
     case'newPlayer':ui.tab='players';ui.playerId=null;render();playerModal();break;
@@ -685,7 +749,73 @@ function dispatch(el){
   });
   try{render();}catch(e){
     var v=$('#view');if(v)v.innerHTML='<div class="empty"><div class="big">⚠</div><b>Ошибка запуска</b><span class="small">'+esc(e.message)+'</span></div>';
+  }function checkAdminPassword(){
+  if(isAdminMode)return true;
+  
+  modal('<h3>Вход администратора</h3>'+
+    '<p class="mut" style="margin:10px 0;">Введите пароль администратора для доступа к настройкам.</p>'+
+    '<label>Пароль администратора</label>'+
+    '<input type="password" id="adminPassInput" placeholder="Введите пароль">'+
+    '<div class="row-actions">'+
+      '<button class="btn ghost" data-action="closeModal">Отмена</button>'+
+      '<button class="btn primary" data-action="verifyAdminPass">Войти</button>'+
+    '</div>');
+    
+  return false;
+}
+
+function verifyAdminPass(){
+  var passInput=document.getElementById('adminPassInput');
+  if(passInput&&passInput.value===ADMIN_PASSWORD){
+    isAdminMode=true;
+    closeModal();
+    toast('Режим администратора включён','ok');
+    return true;
+  }else{
+    toast('Неверный пароль','err');
+    return false;
   }
+}
+
+function changeAdminPassword(){
+  if(!checkAdminPassword())return;
+  
+  modal('<h3>Смена пароля администратора</h3>'+
+    '<label>Новый пароль</label>'+
+    '<input type="password" id="newAdminPass" placeholder="Введите новый пароль">'+
+    '<label>Повторите пароль</label>'+
+    '<input type="password" id="confirmAdminPass" placeholder="Повторите пароль">'+
+    '<div class="row-actions">'+
+      '<button class="btn ghost" data-action="closeModal">Отмена</button>'+
+      '<button class="btn primary" data-action="saveAdminPass">Сохранить</button>'+
+    '</div>');
+}
+
+function saveAdminPass(){
+  var newPass=document.getElementById('newAdminPass');
+  var confirmPass=document.getElementById('confirmAdminPass');
+  
+  if(!newPass||!newPass.value||newPass.value.length<4){
+    toast('Пароль должен быть не менее 4 символов','err');
+    return;
+  }
+  
+  if(newPass.value!==confirmPass.value){
+    toast('Пароли не совпадают','err');
+    return;
+  }
+  
+  ADMIN_PASSWORD=newPass.value;
+  localStorage.setItem('adminPassword',ADMIN_PASSWORD);
+  closeModal();
+  toast('Пароль администратора изменён','ok');
+}
+
+function exitAdminMode(){
+  isAdminMode=false;
+  toast('Режим администратора выключен','ok');
+  render();
+}
 })();
 </script>
 </body>
