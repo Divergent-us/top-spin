@@ -1,4 +1,4 @@
-<artifact identifier="topspin-v6-admin" type="application/vnd.ant.code" language="html" title="ТОП-СПИН — с паролем администратора">
+<artifact identifier="topspin-v7-theme" type="application/vnd.ant.code" language="html" title="ТОП-СПИН — с темой, шрифтом и звуками">
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -12,16 +12,38 @@
 <style>
 :root{--bg:#0a1424;--bg2:#0e1c31;--panel:#132238;--panel2:#182b46;--line:#24395a;--line2:#31507e;--txt:#eaf2ff;--mut:#8ea6c8;--dim:#5f7699;--orange:#ff8b1f;--orange2:#ffb35c;--ball:#ffa41b;--blue:#3aa9ff;--green:#41e08d;--red:#ff5f6b;--gold:#ffd166;--silver:#cfd8e3;--bronze:#e0a06c;--rad:14px;--fd:'Russo One',system-ui,sans-serif;--fb:'Golos Text',system-ui,sans-serif}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:var(--fb);color:var(--txt);background:var(--bg);min-height:100vh;overflow-x:hidden;touch-action:manipulation;-webkit-text-size-adjust:100%}
+body{font-family:var(--fb);color:var(--txt);background:var(--bg);min-height:100vh;overflow-x:hidden;touch-action:manipulation;-webkit-text-size-adjust:100%;transition:background-color .3s ease,color .3s ease}
 body.locked{overflow:hidden}
-body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:radial-gradient(600px 420px at 85% -5%,rgba(255,139,31,.16),transparent 60%),radial-gradient(700px 520px at -10% 100%,rgba(58,169,255,.13),transparent 60%),linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%)}
+body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:radial-gradient(600px 420px at 85% -5%,rgba(255,139,31,.16),transparent 60%),radial-gradient(700px 520px at -10% 100%,rgba(58,169,255,.13),transparent 60%),linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);transition:opacity .3s ease}
 body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;background:repeating-linear-gradient(115deg,transparent 0 46px,rgba(255,255,255,.022) 46px 47px)}
 .orb{position:fixed;border-radius:50%;filter:blur(60px);z-index:-1;pointer-events:none;opacity:.5}
 .orb.o1{width:220px;height:220px;background:rgba(255,139,31,.22);top:-60px;right:-60px;animation:drift 18s ease-in-out infinite alternate}
 .orb.o2{width:260px;height:260px;background:rgba(58,169,255,.16);bottom:-80px;left:-80px;animation:drift 22s ease-in-out infinite alternate-reverse}
 @keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(-40px,50px) scale(1.15)}}
-.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;max-width:540px;margin:0 auto;width:100%;padding:10px 14px 8px;background:rgba(10,20,36,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.app{max-width:540px;margin:0 auto;padding:0 14px 110px}
+
+body.light{--bg:#f5f7fa;--bg2:#e8ecf1;--panel:#ffffff;--panel2:#f0f4f8;--line:#d1d9e0;--line2:#b8c4d0;--txt:#1a2332;--mut:#4a5a6a;--dim:#8a96a6;--orange:#ff8b1f;--orange2:#ff6b0f;--ball:#ff9500;--blue:#0066ff;--green:#00c853;--red:#ff1744;--gold:#d4a017;--silver:#607d8b;--bronze:#b87333}
+body.light::before{background:radial-gradient(600px 420px at 85% -5%,rgba(255,139,31,.1),transparent 60%),radial-gradient(700px 520px at -10% 100%,rgba(0,102,255,.08),transparent 60%),linear-gradient(180deg,#f5f7fa 0%,#e8ecf1 100%)}
+body.light::after{background:repeating-linear-gradient(115deg,transparent 0 46px,rgba(0,0,0,.03) 46px 47px)}
+body.light .topbar{background:rgba(245,247,250,.9)}
+body.light .tabbar{background:rgba(245,247,250,.95);border-top:1px solid var(--line)}
+body.light input,body.light select{background:#ffffff;color:var(--txt)}
+body.light .card,body.light .sheet{background:var(--panel)}
+body.light .counter{background:#ffffff}
+body.light .stat{background:#ffffff}
+body.light .backdrop{background:rgba(245,247,250,.7)}
+body.light .toast{background:#ffffff;color:var(--txt)}
+body.light .trow,body.light .prow{background:var(--panel)}
+body.light .mrow{background:var(--panel)}
+body.light .setin{background:#ffffff}
+body.light .tally{background:var(--panel)}
+body.big-font{font-size:18px}
+body.big-font h1,body.big-font h2,body.big-font h3{font-size:1.3em}
+body.big-font .btn{font-size:16px;padding:13px 18px}
+body.big-font input,body.big-font select{font-size:16px;padding:13px 14px}
+body.big-font .tabbtn{font-size:11px}
+body.big-font .tabbtn svg{width:26px;height:26px}
+.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;max-width:540px;margin:0 auto;width:100%;padding:10px 14px 8px;background:rgba(10,20,36,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background-color .3s ease}
+.app{max-width:540px;margin:0 auto;padding:0 14px 110px;transition:opacity .3s ease}
 .brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
 .logo{width:44px;height:44px;flex:none;filter:drop-shadow(0 4px 12px rgba(255,139,31,.35))}
 .brand h1{font-family:var(--fd);font-size:19px;letter-spacing:.06em;line-height:1}
@@ -34,7 +56,7 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .iconbtn:hover{color:var(--txt);border-color:var(--line2)}
 .iconbtn:active{transform:scale(.92)}
 .iconbtn svg{width:19px;height:19px}
-.card{background:linear-gradient(180deg,#152741,#111f36);border:1px solid var(--line);border-radius:var(--rad);padding:16px;position:relative}
+.card{background:linear-gradient(180deg,#152741,#111f36);border:1px solid var(--line);border-radius:var(--rad);padding:16px;position:relative;transition:background .3s ease,border-color .3s ease}
 .row-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .row-actions .btn{flex:1;justify-content:center}
 .btn{display:inline-flex;align-items:center;gap:7px;justify-content:center;font-family:var(--fb);font-weight:800;font-size:14px;color:var(--txt);border:none;cursor:pointer;border-radius:11px;padding:11px 16px;transition:transform .15s,box-shadow .2s,filter .2s;user-select:none}
@@ -166,7 +188,7 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 .tally .sep{color:var(--dim);font-family:var(--fd);font-size:24px}
 .tally .who{font-size:12px;color:var(--mut);max-width:92px;text-align:center;font-weight:700;line-height:1.3}
 .rprev{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
-.tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(540px,100%);z-index:50;display:flex;gap:4px;padding:8px 10px calc(9px + env(safe-area-inset-bottom));background:rgba(11,20,36,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+.tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(540px,100%);z-index:50;display:flex;gap:4px;padding:8px 10px calc(9px + env(safe-area-inset-bottom));background:rgba(11,20,36,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);transition:background-color .3s ease}
 .tabbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--dim);font-family:var(--fb);font-size:10px;font-weight:700;letter-spacing:.04em;cursor:pointer;padding:7px 2px;border-radius:11px;transition:.2s}
 .tabbtn svg{width:22px;height:22px}
 .tabbtn.on{color:var(--orange);background:rgba(255,139,31,.1)}
@@ -206,6 +228,11 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 .picker-item:hover{border-color:var(--orange);background:#111f36}
 .picker-item .nm{flex:1;font-weight:700;font-size:14px}
 .picker-item .rt{font-family:var(--fd);font-size:13px;color:var(--ball)}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.settings-grid .btn{flex:none}
+.toggle-row{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;margin:8px 0;cursor:pointer}
+.toggle-row input{width:auto;margin:0}
+.toggle-row span{flex:1;font-weight:600}
 @media (max-width:380px){.counters{grid-template-columns:repeat(2,1fr)}.statgrid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
@@ -223,6 +250,9 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 </div>
 <span id="adminBadge" class="admin-badge">🔑 АДМИН</span>
 <span class="datechip" id="todayChip"></span>
+<button class="iconbtn" data-action="openAppearance" title="Оформление">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+</button>
 <button class="iconbtn" data-action="settings" title="Настройки">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1"/></svg>
 </button>
@@ -293,6 +323,40 @@ img.onerror=function(){toast('Не удалось прочитать изобр�
 img.src=e.target.result;
 };
 reader.readAsDataURL(file);
+}
+function playSound(type){
+if(lsGet('soundEnabled')==='false')return;
+try{
+var audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+var oscillator=audioCtx.createOscillator();
+var gainNode=audioCtx.createGain();
+oscillator.connect(gainNode);
+gainNode.connect(audioCtx.destination);
+if(type==='setEnd'){
+oscillator.frequency.value=880;
+oscillator.type='sine';
+gainNode.gain.setValueAtTime(0.3,audioCtx.currentTime);
+gainNode.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.3);
+oscillator.start(audioCtx.currentTime);
+oscillator.stop(audioCtx.currentTime+0.3);
+}else if(type==='matchEnd'){
+oscillator.frequency.setValueAtTime(523,audioCtx.currentTime);
+oscillator.frequency.setValueAtTime(659,audioCtx.currentTime+0.15);
+oscillator.frequency.setValueAtTime(784,audioCtx.currentTime+0.3);
+oscillator.type='sine';
+gainNode.gain.setValueAtTime(0.35,audioCtx.currentTime);
+gainNode.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.6);
+oscillator.start(audioCtx.currentTime);
+oscillator.stop(audioCtx.currentTime+0.6);
+}else if(type==='click'){
+oscillator.frequency.value=600;
+oscillator.type='square';
+gainNode.gain.setValueAtTime(0.08,audioCtx.currentTime);
+gainNode.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.05);
+oscillator.start(audioCtx.currentTime);
+oscillator.stop(audioCtx.currentTime+0.05);
+}
+}catch(e){}
 }
 function setsCountArr(sets){var a=0,b=0;for(var i=0;i<sets.length;i++){if(sets[i][0]>sets[i][1])a++;else if(sets[i][1]>sets[i][0])b++;}return[a,b];}
 function ballsCountArr(sets){var a=0,b=0;for(var i=0;i<sets.length;i++){a+=sets[i][0];b+=sets[i][1];}return[a,b];}
@@ -554,6 +618,30 @@ closeModal();
 toast('Режим администратора выключен','ok');
 render();
 }
+function openAppearanceModal(){
+var currentTheme=document.body.classList.contains('light')?'light':'dark';
+var currentSize=document.body.classList.contains('big-font')?'big':'normal';
+var soundEnabled=lsGet('soundEnabled')!=='false';
+modal('<h3>🎨 Оформление</h3><label>Тема</label><div class="settings-grid"><button class="btn '+(currentTheme==='dark'?'primary':'ghost')+'" data-action="setTheme" data-theme="dark">🌙 Тёмная</button><button class="btn '+(currentTheme==='light'?'primary':'ghost')+'" data-action="setTheme" data-theme="light">☀️ Светлая</button></div><label>Размер шрифта</label><div class="settings-grid"><button class="btn '+(currentSize==='normal'?'primary':'ghost')+'" data-action="setFontSize" data-size="normal">📱 Обычный</button><button class="btn '+(currentSize==='big'?'primary':'ghost')+'" data-action="setFontSize" data-size="big">🔍 Крупный</button></div><label>Звуки</label><div class="toggle-row" data-action="toggleSound"><input type="checkbox" id="soundToggle" '+(soundEnabled?'checked':'')+'><span>🔊 Звуковые сигналы при окончании сета</span></div><div class="row-actions"><button class="btn primary w100" data-action="closeModal">Готово</button></div>');
+}
+function setTheme(theme){
+if(theme==='light'){document.body.classList.add('light');lsSet('theme','light');}
+else{document.body.classList.remove('light');lsSet('theme','dark');}
+closeModal();
+render();
+}
+function setFontSize(size){
+if(size==='big'){document.body.classList.add('big-font');lsSet('fontSize','big');}
+else{document.body.classList.remove('big-font');lsSet('fontSize','normal');}
+closeModal();
+render();
+}
+function toggleSound(){
+var cur=lsGet('soundEnabled')!=='false';
+lsSet('soundEnabled',cur?'false':'true');
+openAppearanceModal();
+if(!cur)playSound('click');
+}
 function playerModal(pid){
 var p=pid?player(pid):null;
 __pendingAvatar=p&&p.avatar?p.avatar:null;
@@ -633,8 +721,8 @@ function resultSheet(mid){var m=state.matches.find(function(x){return x.id===mid
 function setRowHtml(i,a,b){return'<div class="setrow"><span class="setlabel">Сет '+(i+1)+'</span><input type="number" inputmode="numeric" min="0" max="99" class="setin pa" value="'+((a==null)?'':a)+'" placeholder="—" oninput="resultPreview()"><span class="colon">:</span><input type="number" inputmode="numeric" min="0" max="99" class="setin pb" value="'+((b==null)?'':b)+'" placeholder="—" oninput="resultPreview()"><button class="iconbtn rm" data-action="rmSet">✕</button></div>';}
 function addSetRow(){var m=state.matches.find(function(x){return x.id===__rmid;});var t=tourn(m.tournamentId);var wrap=$('#setsWrap');var maxSets=String(t.bestOf)==='3'?3:5;if(wrap.children.length>=maxSets){toast('Больше сетов не нужно','err');return;}wrap.insertAdjacentHTML('beforeend',setRowHtml(wrap.children.length,null,null));resultPreview();}
 function collectSets(){var sets=[];var bad=false;document.querySelectorAll('#setsWrap .setrow').forEach(function(r){var a=r.querySelector('.pa').value,b=r.querySelector('.pb').value;if(a===''&&b==='')return;if(a===''||b===''||a===b){bad=true;return;}sets.push([+a,+b]);});return{sets:sets,bad:bad};}
-function resultPreview(){var m=state.matches.find(function(x){return x.id===__rmid;});if(!m)return;var t=tourn(m.tournamentId);var need=needSets(t);var cs=collectSets();var sets=cs.sets;var sc=setsCountArr(sets);$('#tallyBox').innerHTML='<div class="who">'+pName(m.playerAId)+'</div><div class="n">'+sc[0]+'</div><div class="sep">:</div><div class="n">'+sc[1]+'</div><div class="who">'+pName(m.playerBId)+'</div>';var done=sc[0]===need||sc[1]===need;if(done&&sc[0]!==sc[1]){var eng=engine(__rmid);var Ra=eng.R[m.playerAId],Rb=eng.R[m.playerBId];if(Ra===undefined||Rb===undefined){$('#rprev').innerHTML='';return;}var d=eloDeltaFor(Ra,Rb,sc[0]>sc[1],sc[0],sc[1]);$('#rprev').innerHTML='<span class="delta up">'+(sc[0]>sc[1]?pName(m.playerAId):pName(m.playerBId))+' '+(d>0?'+':'')+d+' ▲</span><span class="delta down">'+(sc[0]>sc[1]?pName(m.playerBId):pName(m.playerAId))+' '+(-d)+' ▼</span>';}else{$('#rprev').innerHTML='<span class="chip">для победы нужно '+need+' сета</span>';}}
-function saveResult(){var m=state.matches.find(function(x){return x.id===__rmid;});var t=tourn(m.tournamentId);var cs=collectSets();if(cs.bad){toast('Проверьте сеты: оба числа, без ничьих','err');return;}if(!cs.sets.length){toast('Введите хотя бы один сет','err');return;}var sc=setsCountArr(cs.sets);var need=needSets(t);if(sc[0]!==need&&sc[1]!==need){toast('Матч не завершён: нужно '+need+' выигранных сета','err');return;}m.sets=cs.sets;save();closeModal();render();toast('Счёт сохранён','ok');}
+function resultPreview(){var m=state.matches.find(function(x){return x.id===__rmid;});if(!m)return;var t=tourn(m.tournamentId);var need=needSets(t);var cs=collectSets();var sets=cs.sets;var sc=setsCountArr(sets);$('#tallyBox').innerHTML='<div class="who">'+pName(m.playerAId)+'</div><div class="n">'+sc[0]+'</div><div class="sep">:</div><div class="n">'+sc[1]+'</div><div class="who">'+pName(m.playerBId)+'</div>';var done=sc[0]===need||sc[1]===need;if(done&&sc[0]!==sc[1]){var eng=engine(__rmid);var Ra=eng.R[m.playerAId],Rb=eng.R[m.playerBId];if(Ra===undefined||Rb===undefined){$('#rprev').innerHTML='';return;}var d=eloDeltaFor(Ra,Rb,sc[0]>sc[1],sc[0],sc[1]);$('#rprev').innerHTML='<span class="delta up">'+(sc[0]>sc[1]?pName(m.playerAId):pName(m.playerBId))+' '+(d>0?'+':'')+d+' ▲</span><span class="delta down">'+(sc[0]>sc[1]?pName(m.playerBId):pName(m.playerAId))+' '+(-d)+' ▼</span>';playSound('setEnd');}else{$('#rprev').innerHTML='<span class="chip">для победы нужно '+need+' сета</span>';}}
+function saveResult(){var m=state.matches.find(function(x){return x.id===__rmid;});var t=tourn(m.tournamentId);var cs=collectSets();if(cs.bad){toast('Проверьте сеты: оба числа, без ничьих','err');return;}if(!cs.sets.length){toast('Введите хотя бы один сет','err');return;}var sc=setsCountArr(cs.sets);var need=needSets(t);if(sc[0]!==need&&sc[1]!==need){toast('Матч не завершён: нужно '+need+' выигранных сета','err');return;}m.sets=cs.sets;save();playSound('matchEnd');closeModal();render();toast('Счёт сохранён','ok');}
 function clearResult(){var m=state.matches.find(function(x){return x.id===__rmid;});m.sets=null;save();closeModal();render();toast('Результат убран');}
 function awardModal(){if(!state.players.length){toast('Сначала добавьте игроков','err');return;}var emo=['🏆','🥇','🥈','🥉','⭐','🔥','💪','🎯','🚀','🛡️'];__emo='🏆';modal('<h3>Вручить награду</h3><label>Игрок</label><select id="awP">'+state.players.map(function(p){return'<option value="'+p.id+'">'+esc(p.firstName+' '+p.lastName)+'</option>';}).join('')+'</select><label>Награда</label><div class="emorow">'+emo.map(function(e,i){return'<button class="emopt '+(i===0?'on':'')+'" data-action="emo" data-emo="'+e+'">'+e+'</button>';}).join('')+'</div><label>Название</label><input id="awT" placeholder="Например: Воля к победе"><label>Турнир (не обязательно)</label><select id="awTid"><option value="">— без турнира —</option>'+state.tournaments.map(function(t){return'<option value="'+t.id+'">'+esc(t.name)+' • '+fmtDate(t.date)+'</option>';}).join('')+'</select><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveAward">Вручить</button></div>');}
 function pickEmoji(btn,e){__emo=e;document.querySelectorAll('.emopt').forEach(function(b){b.classList.toggle('on',b===btn);});}
@@ -657,8 +745,12 @@ function loadDemo(){confirmBox('Загрузить демонстрационн�
 function dispatch(el){
 var act=el.dataset.action;var id=el.dataset.id;var tid=el.dataset.tid;
 switch(act){
-case'tab':setTab(el.dataset.tab);break;
+case'tab':playSound('click');setTab(el.dataset.tab);break;
 case'settings':settingsModal();break;
+case'openAppearance':openAppearanceModal();break;
+case'setTheme':setTheme(el.dataset.theme);break;
+case'setFontSize':setFontSize(el.dataset.size);break;
+case'toggleSound':toggleSound();break;
 case'verifyAdminPass':verifyAdminPass();break;
 case'changeAdminPass':changeAdminPass();break;
 case'saveAdminPass':saveAdminPass();break;
@@ -672,7 +764,7 @@ case'newTournament':tournamentModal();break;
 case'editTournament':tournamentModal(id);break;
 case'saveTournament':saveTournament(id||null);break;
 case'delTournament':delTournament(id);break;
-case'openTournament':openTournament(id);break;
+case'openTournament':playSound('click');openTournament(id);break;
 case'closeNow':closeTournamentNow(id);break;
 case'reopen':reopenTournament(id);break;
 case'addParticipant':addParticipantModal(tid);break;
@@ -690,7 +782,7 @@ case'addSet':addSetRow();break;
 case'rmSet':el.closest('.setrow').remove();resultPreview();break;
 case'saveResult':saveResult();break;
 case'clearResult':clearResult();break;
-case'openPlayer':openPlayer(id);break;
+case'openPlayer':playSound('click');openPlayer(id);break;
 case'backPlayers':ui.playerId=null;render();break;
 case'backTournaments':ui.tournamentId=null;render();break;
 case'sortR':ui.ratingSort='r';render();break;
@@ -714,6 +806,8 @@ try{
 var d=new Date();
 $('#todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()];
 }catch(e){}
+if(lsGet('theme')==='light')document.body.classList.add('light');
+if(lsGet('fontSize')==='big')document.body.classList.add('big-font');
 try{
 var svg=document.querySelector('.logo').outerHTML.replace('class="logo"','xmlns="http://www.w3.org/2000/svg"');
 var fav=document.createElement('link');fav.rel='icon';fav.href='data:image/svg+xml,'+encodeURIComponent(svg);
