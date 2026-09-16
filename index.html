@@ -255,6 +255,8 @@ try{localStorage.setItem('__t','1');localStorage.removeItem('__t');_lsOk=true;}c
 function lsGet(k){try{if(_lsOk)return localStorage.getItem(k);}catch(e){}return _mem[k]||null;}
 function lsSet(k,v){try{if(_lsOk)localStorage.setItem(k,v);}catch(e){}_mem[k]=v;}
 var LS_KEY='topspin_v3';
+var ADMIN_PASSWORD=lsGet('adminPassword')||'1234';
+var isAdminMode=false;
 var DEF_SET={startRating:1000,kFactor:32};
 function loadState(){try{var s=JSON.parse(lsGet(LS_KEY));if(s&&s.players){s.settings=Object.assign({},DEF_SET,s.settings||{});s.awards=s.awards||[];s.tournaments=s.tournaments||[];s.matches=s.matches||[];return s;}}catch(e){}return null;}
 var state=loadState()||{players:[],tournaments:[],matches:[],awards:[],settings:Object.assign({},DEF_SET)};
@@ -612,7 +614,14 @@ function pickEmoji(btn,e){__emo=e;document.querySelectorAll('.emopt').forEach(fu
 function saveAward(){var pid=$('#awP').value,title=$('#awT').value.trim()||'Специальная награда',tid=$('#awTid').value||null;state.awards.push({id:uid(),playerId:pid,title:title,emoji:__emo,tournamentId:tid,date:new Date().toISOString().slice(0,10)});save();closeModal();render();toast('Награда вручена 🎉','ok');}
 function delAward(id){confirmBox('Удалить награду?',function(){state.awards=state.awards.filter(function(a){return a.id!==id;});save();render();});}
 function awardPodium(tid){var t=tourn(tid);var st=standings(tid);if(st.length<3){toast('Нужно минимум 3 участника с матчами','err');return;}var defs=[['🥇','Чемпион турнира'],['🥈','Серебряный призёр'],['🥉','Бронзовый призёр']];var added=0;defs.forEach(function(d,i){if(!state.awards.some(function(a){return a.tournamentId===tid&&a.title===d[1];})){state.awards.push({id:uid(),tournamentId:tid,playerId:st[i].pid,title:d[1],emoji:d[0],date:t.date});added++;}});save();render();toast(added?('Вручено наград: '+added+' 🏆'):'Призёры уже награждены','ok');}
-function settingsModal(){modal('<h3>Настройки</h3><label>Стартовый рейтинг</label><input id="setR" type="number" value="'+state.settings.startRating+'" min="100" max="3000"><label>K-фактор (чувствительность рейтинга)</label><input id="setK" type="number" value="'+state.settings.kFactor+'" min="8" max="64"><div class="row-actions"><button class="btn primary" style="flex:1" data-action="saveSettings">Сохранить</button></div><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="exportData">⤓ Экспорт данных</button><button class="btn ghost" style="flex:1" data-action="importData">⤒ Импорт</button></div><input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="importFile(this)"><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="demo">Демо-данные</button><button class="btn danger" style="flex:1" data-action="resetAll">Сбросить всё</button></div><div class="mut small" style="margin-top:14px">Данные хранятся на этом устройстве. Режим: '+(_lsOk?'нормальный':'только в этой сессии')+'</div>');}
+function settingsModal(){
+  if(!isAdminMode){
+    modal('<h3>🔑 Вход администратора</h3><p class="mut" style="margin:10px 0;">Введите пароль для доступа к настройкам.</p><label>Пароль</label><input type="password" id="adminPassInput" placeholder="Введите пароль"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="verifyAdminPass">Войти</button></div>');
+    setTimeout(function(){var inp=document.getElementById('adminPassInput');if(inp)inp.focus();},100);
+    return;
+  }
+  modal('<h3>⚙️ Настройки рейтинга</h3><div class="mut small" style="margin-bottom:10px;">🔑 Режим администратора активен</div><label>Стартовый рейтинг</label><input id="setR" type="number" value="'+state.settings.startRating+'" min="100" max="3000"><label>K-фактор (чувствительность рейтинга)</label><input id="setK" type="number" value="'+state.settings.kFactor+'" min="8" max="64"><div class="row-actions"><button class="btn primary" style="flex:1" data-action="saveSettings">Сохранить</button></div><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="changeAdminPass">🔒 Сменить пароль</button><button class="btn ghost" style="flex:1" data-action="exitAdminMode">🚪 Выйти из режима админа</button></div><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="exportData">⤓ Экспорт данных</button><button class="btn ghost" style="flex:1" data-action="importData">⤒ Импорт</button></div><input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="importFile(this)"><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="demo">Демо-данные</button><button class="btn danger" style="flex:1" data-action="resetAll">Сбросить всё</button></div><div class="mut small" style="margin-top:14px">Данные хранятся на этом устройстве. Режим: '+(_lsOk?'нормальный':'только в этой сессии')+'</div>');
+}
 function saveSettings(){state.settings.startRating=Math.min(3000,Math.max(100,parseInt($('#setR').value)||1000));state.settings.kFactor=Math.min(64,Math.max(8,parseInt($('#setK').value)||32));save();closeModal();render();toast('Настройки сохранены','ok');}
 function exportData(){try{var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='topspin-backup.json';document.body.appendChild(a);a.click();a.remove();toast('Файл резервной копии создан','ok');}catch(e){toast('Не удалось создать файл','err');}}
 function importFile(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!d.players||!d.tournaments)throw 0;state=Object.assign({settings:Object.assign({},DEF_SET)},d);state.settings=Object.assign({},DEF_SET,d.settings||{});save();closeModal();render();toast('Данные импортированы','ok');}catch(e){toast('Файл не подходит','err');}};r.readAsText(f);}
@@ -623,6 +632,10 @@ function dispatch(el){
   switch(act){
     case'tab':setTab(el.dataset.tab);break;
     case'settings':settingsModal();break;
+    case'verifyAdminPass':verifyAdminPass();break;
+    case'changeAdminPass':changeAdminPass();break;
+    case'saveAdminPass':saveAdminPass();break;
+    case'exitAdminMode':exitAdminMode();break;
     case'newPlayer':ui.tab='players';ui.playerId=null;render();playerModal();break;
     case'editPlayer':playerModal(id);break;
     case'savePlayer':savePlayer(id||null);break;
@@ -686,6 +699,37 @@ function dispatch(el){
   try{render();}catch(e){
     var v=$('#view');if(v)v.innerHTML='<div class="empty"><div class="big">⚠</div><b>Ошибка запуска</b><span class="small">'+esc(e.message)+'</span></div>';
   }
+function verifyAdminPass(){
+  var passInput=document.getElementById('adminPassInput');
+  if(passInput&&passInput.value===ADMIN_PASSWORD){
+    isAdminMode=true;
+    closeModal();
+    toast('🔑 Режим администратора включён','ok');
+    settingsModal();
+  }else{
+    toast('Неверный пароль','err');
+  }
+}
+function changeAdminPass(){
+  modal('<h3>🔒 Смена пароля</h3><label>Текущий пароль</label><input type="password" id="curAdminPass" placeholder="Для подтверждения"><label>Новый пароль (мин. 4 символа)</label><input type="password" id="newAdminPass" placeholder="Введите новый пароль"><label>Повторите пароль</label><input type="password" id="confirmAdminPass" placeholder="Повторите пароль"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveAdminPass">Сохранить</button></div>');
+}
+function saveAdminPass(){
+  var curPass=document.getElementById('curAdminPass');
+  var newPass=document.getElementById('newAdminPass');
+  var confirmPass=document.getElementById('confirmAdminPass');
+  if(!curPass||curPass.value!==ADMIN_PASSWORD){toast('Неверный текущий пароль','err');return;}
+  if(!newPass||!newPass.value||newPass.value.length<4){toast('Пароль должен быть не менее 4 символов','err');return;}
+  if(newPass.value!==confirmPass.value){toast('Пароли не совпадают','err');return;}
+  ADMIN_PASSWORD=newPass.value;
+  lsSet('adminPassword',ADMIN_PASSWORD);
+  closeModal();
+  toast('Пароль изменён','ok');
+}
+function exitAdminMode(){
+  isAdminMode=false;
+  closeModal();
+  toast('Режим администратора выключен','ok');
+}
 })();
 </script>
 </body>
