@@ -1,4 +1,6 @@
-<artifact identifier="topspin-v9-auth" type="application/vnd.ant.code" language="html" title="ТОП-СПИН v9 — Вход по телефону">
+Вот полный код с исправлениями: компактные шарики-статусы и сброс таймера при досрочном закрытии.
+
+<artifact identifier="topspin-v11-fixes" type="application/vnd.ant.code" language="html" title="ТОП-СПИН v11 — Компактные статусы + сброс таймера">
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -12,6 +14,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#0a1424;--bg2:#0e1c31;--panel:#132238;--panel2:#182b46;--line:#24395a;--line2:#31507e;--txt:#eaf2ff;--mut:#8ea6c8;--dim:#5f7699;--orange:#ff8b1f;--orange2:#ffb35c;--ball:#ffa41b;--blue:#3aa9ff;--green:#41e08d;--red:#ff5f6b;--gold:#ffd166;--silver:#cfd8e3;--bronze:#e0a06c;--rad:14px;--fd:'Russo One',system-ui,sans-serif;--fb:'Golos Text',system-ui,sans-serif}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -44,8 +49,6 @@ body.big-font .btn{font-size:16px;padding:13px 18px}
 body.big-font input,body.big-font select{font-size:16px;padding:13px 14px}
 body.big-font .tabbtn{font-size:11px}
 body.big-font .tabbtn svg{width:26px;height:26px}
-
-/* Экран входа */
 .login-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px}
 .login-card{max-width:400px;width:100%;background:linear-gradient(180deg,#152741,#111f36);border:1px solid var(--line);border-radius:20px;padding:30px;text-align:center;animation:rise .5s both}
 .login-logo{width:80px;height:80px;margin:0 auto 16px}
@@ -62,14 +65,6 @@ body.big-font .tabbtn svg{width:26px;height:26px}
 .login-btn:disabled{opacity:.5;cursor:not-allowed}
 .login-error{color:var(--red);font-size:13px;margin-top:12px;min-height:20px}
 .login-hint{color:var(--dim);font-size:12px;margin-top:12px}
-.login-user{display:flex;align-items:center;gap:10px;margin-top:16px;padding:10px;background:rgba(255,255,255,.05);border-radius:10px}
-.login-user-avatar{width:36px;height:36px;border-radius:50%;background:var(--orange);display:grid;place-items:center;font-size:16px}
-.login-user-info{flex:1;text-align:left}
-.login-user-name{font-weight:700;font-size:14px}
-.login-user-phone{color:var(--mut);font-size:12px}
-.login-user-role{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
-.login-user-role.admin{background:rgba(255,139,31,.2);color:var(--orange2)}
-.login-user-role.player{background:rgba(65,224,141,.15);color:var(--green)}
 .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;max-width:540px;margin:0 auto;width:100%;padding:10px 14px 8px;background:rgba(10,20,36,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background-color .3s ease;flex-wrap:wrap}
 .app{max-width:540px;margin:0 auto;padding:0 14px 110px}
 .brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
@@ -107,20 +102,18 @@ body.big-font .tabbtn svg{width:26px;height:26px}
 .sec-title{font-family:var(--fd);font-size:14px;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:9px;margin:22px 2px 11px}
 .sec-title .cnt{margin-left:auto;font-family:var(--fb);font-size:11px;font-weight:700;color:var(--dim);letter-spacing:0}
 .sec-title::before{content:"";width:16px;height:4px;border-radius:2px;background:var(--orange);box-shadow:0 0 10px rgba(255,139,31,.6)}
-.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid var(--line2);color:var(--mut);background:rgba(255,255,255,.03);white-space:nowrap}
-.chip .dot{width:7px;height:7px;border-radius:50%}
-.chip.live{color:#9df0c0;border-color:rgba(65,224,141,.45);background:rgba(65,224,141,.08)}
-.chip.live .dot{background:var(--green);animation:pulse 1.4s infinite}
-.chip.up{color:#a8d8ff;border-color:rgba(58,169,255,.45);background:rgba(58,169,255,.08)}
-.chip.up .dot{background:var(--blue)}
-.chip.fin{color:var(--orange2);border-color:rgba(255,139,31,.45);background:rgba(255,139,31,.08)}
-.chip.fin .dot{background:var(--orange)}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(65,224,141,.5)}50%{box-shadow:0 0 0 6px rgba(65,224,141,0)}}
+/* Компактные статусы - только шарики */
+.status-dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;flex-shrink:0}
+.status-dot.live{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse-dot 1.4s infinite}
+.status-dot.upcoming{background:var(--blue)}
+.status-dot.finished{background:var(--orange)}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 4px var(--green)}50%{box-shadow:0 0 12px var(--green)}}
 .delta{font-weight:800;font-size:12px;padding:2px 8px;border-radius:7px;white-space:nowrap}
 .delta.up{color:var(--green);background:rgba(65,224,141,.1)}
 .delta.down{color:var(--red);background:rgba(255,95,107,.1)}
 .avatar{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;font-family:var(--fd);font-size:15px;color:#0a1424;overflow:hidden;background:#0d1a2d}
 .avatar.lg{width:64px;height:64px;font-size:23px;border-radius:16px}
+.avatar.xl{width:72px;height:72px;font-size:26px;border-radius:50%}
 .avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}
 input,select{width:100%;font-family:var(--fb);font-size:15px;color:var(--txt);background:#0d1a2d;border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:none;transition:border-color .2s,box-shadow .2s}
 input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,139,31,.18)}
@@ -137,7 +130,151 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 .hero::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:repeating-linear-gradient(115deg,var(--orange) 0 12px,transparent 12px 24px);opacity:.55}
 .hero .kick{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-top:4px;flex-wrap:wrap}
 .hero h2{font-family:var(--fd);font-size:23px;letter-spacing:.02em;line-height:1.15;margin-bottom:6px}
-.hero .meta{color:var(--mut);font-size:13px;font-weight:500;margin-bottom:14px}
+.hero .meta{color:var(--mut);font-size:13px;font-weight:500;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.count{font-family:var(--fd);font-size:34px;letter-spacing:.08em;color:var(--ball);text-shadow:0 0 24px rgba(255,164,27,.45);margin:2px 0 4px}
+.count-lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:700}
+.counters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.counter{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 6px;text-align:center;transition:.2s}
+.counter:hover{border-color:var(--line2);transform:translateY(-2px)}
+.counter b{display:block;font-family:var(--fd);font-size:21px;color:var(--orange2)}
+.counter span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:700}
+.podium{display:flex;align-items:flex-end;gap:9px;padding-top:6px}
+.pod{flex:1;min-width:0;text-align:center}
+.pod .nm{font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
+.pod .bar{border-radius:9px 9px 3px 3px;display:flex;align-items:flex-start;justify-content:center;padding-top:9px;font-family:var(--fd);font-size:16px;position:relative;overflow:hidden}
+.pВот полный код с исправлениями: компактные шарики-статусы и сброс таймера при досрочном закрытии.
+
+<artifact identifier="topspin-v11-fixes" type="application/vnd.ant.code" language="html" title="ТОП-СПИН v11 — Компактные статусы + сброс таймера">
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1424">
+<title>ТОП-СПИН — центр турниров</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Golos+Text:wght@400;500;600;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#0a1424;--bg2:#0e1c31;--panel:#132238;--panel2:#182b46;--line:#24395a;--line2:#31507e;--txt:#eaf2ff;--mut:#8ea6c8;--dim:#5f7699;--orange:#ff8b1f;--orange2:#ffb35c;--ball:#ffa41b;--blue:#3aa9ff;--green:#41e08d;--red:#ff5f6b;--gold:#ffd166;--silver:#cfd8e3;--bronze:#e0a06c;--rad:14px;--fd:'Russo One',system-ui,sans-serif;--fb:'Golos Text',system-ui,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--fb);color:var(--txt);background:var(--bg);min-height:100vh;overflow-x:hidden;touch-action:manipulation;-webkit-text-size-adjust:100%;transition:background-color .3s ease,color .3s ease}
+body.locked{overflow:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:radial-gradient(600px 420px at 85% -5%,rgba(255,139,31,.16),transparent 60%),radial-gradient(700px 520px at -10% 100%,rgba(58,169,255,.13),transparent 60%),linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;background:repeating-linear-gradient(115deg,transparent 0 46px,rgba(255,255,255,.022) 46px 47px)}
+.orb{position:fixed;border-radius:50%;filter:blur(60px);z-index:-1;pointer-events:none;opacity:.5}
+.orb.o1{width:220px;height:220px;background:rgba(255,139,31,.22);top:-60px;right:-60px;animation:drift 18s ease-in-out infinite alternate}
+.orb.o2{width:260px;height:260px;background:rgba(58,169,255,.16);bottom:-80px;left:-80px;animation:drift 22s ease-in-out infinite alternate-reverse}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(-40px,50px) scale(1.15)}}
+body.light{--bg:#f5f7fa;--bg2:#e8ecf1;--panel:#ffffff;--panel2:#f0f4f8;--line:#d1d9e0;--line2:#b8c4d0;--txt:#1a2332;--mut:#4a5a6a;--dim:#8a96a6;--orange:#ff8b1f;--orange2:#ff6b0f;--ball:#ff9500;--blue:#0066ff;--green:#00c853;--red:#ff1744;--gold:#d4a017;--silver:#607d8b;--bronze:#b87333}
+body.light::before{background:radial-gradient(600px 420px at 85% -5%,rgba(255,139,31,.1),transparent 60%),radial-gradient(700px 520px at -10% 100%,rgba(0,102,255,.08),transparent 60%),linear-gradient(180deg,#f5f7fa 0%,#e8ecf1 100%)}
+body.light::after{background:repeating-linear-gradient(115deg,transparent 0 46px,rgba(0,0,0,.03) 46px 47px)}
+body.light .topbar{background:rgba(245,247,250,.9)}
+body.light .tabbar{background:rgba(245,247,250,.95);border-top:1px solid var(--line)}
+body.light input,body.light select{background:#ffffff;color:var(--txt)}
+body.light .card,body.light .sheet{background:var(--panel)}
+body.light .counter{background:#ffffff}
+body.light .stat{background:#ffffff}
+body.light .backdrop{background:rgba(245,247,250,.7)}
+body.light .toast{background:#ffffff;color:var(--txt)}
+body.light .trow,body.light .prow{background:var(--panel)}
+body.light .mrow{background:var(--panel)}
+body.light .setin{background:#ffffff}
+body.light .tally{background:var(--panel)}
+body.big-font{font-size:18px}
+body.big-font h1,body.big-font h2,body.big-font h3{font-size:1.3em}
+body.big-font .btn{font-size:16px;padding:13px 18px}
+body.big-font input,body.big-font select{font-size:16px;padding:13px 14px}
+body.big-font .tabbtn{font-size:11px}
+body.big-font .tabbtn svg{width:26px;height:26px}
+.login-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px}
+.login-card{max-width:400px;width:100%;background:linear-gradient(180deg,#152741,#111f36);border:1px solid var(--line);border-radius:20px;padding:30px;text-align:center;animation:rise .5s both}
+.login-logo{width:80px;height:80px;margin:0 auto 16px}
+.login-title{font-family:var(--fd);font-size:24px;margin-bottom:8px}
+.login-sub{color:var(--mut);font-size:14px;margin-bottom:24px}
+.login-step{display:none}
+.login-step.active{display:block}
+.login-label{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:16px 0 6px;text-align:left}
+.login-input{width:100%;font-family:var(--fb);font-size:16px;color:var(--txt);background:#0d1a2d;border:1px solid var(--line);border-radius:10px;padding:14px 12px;outline:none;text-align:center;letter-spacing:2px}
+.login-input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,139,31,.18)}
+.login-btn{width:100%;margin-top:20px;font-family:var(--fb);font-weight:800;font-size:15px;color:#241203;background:linear-gradient(180deg,#ffa14a,#ff7d12);border:none;border-radius:11px;padding:14px;cursor:pointer;transition:.15s}
+.login-btn:hover{filter:brightness(1.06)}
+.login-btn:active{transform:scale(.97)}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+.login-error{color:var(--red);font-size:13px;margin-top:12px;min-height:20px}
+.login-hint{color:var(--dim);font-size:12px;margin-top:12px}
+.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;max-width:540px;margin:0 auto;width:100%;padding:10px 14px 8px;background:rgba(10,20,36,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background-color .3s ease;flex-wrap:wrap}
+.app{max-width:540px;margin:0 auto;padding:0 14px 110px}
+.brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
+.logo{width:44px;height:44px;flex:none;filter:drop-shadow(0 4px 12px rgba(255,139,31,.35))}
+.brand h1{font-family:var(--fd);font-size:19px;letter-spacing:.06em;line-height:1}
+.brand h1 em{font-style:normal;color:var(--orange)}
+.brand small{display:block;color:var(--mut);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.datechip{font-size:11.5px;font-weight:600;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:6px 11px;white-space:nowrap;background:rgba(255,255,255,.03);text-transform:capitalize}
+.admin-badge{display:none;background:var(--orange);color:#241203;padding:4px 10px;border-radius:999px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.admin-badge.show{display:inline-block}
+.sync-indicator{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:var(--mut);padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.03);white-space:nowrap}
+.sync-indicator.synced{color:var(--green);border-color:rgba(65,224,141,.3)}
+.sync-indicator.syncing{color:var(--orange2);border-color:rgba(255,139,31,.3)}
+.sync-indicator.error{color:var(--red);border-color:rgba(255,95,107,.3)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.sync-indicator.syncing .sync-dot{animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.iconbtn{width:38px;height:38px;flex:none;display:grid;place-items:center;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:11px;color:var(--mut);transition:.18s}
+.iconbtn:hover{color:var(--txt);border-color:var(--line2)}
+.iconbtn:active{transform:scale(.92)}
+.iconbtn svg{width:19px;height:19px}
+.card{background:linear-gradient(180deg,#152741,#111f36);border:1px solid var(--line);border-radius:var(--rad);padding:16px;position:relative}
+.row-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.row-actions .btn{flex:1;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:7px;justify-content:center;font-family:var(--fb);font-weight:800;font-size:14px;color:var(--txt);border:none;cursor:pointer;border-radius:11px;padding:11px 16px;transition:transform .15s,box-shadow .2s,filter .2s;user-select:none}
+.btn:active{transform:scale(.965)}
+.btn.primary{background:linear-gradient(180deg,#ffa14a,#ff7d12);color:#241203;box-shadow:0 6px 18px rgba(255,139,31,.32)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.ghost{background:rgba(255,255,255,.04);border:1px solid var(--line2);font-weight:600;color:var(--txt)}
+.btn.ghost:hover{background:rgba(255,255,255,.08)}
+.btn.danger{background:rgba(255,95,107,.12);border:1px solid rgba(255,95,107,.45);color:var(--red)}
+.btn.sm{padding:7px 12px;font-size:12.5px;border-radius:9px}
+.btn.w100{width:100%}
+.mut{color:var(--mut)}.dim{color:var(--dim)}.small{font-size:12px}
+.sec-title{font-family:var(--fd);font-size:14px;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:9px;margin:22px 2px 11px}
+.sec-title .cnt{margin-left:auto;font-family:var(--fb);font-size:11px;font-weight:700;color:var(--dim);letter-spacing:0}
+.sec-title::before{content:"";width:16px;height:4px;border-radius:2px;background:var(--orange);box-shadow:0 0 10px rgba(255,139,31,.6)}
+/* Компактные статусы - только шарики */
+.status-dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;flex-shrink:0}
+.status-dot.live{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse-dot 1.4s infinite}
+.status-dot.upcoming{background:var(--blue)}
+.status-dot.finished{background:var(--orange)}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 4px var(--green)}50%{box-shadow:0 0 12px var(--green)}}
+.delta{font-weight:800;font-size:12px;padding:2px 8px;border-radius:7px;white-space:nowrap}
+.delta.up{color:var(--green);background:rgba(65,224,141,.1)}
+.delta.down{color:var(--red);background:rgba(255,95,107,.1)}
+.avatar{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;font-family:var(--fd);font-size:15px;color:#0a1424;overflow:hidden;background:#0d1a2d}
+.avatar.lg{width:64px;height:64px;font-size:23px;border-radius:16px}
+.avatar.xl{width:72px;height:72px;font-size:26px;border-radius:50%}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}
+input,select{width:100%;font-family:var(--fb);font-size:15px;color:var(--txt);background:#0d1a2d;border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,139,31,.18)}
+input::placeholder{color:var(--dim)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238ea6c8' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+input[type=file]{padding:8px 10px;font-size:13px;background:#0d1a2d}
+input[type=file]::-webkit-file-upload-button{background:var(--orange);color:#241203;border:none;padding:6px 12px;border-radius:7px;font-weight:700;margin-right:8px;cursor:pointer}
+label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:13px 0 6px}
+.frm2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.spark{display:block}.spark.up{color:var(--green)}.spark.down{color:var(--red)}.spark .flat{stroke:var(--dim);stroke-width:1.5}
+.hero{overflow:hidden;clip-path:polygon(0 0,calc(100% - 26px) 0,100% 26px,100% 100%,0 100%);border-top:1px solid rgba(255,139,31,.35)}
+.hero::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:repeating-linear-gradient(115deg,var(--orange) 0 12px,transparent 12px 24px);opacity:.55}
+.hero .kick{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-top:4px;flex-wrap:wrap}
+.hero h2{font-family:var(--fd);font-size:23px;letter-spacing:.02em;line-height:1.15;margin-bottom:6px}
+.hero .meta{color:var(--mut);font-size:13px;font-weight:500;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .count{font-family:var(--fd);font-size:34px;letter-spacing:.08em;color:var(--ball);text-shadow:0 0 24px rgba(255,164,27,.45);margin:2px 0 4px}
 .count-lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:700}
 .counters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
@@ -168,7 +305,7 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 .datebox span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:700}
 .trow .info,.prow .info{flex:1;min-width:0}
 .trow .nm,.prow .nm{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.trow .sub,.prow .sub{color:var(--mut);font-size:12px;margin-top:3px}
+.trow .sub,.prow .sub{color:var(--mut);font-size:12px;margin-top:3px;display:flex;align-items:center;gap:6px}
 .prow .rat{font-family:var(--fd);font-size:19px;color:var(--ball);flex:none;text-align:right}
 .chev{color:var(--dim);flex:none}
 .rise{animation:rise .45s both}
@@ -268,284 +405,107 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 .toggle-row{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;margin:8px 0;cursor:pointer}
 .toggle-row input{width:auto;margin:0}
 .toggle-row span{flex:1;font-weight:600}
+.profile-card{display:flex;align-items:center;gap:14px;background:linear-gradient(180deg,#152741,#111f36);border:1px solid var(--line);border-radius:var(--rad);padding:20px;margin-bottom:16px}
+.profile-info{flex:1}
+.profile-name{font-family:var(--fd);font-size:20px;margin-bottom:4px}
+.profile-phone{color:var(--mut);font-size:12px;margin-bottom:8px}
+.profile-rating{display:flex;align-items:center;gap:8px}
+.profile-rating-num{font-family:var(--fd);font-size:24px;color:var(--ball)}
+.tournament-register-item{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,#152741,#111f36);border:1px solid var(--line);border-radius:var(--rad);padding:14px;margin-bottom:9px}
+.tournament-register-info{flex:1}
+.tournament-register-name{font-weight:700;font-size:15px}
+.tournament-register-meta{color:var(--mut);font-size:12px;margin-top:4px;display:flex;align-items:center;gap:6px}
 @media (max-width:380px){.counters{grid-template-columns:repeat(2,1fr)}.statgrid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-
-<!-- Экран входа -->
 <div class="login-screen" id="loginScreen">
-<div class="login-card">
-<svg class="login-logo" viewBox="0 0 64 64">
-<circle cx="32" cy="32" r="31" fill="#0e1e34" stroke="#31507e" stroke-width="2"/>
-<path d="M8 16 A29 29 0 0 1 24 4.5" stroke="#ff8b1f" stroke-width="3" fill="none" stroke-linecap="round"/>
-<g transform="rotate(-30 30 31)"><rect x="26.6" y="39" width="9" height="16" rx="4.5" fill="#e3a067"/><ellipse cx="31" cy="26" rx="15" ry="16.5" fill="#e8452c"/><path d="M20 17a15 16.5 0 0 1 16-5" stroke="#ff9d86" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/></g>
-<circle cx="47.5" cy="14.5" r="5.2" fill="#ffa41b"/><circle cx="45.8" cy="12.8" r="1.6" fill="#ffe0a3"/>
-</svg>
-<div class="login-title">ТОП-СПИН</div>
-<div class="login-sub">Центр турниров по настольному теннису</div>
-<!-- Шаг 1: Ввод телефона -->
-<div class="login-step active" id="loginStepPhone">
-  <label class="login-label">Номер телефона</label>
-  <input class="login-input" type="tel" id="loginPhone" placeholder="+7 999 123-45-67" maxlength="18">
-  <button class="login-btn" id="loginSendBtn" onclick="sendPhoneCode()">Получить код</button>
-  <div class="login-error" id="loginError"></div>
-  <div class="login-hint">Тестовый номер: +79991234567, код: 123456</div>
+  <div class="login-card">
+    <svg class="login-logo" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r="31" fill="#0e1e34" stroke="#31507e" stroke-width="2"/>
+      <path d="M8 16 A29 29 0 0 1 24 4.5" stroke="#ff8b1f" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g transform="rotate(-30 30 31)"><rect x="26.6" y="39" width="9" height="16" rx="4.5" fill="#e3a067"/><ellipse cx="31" cy="26" rx="15" ry="16.5" fill="#e8452c"/><path d="M20 17a15 16.5 0 0 1 16-5" stroke="#ff9d86" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/></g>
+      <circle cx="47.5" cy="14.5" r="5.2" fill="#ffa41b"/><circle cx="45.8" cy="12.8" r="1.6" fill="#ffe0a3"/>
+    </svg>
+    <div class="login-title">ТОП-СПИН</div>
+    <div class="login-sub">Центр турниров по настольному теннису</div>
+    <div class="login-step active" id="loginStepPhone">
+      <label class="login-label">Номер телефона</label>
+      <input class="login-input" type="tel" id="loginPhone" placeholder="+7 999 123-45-67" maxlength="18">
+      <button class="login-btn" id="loginSendBtn" onclick="sendPhoneCode()">Получить код</button>
+      <div class="login-error" id="loginError"></div>
+      <div class="login-hint">Тестовый номер: +79991234567, код: 123456</div>
+    </div>
+    <div class="login-step" id="loginStepCode">
+      <div class="login-hint" style="margin-bottom:16px">Код отправлен на <span id="loginPhoneDisplay" style="color:var(--orange2)"></span></div>
+      <label class="login-label">Код подтверждения</label>
+      <input class="login-input" type="text" id="loginCode" placeholder="123456" maxlength="6" inputmode="numeric">
+      <button class="login-btn" id="loginVerifyBtn" onclick="verifyPhoneCode()">Войти</button>
+      <div class="login-error" id="loginError2"></div>
+      <button class="login-btn" style="background:transparent;color:var(--mut);box-shadow:none;margin-top:10px" onclick="showPhoneStep()">← Изменить номер</button>
+    </div>
+  </div>
 </div>
-
-<!-- Шаг 2: Ввод кода -->
-<div class="login-step" id="loginStepCode">
-  <div class="login-hint" style="margin-bottom:16px">Код отправлен на <span id="loginPhoneDisplay" style="color:var(--orange2)"></span></div>
-  <label class="login-label">Код подтверждения</label>
-  <input class="login-input" type="text" id="loginCode" placeholder="123456" maxlength="6" inputmode="numeric">
-  <button class="login-btn" id="loginVerifyBtn" onclick="verifyPhoneCode()">Войти</button>
-  <div class="login-error" id="loginError2"></div>
-  <button class="login-btn" style="background:transparent;color:var(--mut);box-shadow:none;margin-top:10px" onclick="showPhoneStep()">← Изменить номер</button>
-</div>
-</div>
-</div>
-
 <div class="orb o1"></div><div class="orb o2"></div>
 <header class="topbar" id="mainHeader" style="display:none">
-<div class="brand" data-action="tab" data-tab="arena">
-<svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
-<circle cx="32" cy="32" r="31" fill="#0e1e34" stroke="#31507e" stroke-width="2"/>
-<path d="M8 16 A29 29 0 0 1 24 4.5" stroke="#ff8b1f" stroke-width="3" fill="none" stroke-linecap="round"/>
-<g transform="rotate(-30 30 31)"><rect x="26.6" y="39" width="9" height="16" rx="4.5" fill="#e3a067"/><ellipse cx="31" cy="26" rx="15" ry="16.5" fill="#e8452c"/><path d="M20 17a15 16.5 0 0 1 16-5" stroke="#ff9d86" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/></g>
-<circle cx="47.5" cy="14.5" r="5.2" fill="#ffa41b"/><circle cx="45.8" cy="12.8" r="1.6" fill="#ffe0a3"/>
-</svg>
-<div><h1>ТОП-<em>СПИН</em></h1><small>центр турниров</small></div>
-</div>
-<span id="syncIndicator" class="sync-indicator"><span class="sync-dot"></span>синхр</span>
-<span id="adminBadge" class="admin-badge">🔑 АДМИН</span>
-<span class="datechip" id="todayChip"></span>
-<button class="iconbtn" data-action="openAppearance" title="Оформление">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-</button>
-<button class="iconbtn" data-action="settings" title="Настройки">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1"/></svg>
-</button>
-<button class="iconbtn" id="logoutBtn" data-action="logout" title="Выйти">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-</button>
+  <div class="brand" data-action="tab" data-tab="arena">
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="31" fill="#0e1e34" stroke="#31507e" stroke-width="2"/>
+      <path d="M8 16 A29 29 0 0 1 24 4.5" stroke="#ff8b1f" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g transform="rotate(-30 30 31)"><rect x="26.6" y="39" width="9" height="16" rx="4.5" fill="#e3a067"/><ellipse cx="31" cy="26" rx="15" ry="16.5" fill="#e8452c"/><path d="M20 17a15 16.5 0 0 1 16-5" stroke="#ff9d86" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/></g>
+      <circle cx="47.5" cy="14.5" r="5.2" fill="#ffa41b"/><circle cx="45.8" cy="12.8" r="1.6" fill="#ffe0a3"/>
+    </svg>
+    <div><h1>ТОП-<em>СПИН</em></h1><small>центр турниров</small></div>
+  </div>
+  <span id="syncIndicator" class="sync-indicator"><span class="sync-dot"></span>синхр</span>
+  <span id="adminBadge" class="admin-badge">🔑 АДМИН</span>
+  <span class="datechip" id="todayChip"></span>
+  <button class="iconbtn" data-action="openAppearance" title="Оформление">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+  </button>
+  <button class="iconbtn" data-action="settings" title="Настройки">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1"/></svg>
+  </button>
+  <button class="iconbtn" id="logoutBtn" data-action="logout" title="Выйти">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  </button>
 </header>
 <main class="app" id="view" style="display:none"><noscript>Включите JavaScript.</noscript></main>
 <nav class="tabbar" id="mainTabbar" style="display:none">
-<button class="tabbtn" data-tab="arena" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><ellipse cx="10" cy="9.5" rx="6.2" ry="7"/><path d="m14.8 14.6 4.6 4.9"/><circle cx="19.6" cy="6" r="2.1"/></svg>Арена</button>
-<button class="tabbtn" data-tab="tournaments" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Турниры</button>
-<button class="tabbtn" data-tab="players" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><circle cx="16.8" cy="9.5" r="2.6"/><path d="M16 14.9c2.6.2 4.2 1.6 4.7 4.2"/></svg>Игроки</button>
-<button class="tabbtn" data-tab="rating" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20v-6M11 20V5M17 20v-9M3 20h18"/></svg>Рейтинг</button>
-<button class="tabbtn" data-tab="awards" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="14.5" r="5"/><path d="M8.6 10.4 5.6 4h4.1l1.7 3.6M15.4 10.4l3-6.4h-4.1l-1.7 3.6"/></svg>Награды</button>
+  <button class="tabbtn" data-tab="arena" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><ellipse cx="10" cy="9.5" rx="6.2" ry="7"/><path d="m14.8 14.6 4.6 4.9"/><circle cx="19.6" cy="6" r="2.1"/></svg>Арена</button>
+  <button class="tabbtn" data-tab="tournaments" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Турниры</button>
+  <button class="tabbtn" data-tab="players" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><circle cx="16.8" cy="9.5" r="2.6"/><path d="M16 14.9c2.6.2 4.2 1.6 4.7 4.2"/></svg>Игроки</button>
+  <button class="tabbtn" data-tab="rating" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20v-6M11 20V5M17 20v-9M3 20h18"/></svg>Рейтинг</button>
+  <button class="tabbtn" data-tab="awards" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="14.5" r="5"/><path d="M8.6 10.4 5.6 4h4.1l1.7 3.6M15.4 10.4l3-6.4h-4.1l-1.7 3.6"/></svg>Награды</button>
+  <button class="tabbtn" data-tab="profile" data-action="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>Кабинет</button>
 </nav>
 <div id="modal-root"></div>
 <div id="toast-root"></div>
-
 <script>
 var _mem={};var _lsOk=false;
 try{localStorage.setItem('__t','1');localStorage.removeItem('__t');_lsOk=true;}catch(e){_lsOk=false;}
 function lsGet(k){try{if(_lsOk)return localStorage.getItem(k);}catch(e){}return _mem[k]||null;}
 function lsSet(k,v){try{if(_lsOk)localStorage.setItem(k,v);}catch(e){}_mem[k]=v;}
-
 var LS_KEY='topspin_v3';
 var DEF_SET={startRating:1000,kFactor:32};
-
-// Список номеров админов (можно добавить несколько)
 var ADMIN_PHONES=['+79991234567'];
-
 var firebaseConfig={apiKey:"AIzaSyBBfeMqpQe5D6-W3QzuX6Q5PHZdmm5FtD8",authDomain:"top-spin-3ef01.firebaseapp.com",databaseURL:"https://top-spin-3ef01-default-rtdb.europe-west1.firebasedatabase.app",projectId:"top-spin-3ef01",storageBucket:"top-spin-3ef01.firebasestorage.app",messagingSenderId:"939869281373",appId:"1:939869281373:web:5b7fe5304f7052489401b4",measurementId:"G-WC9JD17E9N"};
-
 var firebaseApp=null;var dbRef=null;var authRef=null;
 var isSyncingFromFirebase=false;
 var currentUser=null;
 var isAdminMode=false;
 var confirmationResult=null;
-
-function initFirebase(){
-try{
-firebaseApp=firebase.initializeApp(firebaseConfig);
-dbRef=firebase.database().ref('topspin/data');
-authRef=firebase.auth();
-return true;
-}catch(e){console.error('Firebase init error:',e);return false;}
-}
-
-// === АУТЕНТИФИКАЦИЯ ===
-function showPhoneStep(){
-document.getElementById('loginStepPhone').classList.add('active');
-document.getElementById('loginStepCode').classList.remove('active');
-document.getElementById('loginError').textContent='';
-document.getElementById('loginError2').textContent='';
-}
-
-function showCodeStep(phone){
-document.getElementById('loginStepPhone').classList.remove('active');
-document.getElementById('loginStepCode').classList.add('active');
-document.getElementById('loginPhoneDisplay').textContent=phone;
-document.getElementById('loginCode').value='';
-setTimeout(function(){document.getElementById('loginCode').focus();},100);
-}
-
-function formatPhone(phone){
-phone=phone.replace(/[^\d+]/g,'');
-if(!phone.startsWith('+'))phone='+'+phone;
-return phone;
-}
-
-function sendPhoneCode(){
-var phoneInput=document.getElementById('loginPhone');
-var errorEl=document.getElementById('loginError');
-var btn=document.getElementById('loginSendBtn');
-
-var phone=formatPhone(phoneInput.value);
-
-if(!phone||phone.length<10){
-errorEl.textContent='Введите корректный номер телефона';
-return;
-}
-
-errorEl.textContent='';
-btn.disabled=true;
-btn.textContent='Отправка...';
-
-// Для тестовых номеров используем прямой вход
-if(ADMIN_PHONES.indexOf(phone)!==-1||phone==='+79991234567'){
-// Тестовый режим - показываем шаг ввода кода
-showCodeStep(phone);
-btn.disabled=false;
-btn.textContent='Получить код';
-toast('Тестовый режим: введите код 123456','ok');
-return;
-}
-
-// Для реальных номеров - отправляем СМС через Firebase
-firebase.auth().signInWithPhoneNumber(phone,window.recaptchaVerifier)
-.then(function(result){
-confirmationResult=result;
-showCodeStep(phone);
-btn.disabled=false;
-btn.textContent='Получить код';
-toast('Код отправлен','ok');
-})
-.catch(function(e){
-console.error('SMS error:',e);
-errorEl.textContent='Ошибка отправки СМС. Попробуйте позже.';
-btn.disabled=false;
-btn.textContent='Получить код';
-});
-}
-
-function verifyPhoneCode(){
-var codeInput=document.getElementById('loginCode');
-var errorEl=document.getElementById('loginError2');
-var btn=document.getElementById('loginVerifyBtn');
-var phone=formatPhone(document.getElementById('loginPhone').value);
-
-var code=codeInput.value.trim();
-
-if(!code||code.length!==6){
-errorEl.textContent='Введите 6-значный код';
-return;
-}
-
-errorEl.textContent='';
-btn.disabled=true;
-btn.textContent='Проверка...';
-
-// Для тестового номера проверяем код 123456
-if(phone==='+79991234567'&&code==='123456'){
-completeLogin(phone);
-return;
-}
-
-// Для реальных номеров проверяем через Firebase
-if(confirmationResult){
-confirmationResult.confirm(code)
-.then(function(result){
-completeLogin(phone);
-})
-.catch(function(e){
-console.error('Verify error:',e);
-errorEl.textContent='Неверный код';
-btn.disabled=false;
-btn.textContent='Войти';
-});
-}else{
-errorEl.textContent='Сначала получите код';
-btn.disabled=false;
-btn.textContent='Войти';
-}
-}
-
-function completeLogin(phone){
-currentUser={
-phone:phone,
-role:ADMIN_PHONES.indexOf(phone)!==-1?'admin':'player',
-loginTime:new Date().toISOString()
-};
-
-isAdminMode=currentUser.role==='admin';
-
-// Сохраняем сессию
-lsSet('topspin_session',JSON.stringify(currentUser));
-
-// Сохраняем пользователя в базе
-if(dbRef){
-var userRef=firebase.database().ref('topspin/users/'+phone.replace(/\+/g,''));
-userRef.set({
-phone:phone,
-role:currentUser.role,
-lastLogin:new Date().toISOString()
-});
-}
-
-hideLoginScreen();
-toast(currentUser.role==='admin'?'🔑 Вход выполнен как админ':'👋 Вход выполнен','ok');
-render();
-}
-
-function hideLoginScreen(){
-document.getElementById('loginScreen').style.display='none';
-document.getElementById('mainHeader').style.display='flex';
-document.getElementById('view').style.display='block';
-document.getElementById('mainTabbar').style.display='flex';
-}
-
-function showLoginScreen(){
-document.getElementById('loginScreen').style.display='flex';
-document.getElementById('mainHeader').style.display='none';
-document.getElementById('view').style.display='none';
-document.getElementById('mainTabbar').style.display='none';
-showPhoneStep();
-}
-
-function logout(){
-confirmBox('Выйти из аккаунта?',function(){
-currentUser=null;
-isAdminMode=false;
-lsSet('topspin_session','');
-if(authRef)authRef.signOut();
-showLoginScreen();
-toast('Вы вышли из аккаунта');
-});
-}
-
-function checkSession(){
-var session=lsGet('topspin_session');
-if(session){
-try{
-currentUser=JSON.parse(session);
-if(currentUser&&currentUser.phone){
-isAdminMode=currentUser.role==='admin';
-hideLoginScreen();
-return true;
-}
-}catch(e){}
-}
-showLoginScreen();
-return false;
-}
-
-// === ОСТАЛЬНОЙ КОД ===
+function initFirebase(){try{firebaseApp=firebase.initializeApp(firebaseConfig);dbRef=firebase.database().ref('topspin/data');authRef=firebase.auth();return true;}catch(e){console.error('Firebase init error:',e);return false;}}
+function showPhoneStep(){document.getElementById('loginStepPhone').classList.add('active');document.getElementById('loginStepCode').classList.remove('active');document.getElementById('loginError').textContent='';document.getElementById('loginError2').textContent='';}
+function showCodeStep(phone){document.getElementById('loginStepPhone').classList.remove('active');document.getElementById('loginStepCode').classList.add('active');document.getElementById('loginPhoneDisplay').textContent=phone;document.getElementById('loginCode').value='';setTimeout(function(){document.getElementById('loginCode').focus();},100);}
+function formatPhone(phone){phone=phone.replace(/[^\d+]/g,'');if(!phone.startsWith('+'))phone='+'+phone;return phone;}
+function sendPhoneCode(){var phoneInput=document.getElementById('loginPhone');var errorEl=document.getElementById('loginError');var btn=document.getElementById('loginSendBtn');var phone=formatPhone(phoneInput.value);if(!phone||phone.length<10){errorEl.textContent='Введите корректный номер телефона';return;}errorEl.textContent='';btn.disabled=true;btn.textContent='Отправка...';if(ADMIN_PHONES.indexOf(phone)!==-1||phone==='+79991234567'){showCodeStep(phone);btn.disabled=false;btn.textContent='Получить код';toast('Тестовый режим: введите код 123456','ok');return;}firebase.auth().signInWithPhoneNumber(phone,window.recaptchaVerifier).then(function(result){confirmationResult=result;showCodeStep(phone);btn.disabled=false;btn.textContent='Получить код';toast('Код отправлен','ok');}).catch(function(e){console.error('SMS error:',e);errorEl.textContent='Ошибка отправки СМС. Попробуйте позже.';btn.disabled=false;btn.textContent='Получить код';});}
+function verifyPhoneCode(){var codeInput=document.getElementById('loginCode');var errorEl=document.getElementById('loginError2');var btn=document.getElementById('loginVerifyBtn');var phone=formatPhone(document.getElementById('loginPhone').value);var code=codeInput.value.trim();if(!code||code.length!==6){errorEl.textContent='Введите 6-значный код';return;}errorEl.textContent='';btn.disabled=true;btn.textContent='Проверка...';if(phone==='+79991234567'&&code==='123456'){completeLogin(phone);return;}if(confirmationResult){confirmationResult.confirm(code).then(function(result){completeLogin(phone);}).catch(function(e){console.error('Verify error:',e);errorEl.textContent='Неверный код';btn.disabled=false;btn.textContent='Войти';});}else{errorEl.textContent='Сначала получите код';btn.disabled=false;btn.textContent='Войти';}}
+function completeLogin(phone){currentUser={phone:phone,role:ADMIN_PHONES.indexOf(phone)!==-1?'admin':'player',loginTime:new Date().toISOString()};isAdminMode=currentUser.role==='admin';lsSet('topspin_session',JSON.stringify(currentUser));if(dbRef){var userRef=firebase.database().ref('topspin/users/'+phone.replace(/\+/g,''));userRef.set({phone:phone,role:currentUser.role,lastLogin:new Date().toISOString()});}hideLoginScreen();toast(currentUser.role==='admin'?'🔑 Вход выполнен как админ':'👋 Вход выполнен','ok');render();}
+function hideLoginScreen(){document.getElementById('loginScreen').style.display='none';document.getElementById('mainHeader').style.display='flex';document.getElementById('view').style.display='block';document.getElementById('mainTabbar').style.display='flex';}
+function showLoginScreen(){document.getElementById('loginScreen').style.display='flex';document.getElementById('mainHeader').style.display='none';document.getElementById('view').style.display='none';document.getElementById('mainTabbar').style.display='none';showPhoneStep();}
+function logout(){confirmBox('Выйти из аккаунта?',function(){currentUser=null;isAdminMode=false;lsSet('topspin_session','');if(authRef)authRef.signOut();showLoginScreen();toast('Вы вышли из аккаунта');});}
+function checkSession(){var session=lsGet('topspin_session');if(session){try{currentUser=JSON.parse(session);if(currentUser&&currentUser.phone){isAdminMode=currentUser.role==='admin';hideLoginScreen();return true;}}catch(e){}}showLoginScreen();return false;}
 function updateSyncIndicator(status){var ind=document.getElementById('syncIndicator');if(!ind)return;ind.className='sync-indicator '+status;if(status==='synced'){ind.innerHTML='<span class="sync-dot"></span>синхр ✓';}else if(status==='syncing'){ind.innerHTML='<span class="sync-dot"></span>синхр...';}else if(status==='error'){ind.innerHTML='<span class="sync-dot"></span>ошибка';}}
 function saveToFirebase(){if(!dbRef)return;try{dbRef.set(state).then(function(){updateSyncIndicator('synced');}).catch(function(e){console.error('Firebase save error:',e);updateSyncIndicator('error');});}catch(e){updateSyncIndicator('error');}}
 function loadFromFirebase(){if(!dbRef)return;updateSyncIndicator('syncing');dbRef.once('value').then(function(snapshot){var data=snapshot.val();if(data&&data.players){isSyncingFromFirebase=true;state=Object.assign({settings:Object.assign({},DEF_SET)},data);state.settings=Object.assign({},DEF_SET,state.settings||{});state.awards=state.awards||[];state.tournaments=state.tournaments||[];state.matches=state.matches||[];lsSet(LS_KEY,JSON.stringify(state));render();updateSyncIndicator('synced');}else{updateSyncIndicator('synced');}isSyncingFromFirebase=false;}).catch(function(e){console.error('Firebase load error:',e);updateSyncIndicator('error');isSyncingFromFirebase=false;});}
@@ -569,7 +529,7 @@ function fmtDate(d){var x=new Date(d+'T12:00');return x.getDate()+' '+MONF[x.get
 function fmtDateFull(d){var x=new Date(d+'T12:00');return x.toLocaleDateString('ru-RU',{weekday:'short'})+', '+x.getDate()+' '+MONF[x.getMonth()];}
 function avColor(id){var h=0,s=String(id);for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return 'linear-gradient(135deg,hsl('+h+' 75% 62%),hsl('+((h+40)%360)+' 70% 48%))';}
 function initials(p){return ((p.firstName[0]||'')+(p.lastName[0]||'')).toUpperCase();}
-function avatarHtml(p,size){size=size||'reg';var cls=size==='lg'?'avatar lg':'avatar';if(p&&p.avatar)return '<div class="'+cls+'"><img src="'+p.avatar+'" alt=""></div>';return '<div class="'+cls+'" style="background:'+avColor(p?p.id:'x')+'">'+(p?initials(p):'?')+'</div>';}
+function avatarHtml(p,size){size=size||'reg';var cls=size==='lg'?'avatar lg':size==='xl'?'avatar xl':'avatar';if(p&&p.avatar)return '<div class="'+cls+'"><img src="'+p.avatar+'" alt=""></div>';return '<div class="'+cls+'" style="background:'+avColor(p?p.id:'x')+'">'+(p?initials(p):'?')+'</div>';}
 function miniAvatar(p){if(p&&p.avatar)return '<span class="pmini"><img src="'+p.avatar+'" alt=""></span>';return '<span class="pmini" style="background:'+avColor(p?p.id:'x')+'">'+(p?initials(p):'?')+'</span>';}
 function compressImage(file,cb){var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var maxW=200,maxH=200,w=img.width,h=img.height;if(w>maxW){h=h*maxW/w;w=maxW;}if(h>maxH){w=w*maxH/h;h=maxH;}var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);cb(c.toDataURL('image/jpeg',0.85));};img.onerror=function(){toast('Не удалось прочитать изображение','err');};img.src=e.target.result;};reader.readAsDataURL(file);}
 function playSound(type){if(lsGet('soundEnabled')==='false')return;try{var audioCtx=new (window.AudioContext||window.webkitAudioContext)();var oscillator=audioCtx.createOscillator();var gainNode=audioCtx.createGain();oscillator.connect(gainNode);gainNode.connect(audioCtx.destination);if(type==='setEnd'){oscillator.frequency.value=880;oscillator.type='sine';gainNode.gain.setValueAtTime(0.3,audioCtx.currentTime);gainNode.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.3);oscillator.start(audioCtx.currentTime);oscillator.stop(audioCtx.currentTime+0.3);}else if(type==='matchEnd'){oscillator.frequency.setValueAtTime(523,audioCtx.currentTime);oscillator.frequency.setValueAtTime(659,audioCtx.currentTime+0.15);oscillator.frequency.setValueAtTime(784,audioCtx.currentTime+0.3);oscillator.type='sine';gainNode.gain.setValueAtTime(0.35,audioCtx.currentTime);gainNode.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.6);oscillator.start(audioCtx.currentTime);oscillator.stop(audioCtx.currentTime+0.6);}else if(type==='click'){oscillator.frequency.value=600;oscillator.type='square';gainNode.gain.setValueAtTime(0.08,audioCtx.currentTime);gainNode.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.05);oscillator.start(audioCtx.currentTime);oscillator.stop(audioCtx.currentTime+0.05);}}catch(e){}}
@@ -584,27 +544,27 @@ function playerStats(id,eng){var ms=eng.played.filter(function(m){return m.playe
 var ratio=function(x,y){return y===0?x:x/y;};
 function standings(tid){var ms=state.matches.filter(function(m){return m.tournamentId===tid&&matchWinner(m);});var rows={};ms.forEach(function(m){[m.playerAId,m.playerBId].forEach(function(pid){if(!rows[pid])rows[pid]={pid:pid,w:0,l:0,sw:0,sl:0,bw:0,bl:0};});var A=rows[m.playerAId],B=rows[m.playerBId],w=matchWinner(m);var sc=setsCountArr(m.sets),bc=ballsCountArr(m.sets);A.sw+=sc[0];A.sl+=sc[1];A.bw+=bc[0];A.bl+=bc[1];B.sw+=sc[1];B.sl+=sc[0];B.bw+=bc[1];B.bl+=bc[0];if(w===m.playerAId){A.w++;B.l++;}else{B.w++;A.l++;}});return Object.values(rows).sort(function(a,b){return b.w-a.w||ratio(b.sw,b.sl)-ratio(a.sw,a.sl)||ratio(b.bw,b.bl)-ratio(a.bw,a.bl)||pNameRaw(a.pid).localeCompare(pNameRaw(b.pid),'ru');});}
 function tStatus(t){if(t.closed)return'finished';var now=Date.now();var s=new Date(t.date+'T'+(t.startTime||'00:00')+':00').getTime();var e=new Date(t.date+'T'+(t.endTime||'23:59')+':00').getTime();if(now<s)return'upcoming';if(now<=e)return'live';return'finished';}
-function statusChip(t){var s=tStatus(t);if(s==='live')return'<span class="chip live"><span class="dot"></span>идёт сейчас</span>';if(s==='upcoming')return'<span class="chip up"><span class="dot"></span>предстоит</span>';return'<span class="chip fin"><span class="dot"></span>завершён</span>';}
+/* Компактный статус - только цветной шарик */
+function statusChip(t){var s=tStatus(t);if(s==='live')return'<span class="status-dot live" title="Идёт сейчас"></span>';if(s==='upcoming')return'<span class="status-dot upcoming" title="Предстоит"></span>';return'<span class="status-dot finished" title="Завершён"></span>';}
 var I_CHEV='<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m9 5 7 7-7 7"/></svg>';
 function spark(series,w,h){w=w||92;h=h||26;if(!series||series.length<2)return'<svg class="spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><line class="flat" x1="0" y1="'+(h/2)+'" x2="'+w+'" y2="'+(h/2)+'"/></svg>';var min=Math.min.apply(null,series),max=Math.max.apply(null,series),rng=max-min||1;var pts=series.map(function(v,i){return((i/(series.length-1)*(w-2)+1).toFixed(1))+','+((h-2-((v-min)/rng)*(h-5)).toFixed(1));}).join(' ');return'<svg class="spark '+(series[series.length-1]>=series[0]?'up':'down')+'" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><polyline points="'+pts+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';}
 function deltaChip(d){return d>0?'<span class="delta up">▲ +'+d+'</span>':d<0?'<span class="delta down">▼ '+d+'</span>':'<span class="delta">0</span>';}
-
-// Функции отображения (такие же как раньше, но с проверкой прав)
-function viewArena(eng){if(!state.players.length){return'<div class="sec-title">Арена</div><div class="empty rise"><div class="big">🏓</div><b>Добро пожаловать в ТОП-СПИН!</b><span class="small">Судейский центр настольного тенниса.</span>'+(isAdminMode?'<div class="row-actions"><button class="btn primary" data-action="newPlayer">＋ Добавить игроков</button><button class="btn ghost" data-action="demo">Демо-данные</button></div>':'')+'</div>';}var ts=[].concat(state.tournaments).sort(function(a,b){return new Date(a.date+'T'+(a.startTime||'00:00'))-new Date(b.date+'T'+(b.startTime||'00:00'));});var hero=ts.find(function(t){return tStatus(t)==='live';})||ts.find(function(t){return tStatus(t)==='upcoming';})||[].concat(ts).reverse().find(function(t){return tStatus(t)==='finished';});var heroHtml='';if(hero){var st=tStatus(hero);var parts=(hero.playerIds||[]).length;var mAll=state.matches.filter(function(m){return m.tournamentId===hero.id;});var mDone=mAll.filter(function(m){return matchWinner(m);}).length;var countHtml='';if(st==='live')countHtml='<div class="count-lbl">до конца приёма встреч</div><div class="count" id="cd" data-end="'+hero.date+'T'+(hero.endTime||'23:59')+':00">--:--:--</div>';else if(st==='upcoming')countHtml='<div class="count-lbl">до старта турнира</div><div class="count" id="cd" data-end="'+hero.date+'T'+(hero.startTime||'10:00')+':00">--:--:--</div>';else countHtml='<div class="count-lbl">результаты открыты</div><div class="count" style="font-size:22px;color:var(--green)">✓ ИТОГИ</div>';heroHtml='<div class="card hero rise"><div class="kick">'+statusChip(hero)+'<span class="chip">📅 '+fmtDate(hero.date)+'</span></div><h2>'+esc(hero.name)+'</h2><div class="meta">🕐 '+(hero.startTime||'—')+' – '+(hero.endTime||'—')+' • 👥 '+parts+' • 🏓 '+mDone+'/'+mAll.length+'</div>'+countHtml+'<div class="row-actions"><button class="btn primary" data-action="openTournament" data-id="'+hero.id+'">Открыть турнир</button>'+(st==='live'&&isAdminMode?'<button class="btn ghost" data-action="closeNow" data-id="'+hero.id+'">Завершить досрочно</button>':'')+'</div></div>';}else{heroHtml='<div class="card hero rise"><div class="kick"><span class="chip up"><span class="dot"></span>старт</span></div><h2>Создайте первый турнир</h2><div class="meta">Дата, время встреч и окончания — и можно играть</div>'+(isAdminMode?'<div class="row-actions"><button class="btn primary" data-action="newTournament">＋ Новый турнир</button></div>':'')+'</div>';}var sorted=[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});var podium=sorted.slice(0,3);var podHtml='';if(podium.length>=2){var cell=function(p,i){return'<div class="pod p'+(i+1)+'"><div class="nm">'+(i===0?'🥇':i===1?'🥈':'🥉')+' '+esc(p.firstName)+'</div><div class="bar">'+eng.R[p.id]+'</div></div>';};var order=[cell(podium[1],1),cell(podium[0],0)];if(podium[2])order.push(cell(podium[2],2));podHtml='<div class="sec-title">Подиум рейтинга</div><div class="card rise"><div class="podium">'+order.join('')+'</div></div>';}var last5=eng.played.slice(-5).reverse();var movHtml='';if(last5.length){movHtml='<div class="sec-title">Движение рейтинга</div><div class="card rise">'+last5.map(function(m){var w=matchWinner(m);var wN=w===m.playerAId?pName(m.playerAId):pName(m.playerBId);var lN=w===m.playerAId?pName(m.playerBId):pName(m.playerAId);var dd=Math.abs(eng.mdelta[m.id].A);var t=tourn(m.tournamentId);return'<div class="mover"><div style="min-width:0;flex:1"><b style="color:var(--green)">'+wN+'</b> <span class="vs">победил(а)</span> <b style="color:var(--mut)">'+lN+'</b><small>'+(t?esc(t.name):'')+' • '+setsCountArr(m.sets).join(':')+'</small></div><div class="right">'+deltaChip(dd)+deltaChip(-dd)+'</div></div>';}).join('')+'</div>';}var setsTotal=eng.played.reduce(function(s,m){return s+m.sets.length;},0);var ballsTotal=eng.played.reduce(function(s,m){var bc=ballsCountArr(m.sets);return s+bc[0]+bc[1];},0);var champs=state.awards.filter(function(a){return a.emoji==='🥇';}).length;return heroHtml+'<div class="counters rise"><div class="counter"><b>'+state.players.length+'</b><span>игроков</span></div><div class="counter"><b>'+state.tournaments.length+'</b><span>турниров</span></div><div class="counter"><b>'+eng.played.length+'</b><span>матчей</span></div><div class="counter"><b>'+state.awards.length+'</b><span>наград</span></div></div>'+podHtml+movHtml+(eng.played.length?'<div class="sec-title">Общая статистика</div><div class="card rise statgrid"><div class="stat"><b class="o">'+setsTotal+'</b><span>сетов</span></div><div class="stat"><b>'+ballsTotal+'</b><span>мячей</span></div><div class="stat"><b class="g">'+champs+'</b><span>чемпионов</span></div></div>':'');}
-function viewTournaments(){var ts=[].concat(state.tournaments).sort(function(a,b){return new Date(b.date+'T'+(b.endTime||'23:59'))-new Date(a.date+'T'+(a.endTime||'23:59'));});var rows=ts.map(function(t,i){var d=new Date(t.date+'T12:00');var mAll=state.matches.filter(function(m){return m.tournamentId===t.id;});var mDone=mAll.filter(function(m){return matchWinner(m);}).length;return'<button class="trow rise" style="animation-delay:'+Math.min(i*45,320)+'ms" data-action="openTournament" data-id="'+t.id+'"><div class="datebox"><b>'+d.getDate()+'</b><span>'+MON[d.getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">🕐 '+(t.startTime||'—')+'–'+(t.endTime||'—')+' • 👥 '+(t.playerIds||[]).length+' • 🏓 '+mDone+'/'+mAll.length+'</div></div>'+statusChip(t)+' '+I_CHEV+'</button>';}).join('');return'<div class="sec-title">Турниры <span class="cnt">'+ts.length+'</span></div>'+(isAdminMode?'<button class="btn primary w100" data-action="newTournament" style="margin-bottom:12px">＋ Новый турнир</button>':'')+'<div class="list">'+(rows||'<div class="empty"><div class="big">📅</div><b>Пока нет турниров</b></div>')+'</div>';}
-function viewTournamentDetail(tid){var t=tourn(tid);if(!t){ui.tournamentId=null;return viewTournaments();}var eng=engine();var st=tStatus(t);var fin=st==='finished';var ms=state.matches.filter(function(m){return m.tournamentId===tid;}).sort(function(a,b){return(a.time||'99:99').localeCompare(b.time||'99:99');});var done=ms.filter(function(m){return matchWinner(m);}).length;var ptags=(t.playerIds||[]).map(function(pid){var p=player(pid);return'<span class="ptag">'+miniAvatar(p)+'<span class="tx">'+pName(pid)+'</span>'+(isAdminMode?'<button data-action="removeParticipant" data-tid="'+tid+'" data-id="'+pid+'">✕</button>':'')+'</span>';}).join('');var mrows=ms.map(function(m){var w=matchWinner(m);var sc=m.sets?setsCountArr(m.sets):[null,null];var aW=w===m.playerAId,bW=w===m.playerBId;var dl=(fin&&w&&eng.mdelta[m.id])?' <span style="font-size:10.5px;color:'+(eng.mdelta[m.id].A>0?'var(--green)':'var(--red)')+'">'+(eng.mdelta[m.id].A>0?'▲':'▼')+Math.abs(eng.mdelta[m.id].A)+'</span>':'';var act=fin?'result':'editMatch';return'<button class="mrow" data-action="'+act+'" data-id="'+m.id+'" data-tid="'+tid+'"><span class="tm">'+(m.time||'—')+'</span><span class="pl"><span class="'+(aW?'w':'l')+'">'+(aW?'▸ ':'')+pName(m.playerAId)+'</span><span class="'+(bW?'w':'l')+'">'+(bW?'▸ ':'')+pName(m.playerBId)+'</span></span>'+(w?'<span class="sc">'+sc[0]+':'+sc[1]+'</span>'+dl:'<span class="st">'+(fin?'не сыгран':(isAdminMode?'✎ встреча':'—'))+'</span>')+'</button>';}).join('');var stHtml='';if(fin&&done){var stnd=standings(tid);var rows=stnd.map(function(r,i){return'<tr><td class="rk '+(i===0?'g':i===1?'s':i===2?'b':'')+'">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+r.pid+'">'+pName(r.pid)+'</td><td class="num">'+(r.w+r.l)+'</td><td class="num">'+r.w+'</td><td class="num">'+r.l+'</td><td class="num">'+r.sw+':'+r.sl+'</td><td class="num">'+r.bw+':'+r.bl+'</td><td class="num"><b>'+(r.w*2+r.l)+'</b></td></tr>';}).join('');var already=state.awards.some(function(a){return a.tournamentId===tid&&a.title==='Чемпион турнира';});stHtml='<div class="sec-title">Итоговая таблица</div><div class="card rise" style="overflow-x:auto"><table class="tbl"><tr><th>#</th><th>Игрок</th><th>И</th><th>В</th><th>П</th><th>сеты</th><th>мячи</th><th>О</th></tr>'+rows+'</table>'+((!already&&stnd.length>=3&&isAdminMode)?'<div class="row-actions"><button class="btn primary w100" data-action="awardPodium" data-id="'+tid+'">🏆 Наградить призёров</button></div>':'')+'</div>';}var addAllCount=state.players.filter(function(p){return(t.playerIds||[]).indexOf(p.id)<0;}).length;return'<button class="backlink" data-action="backTournaments">← Все турниры</button><div class="card hero rise"><div class="kick">'+statusChip(t)+'<span class="chip">до '+needSets(t)+' побед в сетах</span></div><h2>'+esc(t.name)+'</h2><div class="meta">📅 '+fmtDateFull(t.date)+' • 🕐 '+(t.startTime||'—')+' – '+(t.endTime||'—')+' • 🏓 '+done+'/'+ms.length+'</div>'+(st==='live'?'<div class="count-lbl">ввод результатов откроется после '+(t.endTime||'окончания')+'</div><div class="count" id="cd" data-end="'+t.date+'T'+(t.endTime||'23:59')+':00">--:--:--</div>':'')+(st==='upcoming'?'<div class="mut small">Результаты можно будет внести после окончания турнира</div>':'')+(isAdminMode?'<div class="row-actions"><button class="btn ghost sm" data-action="editTournament" data-id="'+t.id+'">✎ Редактировать</button>'+(st==='live'?'<button class="btn ghost sm" data-action="closeNow" data-id="'+t.id+'">Завершить досрочно</button>':'')+(t.closed?'<button class="btn ghost sm" data-action="reopen" data-id="'+t.id+'">↺ Открыть снова</button>':'')+'<button class="btn danger sm" data-action="delTournament" data-id="'+t.id+'">Удалить</button></div>':'')+'</div><div class="sec-title">Участники <span class="cnt">'+(t.playerIds||[]).length+'</span></div><div class="card rise">'+(state.players.length?'':'<div class="mut small">Сначала добавьте игроков во вкладке «Игроки».</div>')+'<div class="ptags">'+ptags+(state.players.length&&isAdminMode?'<span class="ptag add" data-action="addParticipant" data-tid="'+tid+'">＋ Добавить</span>':'')+'</div>'+(addAllCount>0&&isAdminMode?'<div class="add-actions"><button class="btn ghost sm" data-action="addAllParticipants" data-tid="'+tid+'">＋ Добавить всех ('+addAllCount+')</button></div>':'')+'</div><div class="sec-title">Встречи и счёт <span class="cnt">'+ms.length+'</span></div><div class="list rise">'+(mrows||'<div class="empty"><div class="big">🏓</div><b>Расписание пусто</b></div>')+'</div>'+(isAdminMode?'<div class="row-actions"><button class="btn primary" style="flex:1" data-action="newMatch" data-tid="'+tid+'">＋ Встреча</button>'+(((t.playerIds||[]).length>=2)?'<button class="btn ghost" style="flex:1" data-action="genRR" data-tid="'+tid+'">⚙ Круговая</button>':'')+'</div>':'')+stHtml+(!fin?'<div class="mut small" style="margin-top:14px">💡 Счёт можно вносить после времени окончания.</div>':'');}
+function viewArena(eng){if(!state.players.length){return'<div class="sec-title">Арена</div><div class="empty rise"><div class="big">🏓</div><b>Добро пожаловать в ТОП-СПИН!</b><span class="small">Судейский центр настольного тенниса.</span>'+(isAdminMode?'<div class="row-actions"><button class="btn primary" data-action="newPlayer">＋ Добавить игроков</button><button class="btn ghost" data-action="demo">Демо-данные</button></div>':'')+'</div>';}var ts=[].concat(state.tournaments).sort(function(a,b){return new Date(a.date+'T'+(a.startTime||'00:00'))-new Date(b.date+'T'+(b.startTime||'00:00'));});var hero=ts.find(function(t){return tStatus(t)==='live';})||ts.find(function(t){return tStatus(t)==='upcoming';})||[].concat(ts).reverse().find(function(t){return tStatus(t)==='finished';});var heroHtml='';if(hero){var st=tStatus(hero);var parts=(hero.playerIds||[]).length;var mAll=state.matches.filter(function(m){return m.tournamentId===hero.id;});var mDone=mAll.filter(function(m){return matchWinner(m);}).length;var countHtml='';if(st==='live'&&!hero.closed)countHtml='<div class="count-lbl">до конца приёма встреч</div><div class="count" id="cd" data-end="'+hero.date+'T'+(hero.endTime||'23:59')+':00" data-closed="false">--:--:--</div>';else if(st==='upcoming')countHtml='<div class="count-lbl">до старта турнира</div><div class="count" id="cd" data-end="'+hero.date+'T'+(hero.startTime||'10:00')+':00" data-closed="false">--:--:--</div>';else countHtml='<div class="count-lbl">результаты открыты</div><div class="count" style="font-size:22px;color:var(--green)">✓ ИТОГИ</div>';heroHtml='<div class="card hero rise"><div class="kick">'+statusChip(hero)+'<span class="small">📅 '+fmtDate(hero.date)+'</span></div><h2>'+esc(hero.name)+'</h2><div class="meta">'+statusChip(hero)+'<span>🕐 '+(hero.startTime||'—')+' – '+(hero.endTime||'—')+'</span><span>👥 '+parts+'</span><span>🏓 '+mDone+'/'+mAll.length+'</span></div>'+countHtml+'<div class="row-actions"><button class="btn primary" data-action="openTournament" data-id="'+hero.id+'">Открыть турнир</button>'+(st==='live'&&isAdminMode&&!hero.closed?'<button class="btn ghost" data-action="closeNow" data-id="'+hero.id+'">Завершить досрочно</button>':'')+'</div></div>';}else{heroHtml='<div class="card hero rise"><div class="kick"><span class="status-dot upcoming"></span><span class="small">старт</span></div><h2>Создайте первый турнир</h2><div class="meta">Дата, время встреч и окончания — и можно играть</div>'+(isAdminMode?'<div class="row-actions"><button class="btn primary" data-action="newTournament">＋ Новый турнир</button></div>':'')+'</div>';}var sorted=[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});var podium=sorted.slice(0,3);var podHtml='';if(podium.length>=2){var cell=function(p,i){return'<div class="pod p'+(i+1)+'"><div class="nm">'+(i===0?'🥇':i===1?'🥈':'🥉')+' '+esc(p.firstName)+'</div><div class="bar">'+eng.R[p.id]+'</div></div>';};var order=[cell(podium[1],1),cell(podium[0],0)];if(podium[2])order.push(cell(podium[2],2));podHtml='<div class="sec-title">Подиум рейтинга</div><div class="card rise"><div class="podium">'+order.join('')+'</div></div>';}var last5=eng.played.slice(-5).reverse();var movHtml='';if(last5.length){movHtml='<div class="sec-title">Движение рейтинга</div><div class="card rise">'+last5.map(function(m){var w=matchWinner(m);var wN=w===m.playerAId?pName(m.playerAId):pName(m.playerBId);var lN=w===m.playerAId?pName(m.playerBId):pName(m.playerAId);var dd=Math.abs(eng.mdelta[m.id].A);var t=tourn(m.tournamentId);return'<div class="mover"><div style="min-width:0;flex:1"><b style="color:var(--green)">'+wN+'</b> <span class="vs">победил(а)</span> <b style="color:var(--mut)">'+lN+'</b><small>'+(t?esc(t.name):'')+' • '+setsCountArr(m.sets).join(':')+'</small></div><div class="right">'+deltaChip(dd)+deltaChip(-dd)+'</div></div>';}).join('')+'</div>';}var setsTotal=eng.played.reduce(function(s,m){return s+m.sets.length;},0);var ballsTotal=eng.played.reduce(function(s,m){var bc=ballsCountArr(m.sets);return s+bc[0]+bc[1];},0);var champs=state.awards.filter(function(a){return a.emoji==='🥇';}).length;return heroHtml+'<div class="counters rise"><div class="counter"><b>'+state.players.length+'</b><span>игроков</span></div><div class="counter"><b>'+state.tournaments.length+'</b><span>турниров</span></div><div class="counter"><b>'+eng.played.length+'</b><span>матчей</span></div><div class="counter"><b>'+state.awards.length+'</b><span>наград</span></div></div>'+podHtml+movHtml+(eng.played.length?'<div class="sec-title">Общая статистика</div><div class="card rise statgrid"><div class="stat"><b class="o">'+setsTotal+'</b><span>сетов</span></div><div class="stat"><b>'+ballsTotal+'</b><span>мячей</span></div><div class="stat"><b class="g">'+champs+'</b><span>чемпионов</span></div></div>':'');}
+function viewTournaments(){var ts=[].concat(state.tournaments).sort(function(a,b){return new Date(b.date+'T'+(b.endTime||'23:59'))-new Date(a.date+'T'+(a.endTime||'23:59'));});var rows=ts.map(function(t,i){var d=new Date(t.date+'T12:00');var mAll=state.matches.filter(function(m){return m.tournamentId===t.id;});var mDone=mAll.filter(function(m){return matchWinner(m);}).length;return'<button class="trow rise" style="animation-delay:'+Math.min(i*45,320)+'ms" data-action="openTournament" data-id="'+t.id+'"><div class="datebox"><b>'+d.getDate()+'</b><span>'+MON[d.getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span>🕐 '+(t.startTime||'—')+'–'+(t.endTime||'—')+'</span><span>👥 '+(t.playerIds||[]).length+'</span><span>🏓 '+mDone+'/'+mAll.length+'</span></div></div>'+I_CHEV+'</button>';}).join('');return'<div class="sec-title">Турниры <span class="cnt">'+ts.length+'</span></div>'+(isAdminMode?'<button class="btn primary w100" data-action="newTournament" style="margin-bottom:12px">＋ Новый турнир</button>':'')+'<div class="list">'+(rows||'<div class="empty"><div class="big">📅</div><b>Пока нет турниров</b></div>')+'</div>';}
+function viewTournamentDetail(tid){var t=tourn(tid);if(!t){ui.tournamentId=null;return viewTournaments();}var eng=engine();var st=tStatus(t);var fin=st==='finished';var ms=state.matches.filter(function(m){return m.tournamentId===tid;}).sort(function(a,b){return(a.time||'99:99').localeCompare(b.time||'99:99');});var done=ms.filter(function(m){return matchWinner(m);}).length;var ptags=(t.playerIds||[]).map(function(pid){var p=player(pid);return'<span class="ptag">'+miniAvatar(p)+'<span class="tx">'+pName(pid)+'</span>'+(isAdminMode?'<button data-action="removeParticipant" data-tid="'+tid+'" data-id="'+pid+'">✕</button>':'')+'</span>';}).join('');var mrows=ms.map(function(m){var w=matchWinner(m);var sc=m.sets?setsCountArr(m.sets):[null,null];var aW=w===m.playerAId,bW=w===m.playerBId;var dl=(fin&&w&&eng.mdelta[m.id])?' <span style="font-size:10.5px;color:'+(eng.mdelta[m.id].A>0?'var(--green)':'var(--red)')+'">'+(eng.mdelta[m.id].A>0?'▲':'▼')+Math.abs(eng.mdelta[m.id].A)+'</span>':'';var act=fin?'result':'editMatch';return'<button class="mrow" data-action="'+act+'" data-id="'+m.id+'" data-tid="'+tid+'"><span class="tm">'+(m.time||'—')+'</span><span class="pl"><span class="'+(aW?'w':'l')+'">'+(aW?'▸ ':'')+pName(m.playerAId)+'</span><span class="'+(bW?'w':'l')+'">'+(bW?'▸ ':'')+pName(m.playerBId)+'</span></span>'+(w?'<span class="sc">'+sc[0]+':'+sc[1]+'</span>'+dl:'<span class="st">'+(fin?'не сыгран':(isAdminMode?'✎ встреча':'—'))+'</span>')+'</button>';}).join('');var stHtml='';if(fin&&done){var stnd=standings(tid);var rows=stnd.map(function(r,i){return'<tr><td class="rk '+(i===0?'g':i===1?'s':i===2?'b':'')+'">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+r.pid+'">'+pName(r.pid)+'</td><td class="num">'+(r.w+r.l)+'</td><td class="num">'+r.w+'</td><td class="num">'+r.l+'</td><td class="num">'+r.sw+':'+r.sl+'</td><td class="num">'+r.bw+':'+r.bl+'</td><td class="num"><b>'+(r.w*2+r.l)+'</b></td></tr>';}).join('');var already=state.awards.some(function(a){return a.tournamentId===tid&&a.title==='Чемпион турнира';});stHtml='<div class="sec-title">Итоговая таблица</div><div class="card rise" style="overflow-x:auto"><table class="tbl"><tr><th>#</th><th>Игрок</th><th>И</th><th>В</th><th>П</th><th>сеты</th><th>мячи</th><th>О</th></tr>'+rows+'</table>'+((!already&&stnd.length>=3&&isAdminMode)?'<div class="row-actions"><button class="btn primary w100" data-action="awardPodium" data-id="'+tid+'">🏆 Наградить призёров</button></div>':'')+(isAdminMode?'<div class="row-actions"><button class="btn ghost" style="flex:1" data-action="exportTournamentCSV" data-tid="'+tid+'">📊 Excel</button><button class="btn ghost" style="flex:1" data-action="exportTournamentPDF" data-tid="'+tid+'">📄 PDF</button></div>':'')+'</div>';}var addAllCount=state.players.filter(function(p){return(t.playerIds||[]).indexOf(p.id)<0;}).length;return'<button class="backlink" data-action="backTournaments">← Все турниры</button><div class="card hero rise"><div class="kick">'+statusChip(t)+'<span class="small">'+fmtDateFull(t.date)+'</span></div><h2>'+esc(t.name)+'</h2><div class="meta">'+statusChip(t)+'<span>🕐 '+(t.startTime||'—')+' – '+(t.endTime||'—')+'</span><span>🏓 '+done+'/'+ms.length+'</span></div>'+(st==='live'&&!t.closed?'<div class="count-lbl">ввод результатов откроется после '+(t.endTime||'окончания')+'</div><div class="count" id="cd" data-end="'+t.date+'T'+(t.endTime||'23:59')+':00" data-closed="false">--:--:--</div>':'')+(st==='upcoming'?'<div class="mut small">Результаты можно будет внести после окончания турнира</div>':'')+(isAdminMode?'<div class="row-actions"><button class="btn ghost sm" data-action="editTournament" data-id="'+t.id+'">✎ Редактировать</button>'+(st==='live'&&!t.closed?'<button class="btn ghost sm" data-action="closeNow" data-id="'+t.id+'">Завершить досрочно</button>':'')+(t.closed?'<button class="btn ghost sm" data-action="reopen" data-id="'+t.id+'">↺ Открыть снова</button>':'')+'<button class="btn danger sm" data-action="delTournament" data-id="'+t.id+'">Удалить</button></div>':'')+'</div><div class="sec-title">Участники <span class="cnt">'+(t.playerIds||[]).length+'</span></div><div class="card rise">'+(state.players.length?'':'<div class="mut small">Сначала добавьте игроков во вкладке «Игроки».</div>')+'<div class="ptags">'+ptags+(state.players.length&&isAdminMode?'<span class="ptag add" data-action="addParticipant" data-tid="'+tid+'">＋ Добавить</span>':'')+'</div>'+(addAllCount>0&&isAdminMode?'<div class="add-actions"><button class="btn ghost sm" data-action="addAllParticipants" data-tid="'+tid+'">＋ Добавить всех ('+addAllCount+')</button></div>':'')+'</div><div class="sec-title">Встречи и счёт <span class="cnt">'+ms.length+'</span></div><div class="list rise">'+(mrows||'<div class="empty"><div class="big">🏓</div><b>Расписание пусто</b></div>')+'</div>'+(isAdminMode?'<div class="row-actions"><button class="btn primary" style="flex:1" data-action="newMatch" data-tid="'+tid+'">＋ Встреча</button>'+(((t.playerIds||[]).length>=2)?'<button class="btn ghost" style="flex:1" data-action="genRR" data-tid="'+tid+'">⚙ Круговая</button>':'')+'</div>':'')+stHtml+(!fin?'<div class="mut small" style="margin-top:14px">💡 Счёт можно вносить после времени окончания.</div>':'');}
 function viewPlayers(eng){var rows=[].concat(state.players).sort(function(a,b){return(a.firstName+a.lastName).localeCompare(b.firstName+b.lastName,'ru');}).map(function(p,i){var st=playerStats(p.id,eng);var last=eng.last[p.id];return'<div class="prow rise" style="animation-delay:'+Math.min(i*40,300)+'ms" data-search="'+(p.firstName+' '+p.lastName).toLowerCase()+'" data-action="openPlayer" data-id="'+p.id+'">'+avatarHtml(p)+'<div class="info"><div class="nm">'+esc(p.firstName)+' '+esc(p.lastName)+'</div><div class="sub">'+(st.m?(st.w+' побед / '+st.m+' матчей'):'ещё не играл(а)')+' '+(last?deltaChip(last.d):'')+'</div></div><div class="rat">'+eng.R[p.id]+'</div>'+I_CHEV+'</div>';}).join('');return'<div class="sec-title">Игроки <span class="cnt">'+state.players.length+'</span></div><div style="display:flex;gap:8px;margin-bottom:12px"><input id="pSearch" placeholder="🔍 Поиск игрока…">'+(isAdminMode?'<button class="btn primary" style="flex:none" data-action="newPlayer">＋</button>':'')+'</div><div class="list" id="pList">'+(rows||'<div class="empty"><div class="big">👥</div><b>Список пуст</b></div>')+'</div>';}
 function filterPlayers(q){q=q.toLowerCase();document.querySelectorAll('#pList .prow').forEach(function(r){r.style.display=r.dataset.search.indexOf(q)>=0?'':'none';});}
-function viewPlayer(pid){var p=player(pid);if(!p){ui.playerId=null;return viewPlayers(engine());}var eng=engine();var st=playerStats(pid,eng);var last=eng.last[pid];var history=eng.played.filter(function(m){return m.playerAId===pid||m.playerBId===pid;}).slice(-10).reverse();var aw=state.awards.filter(function(a){return a.playerId===pid;});return'<button class="backlink" data-action="backPlayers">← Все игроки</button><div class="card hero rise" style="display:flex;gap:14px;align-items:center">'+avatarHtml(p,'lg')+'<div style="flex:1;min-width:0"><h2 style="font-size:19px">'+esc(p.firstName)+' '+esc(p.lastName)+'</h2><div style="display:flex;align-items:center;gap:9px;margin-top:7px"><span style="font-family:var(--fd);font-size:27px;color:var(--ball)">'+eng.R[pid]+'</span>'+(last?deltaChip(last.d):'<span class="chip">нет игр</span>')+'</div></div>'+(isAdminMode?'<button class="iconbtn" data-action="editPlayer" data-id="'+pid+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/></svg></button>':'')+'</div><div class="card rise" style="margin-top:9px;padding:12px 14px"><div class="count-lbl" style="margin-bottom:4px">динамика рейтинга</div>'+spark(eng.hist[pid],300,54)+'</div><div class="sec-title">Статистика</div><div class="statgrid rise"><div class="stat"><b>'+st.m+'</b><span>матчей</span></div><div class="stat"><b class="g">'+st.w+'</b><span>побед</span></div><div class="stat"><b class="r">'+st.l+'</b><span>поражений</span></div><div class="stat"><b class="o">'+st.winp+'%</b><span>% побед</span></div><div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div><div class="stat"><b>'+st.bw+':'+st.bl+'</b><span>мячи</span></div><div class="stat"><b class="g">'+(st.streak?st.streak+' 🔥':'—')+'</b><span>серия</span></div><div class="stat"><b>'+st.t+'</b><span>турниров</span></div><div class="stat"><b class="o">'+aw.length+'</b><span>наград</span></div></div>'+(aw.length?'<div class="sec-title">Награды</div><div class="card rise">'+aw.map(function(a){return'<div class="awrow"><span class="em">'+a.emoji+'</span><div><div class="tt">'+esc(a.title)+'</div><div class="sub">'+((a.tournamentId&&tourn(a.tournamentId))?esc(tourn(a.tournamentId).name):'вне турнира')+' • '+fmtDate(a.date)+'</div></div></div>';}).join('')+'</div>':'')+(history.length?'<div class="sec-title">Последние матчи</div><div class="card rise">'+history.map(function(m){var isA=m.playerAId===pid;var opp=isA?m.playerBId:m.playerAId;var w=matchWinner(m)===pid;var sc=setsCountArr(m.sets);var d=eng.mdelta[m.id][isA?'A':'B'];var t=tourn(m.tournamentId);return'<div class="mover"><div style="flex:1;min-width:0"><b style="color:'+(w?'var(--green)':'var(--red)')+'">'+(w?'W':'L')+'</b> против <b>'+pName(opp)+'</b><small>'+(t?esc(t.name):'')+' • '+(isA?sc[0]+':'+sc[1]:sc[1]+':'+sc[0])+'</small></div>'+deltaChip(d)+'</div>';}).join('')+'</div>':'');}
-function viewRating(eng){var list=[].concat(state.players);if(ui.ratingSort==='w')list.sort(function(a,b){return playerStats(b.id,eng).w-playerStats(a.id,eng).w||eng.R[b.id]-eng.R[a.id];});else list.sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});var rows=list.map(function(p,i){var st=playerStats(p.id,eng);var last=eng.last[p.id];return'<tr class="rise" style="animation-delay:'+Math.min(i*35,300)+'ms"><td class="rk '+(i===0?'g':i===1?'s':i===2?'b':'')+'">'+(i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+p.id+'">'+esc(p.firstName)+' '+esc(p.lastName)+'<br><span class="dim" style="font-size:11px;font-weight:600">'+st.w+'В – '+st.l+'П</span></td><td style="width:96px">'+spark(eng.hist[p.id])+'</td><td class="rt">'+eng.R[p.id]+' '+(last?deltaChip(last.d):'')+'</td></tr>';}).join('');return'<div class="sec-title">Рейтинг игроков</div><div class="seg"><button class="'+(ui.ratingSort==='r'?'on':'')+'" data-action="sortR">По рейтингу</button><button class="'+(ui.ratingSort==='w'?'on':'')+'" data-action="sortW">По победам</button></div><div class="card rise" style="overflow-x:auto">'+(rows?'<table class="tbl"><tr><th>#</th><th>Игрок</th><th>форма</th><th style="text-align:right">рейтинг</th></tr>'+rows+'</table>':'<div class="empty"><div class="big">📊</div><b>Рейтинг пуст</b></div>')+'</div><div class="mut small" style="margin-top:10px">Формула: Эло (K = '+state.settings.kFactor+'), коэффициент за счёт — 3:0 ×1.5, 3:1 ×1.25, 3:2 ×1. Старт: '+state.settings.startRating+'.</div>';}
+function viewPlayer(pid){var p=player(pid);if(!p){ui.playerId=null;return viewPlayers(engine());}var eng=engine();var st=playerStats(pid,eng);var last=eng.last[pid];var history=eng.played.filter(function(m){return m.playerAId===pid||m.playerBId===pid;}).slice(-10).reverse();var aw=state.awards.filter(function(a){return a.playerId===pid;});return'<button class="backlink" data-action="backPlayers">← Все игроки</button><div class="card hero rise" style="display:flex;gap:14px;align-items:center">'+avatarHtml(p,'lg')+'<div style="flex:1;min-width:0"><h2 style="font-size:19px">'+esc(p.firstName)+' '+esc(p.lastName)+'</h2><div style="display:flex;align-items:center;gap:9px;margin-top:7px"><span style="font-family:var(--fd);font-size:27px;color:var(--ball)">'+eng.R[pid]+'</span>'+(last?deltaChip(last.d):'<span class="small">нет игр</span>')+'</div></div>'+(isAdminMode?'<button class="iconbtn" data-action="editPlayer" data-id="'+pid+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/></svg></button>':'')+'</div><div class="card rise" style="margin-top:9px;padding:12px 14px"><div class="count-lbl" style="margin-bottom:4px">динамика рейтинга</div>'+spark(eng.hist[pid],300,54)+'</div><div class="sec-title">Статистика</div><div class="statgrid rise"><div class="stat"><b>'+st.m+'</b><span>матчей</span></div><div class="stat"><b class="g">'+st.w+'</b><span>побед</span></div><div class="stat"><b class="r">'+st.l+'</b><span>поражений</span></div><div class="stat"><b class="o">'+st.winp+'%</b><span>% побед</span></div><div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div><div class="stat"><b>'+st.bw+':'+st.bl+'</b><span>мячи</span></div><div class="stat"><b class="g">'+(st.streak?st.streak+' 🔥':'—')+'</b><span>серия</span></div><div class="stat"><b>'+st.t+'</b><span>турниров</span></div><div class="stat"><b class="o">'+aw.length+'</b><span>наград</span></div></div>'+(aw.length?'<div class="sec-title">Награды</div><div class="card rise">'+aw.map(function(a){return'<div class="awrow"><span class="em">'+a.emoji+'</span><div><div class="tt">'+esc(a.title)+'</div><div class="sub">'+((a.tournamentId&&tourn(a.tournamentId))?esc(tourn(a.tournamentId).name):'вне турнира')+' • '+fmtDate(a.date)+'</div></div></div>';}).join('')+'</div>':'')+(history.length?'<div class="sec-title">Последние матчи</div><div class="card rise">'+history.map(function(m){var isA=m.playerAId===pid;var opp=isA?m.playerBId:m.playerAId;var w=matchWinner(m)===pid;var sc=setsCountArr(m.sets);var d=eng.mdelta[m.id][isA?'A':'B'];var t=tourn(m.tournamentId);return'<div class="mover"><div style="flex:1;min-width:0"><b style="color:'+(w?'var(--green)':'var(--red)')+'">'+(w?'W':'L')+'</b> против <b>'+pName(opp)+'</b><small>'+(t?esc(t.name):'')+' • '+(isA?sc[0]+':'+sc[1]:sc[1]+':'+sc[0])+'</small></div>'+deltaChip(d)+'</div>';}).join('')+'</div>':'');}
+function viewRating(eng){var list=[].concat(state.players);if(ui.ratingSort==='w')list.sort(function(a,b){return playerStats(b.id,eng).w-playerStats(a.id,eng).w||eng.R[b.id]-eng.R[a.id];});else list.sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});var rows=list.map(function(p,i){var st=playerStats(p.id,eng);var last=eng.last[p.id];return'<tr class="rise" style="animation-delay:'+Math.min(i*35,300)+'ms"><td class="rk '+(i===0?'g':i===1?'s':i===2?'b':'')+'">'+(i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+p.id+'">'+esc(p.firstName)+' '+esc(p.lastName)+'<br><span class="dim" style="font-size:11px;font-weight:600">'+st.w+'В – '+st.l+'П</span></td><td style="width:96px">'+spark(eng.hist[p.id])+'</td><td class="rt">'+eng.R[p.id]+' '+(last?deltaChip(last.d):'')+'</td></tr>';}).join('');return'<div class="sec-title">Рейтинг игроков</div><div class="seg"><button class="'+(ui.ratingSort==='r'?'on':'')+'" data-action="sortR">По рейтингу</button><button class="'+(ui.ratingSort==='w'?'on':'')+'" data-action="sortW">По победам</button></div><div class="card rise" style="overflow-x:auto">'+(rows?'<table class="tbl"><tr><th>#</th><th>Игрок</th><th>форма</th><th style="text-align:right">рейтинг</th></tr>'+rows+'</table>':'<div class="empty"><div class="big">📊</div><b>Рейтинг пуст</b></div>')+'</div>'+(isAdminMode?'<div class="row-actions"><button class="btn ghost w100" data-action="exportRatingCSV">📊 Экспорт рейтинга в Excel</button></div>':'')+'<div class="mut small" style="margin-top:10px">Формула: Эло (K = '+state.settings.kFactor+'), коэффициент за счёт — 3:0 ×1.5, 3:1 ×1.25, 3:2 ×1. Старт: '+state.settings.startRating+'.</div>';}
 var MEDAL_ORDER={'🥇':1,'🥈':2,'🥉':3};
 function viewAwards(){var byT={};var custom=[];state.awards.forEach(function(a){if(a.tournamentId&&(a.title==='Чемпион турнира'||a.title.indexOf('призёр')>=0)){(byT[a.tournamentId]=byT[a.tournamentId]||[]).push(a);}else custom.push(a);});var tBlocks=Object.keys(byT).map(function(tid){var t=tourn(tid);return'<div class="card rise" style="margin-bottom:9px"><div style="font-weight:800;margin-bottom:6px">🏟 '+(t?esc(t.name):'Турнир')+' <span class="dim small">• '+(t?fmtDate(t.date):'')+'</span></div>'+byT[tid].sort(function(a,b){return(MEDAL_ORDER[a.emoji]||9)-(MEDAL_ORDER[b.emoji]||9);}).map(function(a){return awRowHtml(a);}).join('')+'</div>';}).join('');return'<div class="sec-title">Награды <span class="cnt">'+state.awards.length+'</span></div>'+(isAdminMode?'<button class="btn primary w100" data-action="newAward" style="margin-bottom:13px">🎁 Вручить награду</button>':'')+tBlocks+(custom.length?'<div class="sec-title">Специальные награды</div><div class="card rise">'+custom.map(function(a){return awRowHtml(a);}).join('')+'</div>':'')+(!state.awards.length?'<div class="empty"><div class="big">🏆</div><b>Наград пока нет</b></div>':'');}
 function awRowHtml(a){return'<div class="awrow"><span class="em">'+a.emoji+'</span><div style="min-width:0"><div class="tt">'+esc(a.title)+'</div><div class="sub">'+pName(a.playerId)+' • '+fmtDate(a.date)+'</div></div>'+(isAdminMode?'<button class="iconbtn del" style="width:30px;height:30px" data-action="delAward" data-id="'+a.id+'">✕</button>':'')+'</div>';}
-function render(){try{clearInterval(window.__tick);}catch(e){}var eng=engine();var v=$('#view');if(!v)return;if(ui.tab==='arena')v.innerHTML=viewArena(eng);else if(ui.tab==='tournaments')v.innerHTML=ui.tournamentId?viewTournamentDetail(ui.tournamentId):viewTournaments();else if(ui.tab==='players')v.innerHTML=ui.playerId?viewPlayer(ui.playerId):viewPlayers(eng);else if(ui.tab==='rating')v.innerHTML=viewRating(eng);else v.innerHTML=viewAwards();document.querySelectorAll('.tabbtn').forEach(function(b){b.classList.toggle('on',b.dataset.tab===ui.tab);});var ps=document.getElementById('pSearch');if(ps)ps.addEventListener('input',function(){filterPlayers(this.value);});var adminBadge=document.getElementById('adminBadge');if(adminBadge)adminBadge.classList.toggle('show',isAdminMode);startTick();try{window.scrollTo(0,0);}catch(e){}}
+function render(){try{clearInterval(window.__tick);}catch(e){}var eng=engine();var v=$('#view');if(!v)return;if(ui.tab==='arena')v.innerHTML=viewArena(eng);else if(ui.tab==='tournaments')v.innerHTML=ui.tournamentId?viewTournamentDetail(ui.tournamentId):viewTournaments();else if(ui.tab==='players')v.innerHTML=ui.playerId?viewPlayer(ui.playerId):viewPlayers(eng);else if(ui.tab==='rating')v.innerHTML=viewRating(eng);else if(ui.tab==='awards')v.innerHTML=viewAwards();else if(ui.tab==='profile')v.innerHTML=viewProfile();document.querySelectorAll('.tabbtn').forEach(function(b){b.classList.toggle('on',b.dataset.tab===ui.tab);});var ps=document.getElementById('pSearch');if(ps)ps.addEventListener('input',function(){filterPlayers(this.value);});var adminBadge=document.getElementById('adminBadge');if(adminBadge)adminBadge.classList.toggle('show',isAdminMode);startTick();try{window.scrollTo(0,0);}catch(e){}}
 function setTab(t){ui.tab=t;ui.tournamentId=null;ui.playerId=null;render();}
 function openTournament(id){ui.tab='tournaments';ui.tournamentId=id;render();}
 function openPlayer(id){ui.tab='players';ui.playerId=id;render();}
-function startTick(){var el=document.getElementById('cd');if(!el)return;var end=new Date(el.dataset.end).getTime();var f=function(){var ms=end-Date.now();if(ms<=0){el.textContent='00:00:00';clearInterval(window.__tick);setTimeout(render,600);return;}var s=Math.floor(ms/1000);el.textContent=p2(Math.floor(s/3600))+':'+p2(Math.floor(s/60)%60)+':'+p2(s%60);};f();window.__tick=setInterval(f,1000);}
+/* Таймер с проверкой досрочного закрытия */
+function startTick(){var el=document.getElementById('cd');if(!el)return;if(el.dataset.closed==='true'){var parent=el.parentElement;if(parent)parent.style.display='none';return;}var end=new Date(el.dataset.end).getTime();var f=function(){var ms=end-Date.now();if(ms<=0){el.textContent='00:00:00';clearInterval(window.__tick);setTimeout(render,600);return;}var s=Math.floor(ms/1000);el.textContent=p2(Math.floor(s/3600))+':'+p2(Math.floor(s/60)%60)+':'+p2(s%60);};f();window.__tick=setInterval(f,1000);}
 function modal(html){var mr=$('#modal-root');mr.style.display='flex';mr.style.pointerEvents='auto';mr.innerHTML='<div class="backdrop" data-action="closeModal"></div><div class="sheet"><div class="grab"></div>'+html+'</div>';document.body.classList.add('locked');}
 function closeModal(){var mr=$('#modal-root');mr.innerHTML='';mr.style.display='none';mr.style.pointerEvents='none';document.body.classList.remove('locked');__pendingAvatar=null;}
 function confirmBox(msg,cb){__cb=cb;modal('<h3>Подтверждение</h3><p class="mut" style="margin-top:6px">'+msg+'</p><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn danger" data-action="confirmYes">Да, выполнить</button></div>');}
@@ -615,12 +575,12 @@ function setFontSize(size){if(size==='big'){document.body.classList.add('big-fon
 function toggleSound(){var cur=lsGet('soundEnabled')!=='false';lsSet('soundEnabled',cur?'false':'true');openAppearanceModal();if(!cur)playSound('click');}
 function playerModal(pid){if(!isAdminMode){toast('Только админ может добавлять игроков','err');return;}var p=pid?player(pid):null;__pendingAvatar=p&&p.avatar?p.avatar:null;var urlPrefill=(p&&p.avatar&&String(p.avatar).indexOf('http')===0)?esc(p.avatar):'';var avHtml;if(__pendingAvatar){avHtml='<div class="av-preview" id="avPrev"><img src="'+__pendingAvatar+'"><span class="del-av" data-action="clearAvatar">✕</span></div>';}else{avHtml='<div class="av-preview empty-av" id="avPrev"><span>Нет фото</span></div>';}modal('<h3>'+(p?'Редактировать игрока':'Новый игрок')+'</h3><label>Фото игрока</label>'+avHtml+'<input type="file" id="pfAvatar" accept="image/*"><label>Или ссылка на фото</label><input id="pfUrl" placeholder="https://…/photo.jpg" value="'+urlPrefill+'"><label>Имя</label><input id="pf" value="'+(p?esc(p.firstName):'')+'" placeholder="Например: Иван"><label>Фамилия</label><input id="pl" value="'+(p?esc(p.lastName):'')+'" placeholder="Например: Петров"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="savePlayer" data-id="'+(pid||'')+'">Сохранить</button></div>'+(p?'<button class="btn danger w100" style="margin-top:8px" data-action="delPlayer" data-id="'+pid+'">Удалить игрока</button>':''));var fileInput=document.getElementById('pfAvatar');if(fileInput){fileInput.addEventListener('change',function(){if(this.files&&this.files[0]){compressImage(this.files[0],function(b64){__pendingAvatar=b64;refreshAvatarPreview();});}});}}
 function refreshAvatarPreview(){var prev=document.getElementById('avPrev');if(!prev)return;if(__pendingAvatar){prev.className='av-preview';prev.innerHTML='<img src="'+__pendingAvatar+'"><span class="del-av" data-action="clearAvatar">✕</span>';}else{prev.className='av-preview empty-av';prev.innerHTML='<span>Нет фото</span>';}}
-function savePlayer(pid){var f=$('#pf').value.trim(),l=$('#pl').value.trim();if(!f||!l){toast('Введите имя и фамилию','err');return;}var urlEl=document.getElementById('pfUrl');var urlVal=urlEl?urlEl.value.trim():'';var av=__pendingAvatar||urlVal||null;if(pid){var p=player(pid);p.firstName=f;p.lastName=l;p.avatar=av;toast('Игрок обновлён','ok');}else{state.players.push({id:uid(),firstName:f,lastName:l,avatar:av});toast('Игрок добавлен','ok');}save();closeModal();render();}
+function savePlayer(pid){var f=$('#pf').value.trim(),l=$('#pl').value.trim();if(!f||!l){toast('Введите имя и фамилию','err');return;}var urlEl=document.getElementById('pfUrl');var urlVal=urlEl?urlEl.value.trim():'';var av=__pendingAvatar||urlVal||null;if(pid){var p=player(pid);p.firstName=f;p.lastName=l;p.avatar=av;toast('Игрок обновлён','ok');}else{state.players.push({id:uid(),firstName:f,lastName:l,avatar:av,phone:null});toast('Игрок добавлен','ok');}save();closeModal();render();}
 function delPlayer(pid){var has=state.matches.some(function(m){return(m.playerAId===pid||m.playerBId===pid)&&matchWinner(m);});confirmBox(has?'У игрока есть сыгранные матчи — они будут удалены. Продолжить?':'Удалить игрока?',function(){state.players=state.players.filter(function(p){return p.id!==pid;});state.matches=state.matches.filter(function(m){return m.playerAId!==pid&&m.playerBId!==pid;});state.awards=state.awards.filter(function(a){return a.playerId!==pid;});state.tournaments.forEach(function(t){t.playerIds=(t.playerIds||[]).filter(function(x){return x!==pid;});});save();ui.playerId=null;render();toast('Игрок удалён');});}
 function tournamentModal(tid){if(!isAdminMode){toast('Только админ может создавать турниры','err');return;}var t=tid?tourn(tid):null;var today=new Date().toISOString().slice(0,10);modal('<h3>'+(t?'Редактировать турнир':'Новый турнир')+'</h3><label>Название</label><input id="tn" value="'+(t?esc(t.name):'')+'" placeholder="Например: Кубок осени"><label>Дата соревнований</label><input id="td" type="date" value="'+(t?t.date:today)+'"><div class="frm2"><div><label>Начало встреч</label><input id="ts" type="time" value="'+(t?t.startTime:'10:00')+'"></div><div><label>Окончание</label><input id="te" type="time" value="'+(t?t.endTime:'14:00')+'"></div></div><label>Формат матча</label><select id="tb"><option value="5" '+((!t||t.bestOf!=='3')?'selected':'')+'>До 3 выигранных сетов (5)</option><option value="3" '+((t&&t.bestOf==='3')?'selected':'')+'>До 2 выигранных сетов (3)</option></select><div class="mut small" style="margin-top:10px">⏱ Ввод результатов откроется автоматически после времени окончания.</div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveTournament" data-id="'+(tid||'')+'">Сохранить</button></div>');}
 function saveTournament(tid){var n=$('#tn').value.trim(),d=$('#td').value,s=$('#ts').value,e=$('#te').value,b=$('#tb').value;if(!n||!d){toast('Укажите название и дату','err');return;}if(e&&s&&e<=s)toast('Внимание: окончание раньше начала','err');if(tid){var t=tourn(tid);Object.assign(t,{name:n,date:d,startTime:s,endTime:e,bestOf:b});toast('Турнир обновлён','ok');}else{state.tournaments.push({id:uid(),name:n,date:d,startTime:s,endTime:e,bestOf:b,playerIds:[],closed:false});toast('Турнир создан','ok');}save();closeModal();render();}
 function delTournament(tid){confirmBox('Удалить турнир вместе со всеми встречами и наградами?',function(){state.tournaments=state.tournaments.filter(function(t){return t.id!==tid;});state.matches=state.matches.filter(function(m){return m.tournamentId!==tid;});state.awards=state.awards.filter(function(a){return a.tournamentId!==tid;});save();ui.tournamentId=null;render();toast('Турнир удалён');});}
-function closeTournamentNow(tid){var t=tourn(tid);t.closed=true;save();render();toast('Турнир завершён','ok');}
+function closeTournamentNow(tid){var t=tourn(tid);t.closed=true;save();render();toast('Турнир завершён досрочно','ok');}
 function reopenTournament(tid){var t=tourn(tid);t.closed=false;save();render();toast('Турнир снова открыт');}
 function addParticipantModal(tid){var t=tourn(tid);var avail=state.players.filter(function(p){return(t.playerIds||[]).indexOf(p.id)<0;});if(!avail.length){toast('Все игроки уже добавлены','err');return;}var items=avail.map(function(p){return'<div class="picker-item" data-action="pickParticipant" data-tid="'+tid+'" data-id="'+p.id+'">'+miniAvatar(p)+'<span class="nm">'+esc(p.firstName+' '+p.lastName)+'</span><span class="rt">'+engine().R[p.id]+'</span></div>';}).join('');modal('<h3>Добавить участника</h3><p class="mut small" style="margin-top:6px">Нажмите на игрока, чтобы добавить его в турнир.</p><div class="picker-list">'+items+'</div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Закрыть</button></div>');}
 function pickParticipant(tid,pid){var t=tourn(tid);t.playerIds=t.playerIds||[];if(t.playerIds.indexOf(pid)<0)t.playerIds.push(pid);save();closeModal();render();toast('Участник добавлен','ok');}
@@ -637,7 +597,7 @@ function resultSheet(mid){if(!isAdminMode){toast('Только админ мож
 function setRowHtml(i,a,b){return'<div class="setrow"><span class="setlabel">Сет '+(i+1)+'</span><input type="number" inputmode="numeric" min="0" max="99" class="setin pa" value="'+((a==null)?'':a)+'" placeholder="—" oninput="resultPreview()"><span class="colon">:</span><input type="number" inputmode="numeric" min="0" max="99" class="setin pb" value="'+((b==null)?'':b)+'" placeholder="—" oninput="resultPreview()"><button class="iconbtn rm" data-action="rmSet">✕</button></div>';}
 function addSetRow(){var m=state.matches.find(function(x){return x.id===__rmid;});var t=tourn(m.tournamentId);var wrap=$('#setsWrap');var maxSets=String(t.bestOf)==='3'?3:5;if(wrap.children.length>=maxSets){toast('Больше сетов не нужно','err');return;}wrap.insertAdjacentHTML('beforeend',setRowHtml(wrap.children.length,null,null));resultPreview();}
 function collectSets(){var sets=[];var bad=false;document.querySelectorAll('#setsWrap .setrow').forEach(function(r){var a=r.querySelector('.pa').value,b=r.querySelector('.pb').value;if(a===''&&b==='')return;if(a===''||b===''||a===b){bad=true;return;}sets.push([+a,+b]);});return{sets:sets,bad:bad};}
-function resultPreview(){var m=state.matches.find(function(x){return x.id===__rmid;});if(!m)return;var t=tourn(m.tournamentId);var need=needSets(t);var cs=collectSets();var sets=cs.sets;var sc=setsCountArr(sets);$('#tallyBox').innerHTML='<div class="who">'+pName(m.playerAId)+'</div><div class="n">'+sc[0]+'</div><div class="sep">:</div><div class="n">'+sc[1]+'</div><div class="who">'+pName(m.playerBId)+'</div>';var done=sc[0]===need||sc[1]===need;if(done&&sc[0]!==sc[1]){var eng=engine(__rmid);var Ra=eng.R[m.playerAId],Rb=eng.R[m.playerBId];if(Ra===undefined||Rb===undefined){$('#rprev').innerHTML='';return;}var d=eloDeltaFor(Ra,Rb,sc[0]>sc[1],sc[0],sc[1]);$('#rprev').innerHTML='<span class="delta up">'+(sc[0]>sc[1]?pName(m.playerAId):pName(m.playerBId))+' '+(d>0?'+':'')+d+' ▲</span><span class="delta down">'+(sc[0]>sc[1]?pName(m.playerBId):pName(m.playerAId))+' '+(-d)+' ▼</span>';playSound('setEnd');}else{$('#rprev').innerHTML='<span class="chip">для победы нужно '+need+' сета</span>';}}
+function resultPreview(){var m=state.matches.find(function(x){return x.id===__rmid;});if(!m)return;var t=tourn(m.tournamentId);var need=needSets(t);var cs=collectSets();var sets=cs.sets;var sc=setsCountArr(sets);$('#tallyBox').innerHTML='<div class="who">'+pName(m.playerAId)+'</div><div class="n">'+sc[0]+'</div><div class="sep">:</div><div class="n">'+sc[1]+'</div><div class="who">'+pName(m.playerBId)+'</div>';var done=sc[0]===need||sc[1]===need;if(done&&sc[0]!==sc[1]){var eng=engine(__rmid);var Ra=eng.R[m.playerAId],Rb=eng.R[m.playerBId];if(Ra===undefined||Rb===undefined){$('#rprev').innerHTML='';return;}var d=eloDeltaFor(Ra,Rb,sc[0]>sc[1],sc[0],sc[1]);$('#rprev').innerHTML='<span class="delta up">'+(sc[0]>sc[1]?pName(m.playerAId):pName(m.playerBId))+' '+(d>0?'+':'')+d+' ▲</span><span class="delta down">'+(sc[0]>sc[1]?pName(m.playerBId):pName(m.playerAId))+' '+(-d)+' ▼</span>';playSound('setEnd');}else{$('#rprev').innerHTML='<span class="small">для победы нужно '+need+' сета</span>';}}
 function saveResult(){var m=state.matches.find(function(x){return x.id===__rmid;});var t=tourn(m.tournamentId);var cs=collectSets();if(cs.bad){toast('Проверьте сеты: оба числа, без ничьих','err');return;}if(!cs.sets.length){toast('Введите хотя бы один сет','err');return;}var sc=setsCountArr(cs.sets);var need=needSets(t);if(sc[0]!==need&&sc[1]!==need){toast('Матч не завершён: нужно '+need+' выигранных сета','err');return;}m.sets=cs.sets;save();playSound('matchEnd');closeModal();render();toast('Счёт сохранён','ok');}
 function clearResult(){var m=state.matches.find(function(x){return x.id===__rmid;});m.sets=null;save();closeModal();render();toast('Результат убран');}
 function awardModal(){if(!isAdminMode){toast('Только админ может вручать награды','err');return;}if(!state.players.length){toast('Сначала добавьте игроков','err');return;}var emo=['🏆','🥇','🥈','🥉','⭐','🔥','💪','🎯','🚀','🛡️'];__emo='🏆';modal('<h3>Вручить награду</h3><label>Игрок</label><select id="awP">'+state.players.map(function(p){return'<option value="'+p.id+'">'+esc(p.firstName+' '+p.lastName)+'</option>';}).join('')+'</select><label>Награда</label><div class="emorow">'+emo.map(function(e,i){return'<button class="emopt '+(i===0?'on':'')+'" data-action="emo" data-emo="'+e+'">'+e+'</button>';}).join('')+'</div><label>Название</label><input id="awT" placeholder="Например: Воля к победе"><label>Турнир (не обязательно)</label><select id="awTid"><option value="">— без турнира —</option>'+state.tournaments.map(function(t){return'<option value="'+t.id+'">'+esc(t.name)+' • '+fmtDate(t.date)+'</option>';}).join('')+'</select><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveAward">Вручить</button></div>');}
@@ -645,35 +605,25 @@ function pickEmoji(btn,e){__emo=e;document.querySelectorAll('.emopt').forEach(fu
 function saveAward(){var pid=$('#awP').value,title=$('#awT').value.trim()||'Специальная награда',tid=$('#awTid').value||null;state.awards.push({id:uid(),playerId:pid,title:title,emoji:__emo,tournamentId:tid,date:new Date().toISOString().slice(0,10)});save();closeModal();render();toast('Награда вручена 🎉','ok');}
 function delAward(id){confirmBox('Удалить награду?',function(){state.awards=state.awards.filter(function(a){return a.id!==id;});save();render();});}
 function awardPodium(tid){var t=tourn(tid);var st=standings(tid);if(st.length<3){toast('Нужно минимум 3 участника с матчами','err');return;}var defs=[['🥇','Чемпион турнира'],['🥈','Серебряный призёр'],['🥉','Бронзовый призёр']];var added=0;defs.forEach(function(d,i){if(!state.awards.some(function(a){return a.tournamentId===tid&&a.title===d[1];})){state.awards.push({id:uid(),tournamentId:tid,playerId:st[i].pid,title:d[1],emoji:d[0],date:t.date});added++;}});save();render();toast(added?('Вручено наград: '+added+' 🏆'):'Призёры уже награждены','ok');}
-function settingsModal(){if(!isAdminMode){toast('Настройки доступны только администратору','err');return;}modal('<h3>⚙️ Настройки рейтинга</h3><div class="mut small" style="margin-bottom:10px;">🔑 Режим администратора активен • '+currentUser.phone+'</div><label>Стартовый рейтинг</label><input id="setR" type="number" value="'+state.settings.startRating+'" min="100" max="3000"><label>K-фактор (чувствительность рейтинга)</label><input id="setK" type="number" value="'+state.settings.kFactor+'" min="8" max="64"><div class="row-actions"><button class="btn primary" style="flex:1" data-action="saveSettings">Сохранить</button></div><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="exportData">⤓ Экспорт данных</button><button class="btn ghost" style="flex:1" data-action="importData">⤒ Импорт</button></div><input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="importFile(this)"><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="demo">Демо-данные</button><button class="btn danger" style="flex:1" data-action="resetAll">Сбросить всё</button></div><div class="mut small" style="margin-top:14px">☁️ Данные синхронизируются через Firebase.</div>');}
+function settingsModal(){if(!isAdminMode){toast('Настройки доступны только администратору','err');return;}modal('<h3>⚙️ Настройки рейтинга</h3><div class="mut small" style="margin-bottom:10px;">🔑 Режим администратора активен • '+currentUser.phone+'</div><label>Стартовый рейтинг</label><input id="setR" type="number" value="'+state.settings.startRating+'" min="100" max="3000"><label>K-фактор (чувствительность рейтинга)</label><input id="setK" type="number" value="'+state.settings.kFactor+'" min="8" max="64"><div class="row-actions"><button class="btn primary" style="flex:1" data-action="saveSettings">Сохранить</button></div><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="exportRatingCSV">📊 Рейтинг (Excel)</button><button class="btn ghost" style="flex:1" data-action="exportAllData">💾 Полный бэкап</button></div><input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="importFile(this)"><div class="row-actions"><button class="btn ghost" style="flex:1" data-action="importData">⤒ Импорт</button><button class="btn ghost" style="flex:1" data-action="demo">Демо-данные</button></div><div class="row-actions"><button class="btn danger" style="flex:1" data-action="resetAll">Сбросить всё</button></div><div class="mut small" style="margin-top:14px">☁️ Данные синхронизируются через Firebase.</div>');}
 function saveSettings(){state.settings.startRating=Math.min(3000,Math.max(100,parseInt($('#setR').value)||1000));state.settings.kFactor=Math.min(64,Math.max(8,parseInt($('#setK').value)||32));save();closeModal();render();toast('Настройки сохранены','ok');}
 function exportData(){try{var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='topspin-backup.json';document.body.appendChild(a);a.click();a.remove();toast('Файл резервной копии создан','ok');}catch(e){toast('Не удалось создать файл','err');}}
 function importFile(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!d.players||!d.tournaments)throw 0;state=Object.assign({settings:Object.assign({},DEF_SET)},d);state.settings=Object.assign({},DEF_SET,d.settings||{});save();closeModal();render();toast('Данные импортированы','ok');}catch(e){toast('Файл не подходит','err');}};r.readAsText(f);}
 function resetAll(){confirmBox('Удалить ВСЕ данные? Это удалит данные и из облака!',function(){state={players:[],tournaments:[],matches:[],awards:[],settings:Object.assign({},DEF_SET)};save();ui={tab:'arena',tournamentId:null,playerId:null,ratingSort:'r'};render();toast('Данные очищены');});}
-function loadDemo(){confirmBox('Загрузить демонстрационные данные?',function(){var defs=[['Александр','Волков'],['Дмитрий','Соколов'],['Иван','Крылов'],['Мария','Орлова'],['Павел','Лебедев'],['Анна','Смирнова']];var players=defs.map(function(d,i){return{id:'dp'+(i+1),firstName:d[0],lastName:d[1],avatar:null};});var y=new Date(Date.now()-86400000).toISOString().slice(0,10);var t={id:'tdemo',name:'Кубок ТОП-СПИН',date:y,startTime:'16:00',endTime:'20:00',bestOf:'5',playerIds:players.map(function(p){return p.id;}),closed:false};var strength={'dp1':6,'dp2':4,'dp3':2,'dp4':5,'dp5':1,'dp6':3};var TPL=[[[11,7],[11,8],[11,6]],[[11,9],[8,11],[11,7],[11,5]],[[12,10],[11,8],[9,11],[11,9]],[[11,5],[11,9],[11,7]],[[11,8],[11,6],[7,11],[11,9]]];var pairs=roundRobin(players.map(function(p){return p.id;}));var matches=pairs.map(function(pr,i){var winA=strength[pr[0]]>strength[pr[1]];if(i%3===2)winA=!winA;var sets=TPL[i%TPL.length].map(function(s){return[s[0],s[1]];});if(!winA)sets=sets.map(function(s){return[s[1],s[0]];});return{id:'dm'+i,tournamentId:'tdemo',playerAId:pr[0],playerBId:pr[1],time:addMinutes('16:00',i*15),sets:sets};});state={players:players,tournaments:[t],matches:matches,awards:[],settings:Object.assign({},DEF_SET)};var st=standings('tdemo');[['🥇','Чемпион турнира'],['🥈','Серебряный призёр'],['🥉','Бронзовый призёр']].forEach(function(d,i){if(st[i])state.awards.push({id:uid(),tournamentId:'tdemo',playerId:st[i].pid,title:d[1],emoji:d[0],date:y});});state.awards.push({id:uid(),tournamentId:'tdemo',playerId:'dp4',title:'Воля к победе',emoji:'🔥',date:y});save();ui={tab:'arena',tournamentId:null,playerId:null,ratingSort:'r'};render();toast('Демо-данные загружены','ok');});}
-function dispatch(el){var act=el.dataset.action;var id=el.dataset.id;var tid=el.dataset.tid;switch(act){case'tab':playSound('click');setTab(el.dataset.tab);break;case'settings':settingsModal();break;case'openAppearance':openAppearanceModal();break;case'setTheme':setTheme(el.dataset.theme);break;case'setFontSize':setFontSize(el.dataset.size);break;case'toggleSound':toggleSound();break;case'logout':logout();break;case'newPlayer':ui.tab='players';ui.playerId=null;render();playerModal();break;case'editPlayer':playerModal(id);break;case'savePlayer':savePlayer(id||null);break;case'delPlayer':delPlayer(id);break;case'clearAvatar':__pendingAvatar=null;var u=document.getElementById('pfUrl');if(u)u.value='';refreshAvatarPreview();break;case'newTournament':tournamentModal();break;case'editTournament':tournamentModal(id);break;case'saveTournament':saveTournament(id||null);break;case'delTournament':delTournament(id);break;case'openTournament':playSound('click');openTournament(id);break;case'closeNow':closeTournamentNow(id);break;case'reopen':reopenTournament(id);break;case'addParticipant':addParticipantModal(tid);break;case'pickParticipant':pickParticipant(tid,id);break;case'addAllParticipants':addAllParticipants(tid);break;case'removeParticipant':removeParticipant(tid,id);break;case'newMatch':matchModal(tid);break;case'editMatch':matchModal(tid,id);break;case'saveMatch':saveMatch(tid,id||null);break;case'delMatch':delMatch(id);break;case'genRR':genRRModal(tid);break;case'runGenRR':runGenRR(tid);break;case'result':resultSheet(id);break;case'addSet':addSetRow();break;case'rmSet':el.closest('.setrow').remove();resultPreview();break;case'saveResult':saveResult();break;case'clearResult':clearResult();break;case'openPlayer':playSound('click');openPlayer(id);break;case'backPlayers':ui.playerId=null;render();break;case'backTournaments':ui.tournamentId=null;render();break;case'sortR':ui.ratingSort='r';render();break;case'sortW':ui.ratingSort='w';render();break;case'newAward':awardModal();break;case'emo':pickEmoji(el,el.dataset.emo);break;case'saveAward':saveAward();break;case'delAward':delAward(id);break;case'awardPodium':awardPodium(id);break;case'saveSettings':saveSettings();break;case'exportData':exportData();break;case'importData':document.getElementById('impFile').click();break;case'demo':loadDemo();break;case'resetAll':resetAll();break;case'closeModal':closeModal();break;case'confirmYes':if(__cb)__cb();__cb=null;closeModal();break;}}
-
-(function init(){
-try{var d=new Date();$('#todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()];}catch(e){}
-if(lsGet('theme')==='light')document.body.classList.add('light');
-if(lsGet('fontSize')==='big')document.body.classList.add('big-font');
-try{var svg=document.querySelector('.logo').outerHTML.replace('class="logo"','xmlns="http://www.w3.org/2000/svg"');var fav=document.createElement('link');fav.rel='icon';fav.href='data:image/svg+xml,'+encodeURIComponent(svg);document.head.appendChild(fav);}catch(e){}
-
-if(initFirebase()){
-loadFromFirebase();
-setupFirebaseListener();
-}
-
-// Проверяем сессию
-if(checkSession()){
-render();
-}
-
-document.addEventListener('click',function(e){
-var el=e.target.closest('[data-action]');
-if(el)dispatch(el);
-});
-})();
+function loadDemo(){confirmBox('Загрузить демонстрационные данные?',function(){var defs=[['Александр','Волков'],['Дмитрий','Соколов'],['Иван','Крылов'],['Мария','Орлова'],['Павел','Лебедев'],['Анна','Смирнова']];var players=defs.map(function(d,i){return{id:'dp'+(i+1),firstName:d[0],lastName:d[1],avatar:null,phone:null};});var y=new Date(Date.now()-86400000).toISOString().slice(0,10);var t={id:'tdemo',name:'Кубок ТОП-СПИН',date:y,startTime:'16:00',endTime:'20:00',bestOf:'5',playerIds:players.map(function(p){return p.id;}),closed:false};var strength={'dp1':6,'dp2':4,'dp3':2,'dp4':5,'dp5':1,'dp6':3};var TPL=[[[11,7],[11,8],[11,6]],[[11,9],[8,11],[11,7],[11,5]],[[12,10],[11,8],[9,11],[11,9]],[[11,5],[11,9],[11,7]],[[11,8],[11,6],[7,11],[11,9]]];var pairs=roundRobin(players.map(function(p){return p.id;}));var matches=pairs.map(function(pr,i){var winA=strength[pr[0]]>strength[pr[1]];if(i%3===2)winA=!winA;var sets=TPL[i%TPL.length].map(function(s){return[s[0],s[1]];});if(!winA)sets=sets.map(function(s){return[s[1],s[0]];});return{id:'dm'+i,tournamentId:'tdemo',playerAId:pr[0],playerBId:pr[1],time:addMinutes('16:00',i*15),sets:sets};});state={players:players,tournaments:[t],matches:matches,awards:[],settings:Object.assign({},DEF_SET)};var st=standings('tdemo');[['🥇','Чемпион турнира'],['🥈','Серебряный призёр'],['🥉','Бронзовый призёр']].forEach(function(d,i){if(st[i])state.awards.push({id:uid(),tournamentId:'tdemo',playerId:st[i].pid,title:d[1],emoji:d[0],date:y});});state.awards.push({id:uid(),tournamentId:'tdemo',playerId:'dp4',title:'Воля к победе',emoji:'🔥',date:y});save();ui={tab:'arena',tournamentId:null,playerId:null,ratingSort:'r'};render();toast('Демо-данные загружены','ok');});}
+function dispatch(el){var act=el.dataset.action;var id=el.dataset.id;var tid=el.dataset.tid;switch(act){case'tab':playSound('click');setTab(el.dataset.tab);break;case'settings':settingsModal();break;case'openAppearance':openAppearanceModal();break;case'setTheme':setTheme(el.dataset.theme);break;case'setFontSize':setFontSize(el.dataset.size);break;case'toggleSound':toggleSound();break;case'logout':logout();break;case'newPlayer':ui.tab='players';ui.playerId=null;render();playerModal();break;case'editPlayer':playerModal(id);break;case'savePlayer':savePlayer(id||null);break;case'delPlayer':delPlayer(id);break;case'clearAvatar':__pendingAvatar=null;var u=document.getElementById('pfUrl');if(u)u.value='';refreshAvatarPreview();break;case'newTournament':tournamentModal();break;case'editTournament':tournamentModal(id);break;case'saveTournament':saveTournament(id||null);break;case'delTournament':delTournament(id);break;case'openTournament':playSound('click');openTournament(id);break;case'closeNow':closeTournamentNow(id);break;case'reopen':reopenTournament(id);break;case'addParticipant':addParticipantModal(tid);break;case'pickParticipant':pickParticipant(tid,id);break;case'addAllParticipants':addAllParticipants(tid);break;case'removeParticipant':removeParticipant(tid,id);break;case'newMatch':matchModal(tid);break;case'editMatch':matchModal(tid,id);break;case'saveMatch':saveMatch(tid,id||null);break;case'delMatch':delMatch(id);break;case'genRR':genRRModal(tid);break;case'runGenRR':runGenRR(tid);break;case'result':resultSheet(id);break;case'addSet':addSetRow();break;case'rmSet':el.closest('.setrow').remove();resultPreview();break;case'saveResult':saveResult();break;case'clearResult':clearResult();break;case'openPlayer':playSound('click');openPlayer(id);break;case'backPlayers':ui.playerId=null;render();break;case'backTournaments':ui.tournamentId=null;render();break;case'sortR':ui.ratingSort='r';render();break;case'sortW':ui.ratingSort='w';render();break;case'newAward':awardModal();break;case'emo':pickEmoji(el,el.dataset.emo);break;case'saveAward':saveAward();break;case'delAward':delAward(id);break;case'awardPodium':awardPodium(id);break;case'saveSettings':saveSettings();break;case'exportRatingCSV':exportRatingCSV();break;case'exportTournamentCSV':exportTournamentCSV(el.dataset.tid);break;case'exportTournamentPDF':exportTournamentPDF(el.dataset.tid);break;case'exportAllData':exportAllData();break;case'importData':document.getElementById('impFile').click();break;case'demo':loadDemo();break;case'resetAll':resetAll();break;case'closeModal':closeModal();break;case'confirmYes':if(__cb)__cb();__cb=null;closeModal();break;case'createProfile':createProfileModal();break;case'saveProfile':saveProfile();break;case'editMyProfile':editMyProfileModal();break;case'saveMyProfile':saveMyProfile();break;case'registerToTournament':registerToTournament(tid);break;}}
+function viewProfile(){var eng=engine();var myPlayer=getPlayerByPhone(currentUser?currentUser.phone:null);if(!myPlayer){return '<div class="sec-title">Мой кабинет</div><div class="empty rise"><div class="big">👤</div><b>Профиль не найден</b><span class="small">Ваш номер телефона не привязан к профилю игрока.</span><div class="row-actions"><button class="btn primary" data-action="createProfile">Создать профиль</button></div></div>';}var st=playerStats(myPlayer.id,eng);var last=eng.last[myPlayer.id];var history=eng.played.filter(function(m){return m.playerAId===myPlayer.id||m.playerBId===myPlayer.id;}).slice(-10).reverse();var myTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)!==-1;});var availableTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)===-1&&tStatus(t)!=='finished';});var html='<div class="sec-title">Мой кабинет</div>';html+='<div class="profile-card rise">'+avatarHtml(myPlayer,'xl')+'<div class="profile-info"><div class="profile-name">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div><div class="profile-phone">'+(currentUser?currentUser.phone:'')+'</div><div class="profile-rating"><span class="profile-rating-num">'+eng.R[myPlayer.id]+'</span>'+(last?deltaChip(last.d):'')+'</div></div><button class="iconbtn" data-action="editMyProfile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/></svg></button></div>';html+='<div class="statgrid rise" style="margin-bottom:16px"><div class="stat"><b>'+st.m+'</b><span>матчей</span></div><div class="stat"><b class="g">'+st.w+'</b><span>побед</span></div><div class="stat"><b class="r">'+st.l+'</b><span>поражений</span></div><div class="stat"><b class="o">'+st.winp+'%</b><span>% побед</span></div><div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div><div class="stat"><b class="g">'+(st.streak?st.streak+' 🔥':'—')+'</b><span>серия</span></div></div>';if(myTournaments.length){html+='<div class="sec-title">Мои турниры <span class="cnt">'+myTournaments.length+'</span></div><div class="list">';myTournaments.forEach(function(t){html+='<div class="card rise" style="padding:12px;display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-weight:700">'+esc(t.name)+'</div><div class="tournament-register-meta">'+statusChip(t)+'<span>📅 '+fmtDate(t.date)+'</span></div></div><button class="btn ghost sm" data-action="openTournament" data-id="'+t.id+'">Открыть</button></div>';});html+='</div>';}if(availableTournaments.length){html+='<div class="sec-title">Записаться на турнир <span class="cnt">'+availableTournaments.length+'</span></div><div class="list">';availableTournaments.forEach(function(t){html+='<div class="tournament-register-item rise"><div class="tournament-register-info"><div class="tournament-register-name">'+esc(t.name)+'</div><div class="tournament-register-meta">'+statusChip(t)+'<span>📅 '+fmtDate(t.date)+'</span><span>👥 '+(t.playerIds||[]).length+' участн.</span></div></div><button class="btn primary sm" data-action="registerToTournament" data-tid="'+t.id+'">Записаться</button></div>';});html+='</div>';}if(history.length){html+='<div class="sec-title">Последние матчи</div><div class="card rise">';history.forEach(function(m){var isA=m.playerAId===myPlayer.id;var opp=isA?m.playerBId:m.playerAId;var w=matchWinner(m)===myPlayer.id;var sc=setsCountArr(m.sets);var d=eng.mdelta[m.id][isA?'A':'B'];var t=tourn(m.tournamentId);html+='<div class="mover"><div style="flex:1;min-width:0"><b style="color:'+(w?'var(--green)':'var(--red)')+'">'+(w?'W':'L')+'</b> против <b>'+pName(opp)+'</b><small>'+(t?esc(t.name):'')+' • '+(isA?sc[0]+':'+sc[1]:sc[1]+':'+sc[0])+'</small></div>'+deltaChip(d)+'</div>';});html+='</div>';}return html;}
+function getPlayerByPhone(phone){if(!phone)return null;return state.players.find(function(p){return p.phone===phone;})||null;}
+function createProfileModal(){modal('<h3>Создать профиль игрока</h3><p class="mut small" style="margin:10px 0">Ваш номер: <b>'+(currentUser?currentUser.phone:'')+'</b></p><label>Имя</label><input id="profFirstName" placeholder="Иван"><label>Фамилия</label><input id="profLastName" placeholder="Петров"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveProfile">Создать</button></div>');}
+function saveProfile(){var f=$('#profFirstName').value.trim();var l=$('#profLastName').value.trim();if(!f||!l){toast('Введите имя и фамилию','err');return;}if(!currentUser||!currentUser.phone){toast('Ошибка: нет номера телефона','err');return;}var existing=getPlayerByPhone(currentUser.phone);if(existing){toast('Профиль уже существует','err');return;}state.players.push({id:uid(),firstName:f,lastName:l,avatar:null,phone:currentUser.phone});save();closeModal();render();toast('Профиль создан! Теперь вы можете записываться на турниры','ok');}
+function editMyProfileModal(){var myPlayer=getPlayerByPhone(currentUser?currentUser.phone:null);if(!myPlayer){toast('Профиль не найден','err');return;}__pendingAvatar=myPlayer.avatar;var avHtml=myPlayer.avatar?'<div class="av-preview" id="avPrev"><img src="'+myPlayer.avatar+'"><span class="del-av" data-action="clearAvatar">✕</span></div>':'<div class="av-preview empty-av" id="avPrev"><span>Нет фото</span></div>';modal('<h3>Редактировать профиль</h3><label>Фото</label>'+avHtml+'<input type="file" id="pfAvatar" accept="image/*"><label>Имя</label><input id="pf" value="'+esc(myPlayer.firstName)+'"><label>Фамилия</label><input id="pl" value="'+esc(myPlayer.lastName)+'"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveMyProfile">Сохранить</button></div>');var fileInput=document.getElementById('pfAvatar');if(fileInput){fileInput.addEventListener('change',function(){if(this.files&&this.files[0]){compressImage(this.files[0],function(b64){__pendingAvatar=b64;refreshAvatarPreview();});}});}}
+function saveMyProfile(){var myPlayer=getPlayerByPhone(currentUser?currentUser.phone:null);if(!myPlayer)return;var f=$('#pf').value.trim(),l=$('#pl').value.trim();if(!f||!l){toast('Введите имя и фамилию','err');return;}myPlayer.firstName=f;myPlayer.lastName=l;myPlayer.avatar=__pendingAvatar||myPlayer.avatar;save();closeModal();render();toast('Профиль обновлён','ok');}
+function registerToTournament(tid){var myPlayer=getPlayerByPhone(currentUser?currentUser.phone:null);if(!myPlayer){toast('Сначала создайте профиль','err');return;}var t=tourn(tid);if(!t){toast('Турнир не найден','err');return;}if((t.playerIds||[]).indexOf(myPlayer.id)!==-1){toast('Вы уже записаны на этот турнир','err');return;}t.playerIds=t.playerIds||[];t.playerIds.push(myPlayer.id);save();render();toast('Вы записаны на турнир "'+t.name+'"','ok');}
+function exportRatingCSV(){var eng=engine();var rows=[['Место','Игрок','Рейтинг','Побед','Поражений','% побед']];var sorted=[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});sorted.forEach(function(p,i){var st=playerStats(p.id,eng);rows.push([i+1,p.firstName+' '+p.lastName,eng.R[p.id],st.w,st.l,st.winp+'%']);});var ws=XLSX.utils.aoa_to_sheet(rows);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Рейтинг');XLSX.writeFile(wb,'topspin_rating_'+new Date().toISOString().slice(0,10)+'.xlsx');toast('Рейтинг экспортирован в Excel','ok');}
+function exportTournamentCSV(tid){var t=tourn(tid);if(!t){toast('Турнир не найден','err');return;}var stnd=standings(tid);var rows=[['Место','Игрок','Игр','Побед','Поражений','Сеты','Мячи','Очки']];stnd.forEach(function(r,i){rows.push([i+1,pNameRaw(r.pid),r.w+r.l,r.w,r.l,r.sw+':'+r.sl,r.bw+':'+r.bl,r.w*2+r.l]);});var ws=XLSX.utils.aoa_to_sheet(rows);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Результаты');XLSX.writeFile(wb,'tournament_'+t.name.replace(/\s+/g,'_')+'.xlsx');toast('Турнир экспортирован в Excel','ok');}
+function exportTournamentPDF(tid){var t=tourn(tid);if(!t){toast('Турнир не найден','err');return;}var doc=new jspdf.jsPDF();doc.setFontSize(18);doc.text('Протокол турнира',105,15,{align:'center'});doc.setFontSize(14);doc.text(t.name,105,25,{align:'center'});doc.setFontSize(10);doc.text('Дата: '+fmtDate(t.date)+' | Время: '+(t.startTime||'')+' - '+(t.endTime||''),105,32,{align:'center'});var stnd=standings(tid);var tableData=stnd.map(function(r,i){return[i+1,pNameRaw(r.pid),r.w+r.l,r.w,r.l,r.sw+':'+r.sl,r.bw+':'+r.bl,r.w*2+r.l];});doc.autoTable({startY:40,head:[['#','Игрок','Игр','Побед','Пор.','Сеты','Мячи','Очки']],body:tableData,styles:{fontSize:9},headStyles:{fillColor:[255,139,31]}});doc.save('tournament_'+t.name.replace(/\s+/g,'_')+'.pdf');toast('Протокол экспортирован в PDF','ok');}
+function exportAllData(){var data={exportDate:new Date().toISOString(),players:state.players,tournaments:state.tournaments,matches:state.matches,awards:state.awards,settings:state.settings};var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='topspin_full_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('Полный бэкап создан','ok');}
+(function init(){try{var d=new Date();$('#todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()];}catch(e){}if(lsGet('theme')==='light')document.body.classList.add('light');if(lsGet('fontSize')==='big')document.body.classList.add('big-font');try{var svg=document.querySelector('.logo').outerHTML.replace('class="logo"','xmlns="http://www.w3.org/2000/svg"');var fav=document.createElement('link');fav.rel='icon';fav.href='data:image/svg+xml,'+encodeURIComponent(svg);document.head.appendChild(fav);}catch(e){}if(initFirebase()){loadFromFirebase();setupFirebaseListener();}if(checkSession()){render();}document.addEventListener('click',function(e){var el=e.target.closest('[data-action]');if(el)dispatch(el);});})();
 </script>
 </body>
 </html>
