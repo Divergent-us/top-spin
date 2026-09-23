@@ -44,8 +44,8 @@ body.light .pod-name,body.light .award-name,body.light .mrow .pl span,body.light
 body.light .sets-line{color:#4a5a6a}
 .login-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px;overflow-y:auto}
 .login-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
-.login-bg video,.login-bg img,.login-bg canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.login-bg-overlay{position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(10,20,36,.5) 0%, rgba(10,20,36,.72) 55%, rgba(10,20,36,.92) 100%)}
+.login-bg video,.login-bg img,.login-bg canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;filter:blur(14px) saturate(1.05) brightness(.85);transform:scale(1.08)}
+.login-bg-overlay{position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(10,20,36,.50) 0%, rgba(10,20,36,.72) 55%, rgba(10,20,36,.90) 100%),linear-gradient(180deg, rgba(180,195,215,.14) 0%, rgba(180,195,215,.05) 40%, rgba(180,195,215,.12) 100%)}
 .login-card{position:relative;z-index:1;max-width:400px;width:100%;background:rgba(21,39,65,.92);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:20px;padding:26px;text-align:center}
 .login-logo{width:72px;height:72px;margin:0 auto 14px}
 .login-title{font-family:var(--fd);font-size:24px;margin-bottom:6px}
@@ -406,52 +406,6 @@ function countMatches(id){return state.matches.filter(function(m){return m.playe
 function normalizeName(s){return String(s==null?'':s).replace(/\s+$/,'').replace(/\.+$/,'').trim();}
 function migratePlayers(){var changed=false;state.players.forEach(function(p){var nf=normalizeName(p.firstName),nl=normalizeName(p.lastName);if(nf!==p.firstName||nl!==p.lastName){p.firstName=nf;p.lastName=nl;changed=true;}});var byName={};state.players.forEach(function(p){var key=(p.firstName+' '+p.lastName).toLowerCase();(byName[key]=byName[key]||[]).push(p);});Object.keys(byName).forEach(function(key){var arr=byName[key];if(arr.length<2)return;var keeper=arr[0],kc=countMatches(keeper.id);arr.forEach(function(p){var c=countMatches(p.id);if(c>kc){keeper=p;kc=c;}});arr.forEach(function(p){if(p===keeper)return;changed=true;if(p.phone&&!keeper.phone)keeper.phone=p.phone;if(!keeper.avatar&&p.avatar)keeper.avatar=p.avatar;state.matches.forEach(function(m){if(m.playerAId===p.id)m.playerAId=keeper.id;if(m.playerBId===p.id)m.playerBId=keeper.id;});state.awards.forEach(function(a){if(a.playerId===p.id)a.playerId=keeper.id;});state.tournaments.forEach(function(t){t.playerIds=(t.playerIds||[]).map(function(x){return x===p.id?keeper.id:x;}).filter(function(x,i,arr){return arr.indexOf(x)===i;});});state.players=state.players.filter(function(x){return x.id!==p.id;});});});return changed;}
 if(migratePlayers()){lsSet(LS_KEY,JSON.stringify(state));}
-/* === Разовая миграция: Felix -> Илья (ошибка 22.09) === */
-function migrateFelixToIlya(){
-if(state._migratedFelix) return false;
-var felix=null;
-for(var i=0;i<state.players.length;i++){
-if(state.players[i].firstName==='Felix'){felix=state.players[i];break;}
-}
-if(!felix){state._migratedFelix=true;return false;}
-var ilya=null;
-for(var j=0;j<state.players.length;j++){
-var pp=state.players[j];
-if(pp.id===felix.id) continue;
-var fn=(pp.firstName||'').toLowerCase();
-var ln=(pp.lastName||'').toLowerCase();
-if(fn==='илья'||ln==='илья'||fn.indexOf('илья')>=0||ln.indexOf('илья')>=0){ilya=pp;break;}
-}
-if(!ilya){
-ilya={id:uid(),firstName:'Илья',lastName:felix.lastName||'',avatar:felix.avatar||null,phone:felix.phone||null};
-state.players.push(ilya);
-} else {
-if(!ilya.phone && felix.phone) ilya.phone=felix.phone;
-if(!ilya.avatar && felix.avatar) ilya.avatar=felix.avatar;
-}
-state.matches.forEach(function(m){
-if(m.playerAId===felix.id) m.playerAId=ilya.id;
-if(m.playerBId===felix.id) m.playerBId=ilya.id;
-});
-state.awards.forEach(function(a){
-if(a.playerId===felix.id) a.playerId=ilya.id;
-});
-state.tournaments.forEach(function(t){
-if(t.playerIds && t.playerIds.length){
-var newIds=[];
-for(var k=0;k<t.playerIds.length;k++){
-var id=t.playerIds[k];
-if(id===felix.id) id=ilya.id;
-if(newIds.indexOf(id)<0) newIds.push(id);
-}
-t.playerIds=newIds;
-}
-});
-state.players=state.players.filter(function(p){return p.id!==felix.id;});
-state._migratedFelix=true;
-return true;
-}
-/* === конец миграции === */
 function sha256(text){try{if(window.crypto&&crypto.subtle){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)).then(function(b){var a=new Uint8Array(b);var s='';for(var i=0;i<a.length;i++){s+=a[i].toString(16).padStart(2,'0');}return s;});}else{return Promise.resolve(fallbackHash(text));}}catch(e){return Promise.resolve(fallbackHash(text));}}
 function fallbackHash(s){var h=0;for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0;}return 'fh'+Math.abs(h).toString(16);}
 function failInfo(phone){var until=parseInt(lsGet('topspin_lock_'+phone)||'0');if(Date.now()<until){return{locked:true,left:Math.ceil((until-Date.now())/1000)};}return{locked:false,left:0};}
@@ -501,8 +455,8 @@ dbRef.child('awards').set(state.awards).catch(function(){updateSyncIndicator('er
 if(isAdminMode){dbRef.child('settings').set(state.settings).catch(function(){});dbRef.child('playerCodes').set(state.playerCodes).catch(function(){});}
 updateSyncIndicator('synced');
 }catch(e){updateSyncIndicator('error');}}
-function loadFromFirebase(){if(!dbRef){booted=true;return;}var local=loadState();var backup=loadBackup();dbRef.once('value').then(function(snap){var data=snap.val();var remote=(data&&data.players)?norm(data):null;var cands=[local,backup,remote].filter(function(x){return !!x;});var chosen=null;for(var i=0;i<cands.length;i++){if(!chosen||weight(cands[i])>weight(chosen))chosen=cands[i];}if(chosen&&weight(chosen)>0){state=chosen;migratePlayers();if(migrateFelixToIlya()){lsSet(LS_KEY,JSON.stringify(state));lsSet(BAK_KEY,JSON.stringify(state));saveToFirebase();toast('Исправлено: Felix → Илья','ok');}lsSet(LS_KEY,JSON.stringify(state));lsSet(BAK_KEY,JSON.stringify(state));if(isAdminMode){saveToFirebase();}render();toast('История восстановлена: игроков '+state.players.length+', турниров '+state.tournaments.length,'ok');}booted=true;updateSyncIndicator('synced');updateBadge();}).catch(function(){booted=true;updateSyncIndicator('error');});}
-function setupFirebaseListener(){if(!dbRef)return;dbRef.on('value',function(snap){if(isSyncingFromFirebase||!booted)return;var data=snap.val();if(data&&data.players){var remote=norm(data);if(JSON.stringify(remote)!==JSON.stringify(state)){isSyncingFromFirebase=true;state=remote;migratePlayers();if(migrateFelixToIlya()){saveToFirebase();}lsSet(LS_KEY,JSON.stringify(state));lsSet(BAK_KEY,JSON.stringify(state));render();updateBadge();updateSyncIndicator('synced');setTimeout(function(){isSyncingFromFirebase=false;},100);}}});}
+function loadFromFirebase(){if(!dbRef){booted=true;return;}var local=loadState();var backup=loadBackup();dbRef.once('value').then(function(snap){var data=snap.val();var remote=(data&&data.players)?norm(data):null;var cands=[local,backup,remote].filter(function(x){return !!x;});var chosen=null;for(var i=0;i<cands.length;i++){if(!chosen||weight(cands[i])>weight(chosen))chosen=cands[i];}if(chosen&&weight(chosen)>0){state=chosen;migratePlayers();lsSet(LS_KEY,JSON.stringify(state));lsSet(BAK_KEY,JSON.stringify(state));if(isAdminMode){saveToFirebase();}render();toast('История восстановлена: игроков '+state.players.length+', турниров '+state.tournaments.length,'ok');}booted=true;updateSyncIndicator('synced');updateBadge();}).catch(function(){booted=true;updateSyncIndicator('error');});}
+function setupFirebaseListener(){if(!dbRef)return;dbRef.on('value',function(snap){if(isSyncingFromFirebase||!booted)return;var data=snap.val();if(data&&data.players){var remote=norm(data);if(JSON.stringify(remote)!==JSON.stringify(state)){isSyncingFromFirebase=true;state=remote;migratePlayers();lsSet(LS_KEY,JSON.stringify(state));lsSet(BAK_KEY,JSON.stringify(state));render();updateBadge();updateSyncIndicator('synced');setTimeout(function(){isSyncingFromFirebase=false;},100);}}});}
 function startMs(t){return new Date(t.date+'T'+(t.startTime||'00:00')+':00').getTime();}
 function endMs(t){return new Date(t.date+'T'+(t.endTime||'23:59')+':00').getTime();}
 function effEndMs(t){return endMs(t);}
@@ -658,13 +612,10 @@ if('serviceWorker' in navigator){try{fetch('sw.js').then(function(r){if(r&&r.ok)
 try{var d=new Date();document.getElementById('todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()];}catch(e){}
 if(lsGet('theme')==='light')document.body.classList.add('light');
 if(lsGet('fontSize')==='big')document.body.classList.add('big-font');
-/* Разовая миграция до Firebase — если есть локальные данные */
-var didMigrate=migrateFelixToIlya();
-if(didMigrate){lsSet(LS_KEY,JSON.stringify(state));lsSet(BAK_KEY,JSON.stringify(state));}
 var fbOk=initFirebase();
 if(fbOk&&authRef){authRef.onAuthStateChanged(function(u){firebaseUser=u;isAdminMode=!!u;if(u){currentUser={email:u.email,role:'admin'};lsSet('topspin_session',JSON.stringify(currentUser));hideLoginScreen();render();updateBadge();}else{var ps=loadPlayerSession();if(ps){currentUser=ps;isAdminMode=false;hideLoginScreen();render();updateBadge();}else{currentUser=null;isAdminMode=false;showLoginScreen();}}});}
 else{var ps2=loadPlayerSession();if(ps2){currentUser=ps2;isAdminMode=false;hideLoginScreen();render();updateBadge();}else{showLoginScreen();}}
-if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();}else{booted=true;initMessages();if(didMigrate){setTimeout(saveToFirebase,50);}}
+if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();}else{booted=true;initMessages();}
 initLoginBg();
 autoCloseCheck();
 setInterval(autoCloseCheck,20000);
