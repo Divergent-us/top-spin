@@ -15,13 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Golos+Text:wght@400;500;600;800&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>window.addEventListener('error',function(e){var b=document.getElementById('bootErr');if(b){b.style.display='block';b.textContent='Ошибка загрузки: '+(e.message||'неизвестно')+' (строка '+(e.lineno||'?')+')';}});</script>
+<script>window.addEventListener('error',function(e){var b=document.getElementById('bootErr');if(b){b.style.display='block';b.textContent='Ошибка: '+(e.message||'')+' (строка '+(e.lineno||'?')+')';}});</script>
 <style>
 :root{--bg:#0a1424;--bg2:#0e1c31;--panel:#132238;--panel2:#182b46;--line:#24395a;--line2:#31507e;--txt:#eaf2ff;--mut:#8ea6c8;--dim:#5f7699;--orange:#ff8b1f;--orange2:#ffb35c;--ball:#ffa41b;--blue:#3aa9ff;--green:#41e08d;--red:#ff5f6b;--gold:#ffd166;--silver:#cfd8e3;--bronze:#e0a06c;--rad:14px;--fd:'Russo One',system-ui,sans-serif;--fb:'Golos Text',system-ui,sans-serif}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -310,7 +304,8 @@ var IMPERATOR_PHONE='+79647840691';
 var firebaseConfig={apiKey:"AIzaSyBBfeMqpQe5D6-W3QzuX6Q5PHZdmm5FtD8",authDomain:"top-spin-3ef01.firebaseapp.com",databaseURL:"https://top-spin-3ef01-default-rtdb.europe-west1.firebasedatabase.app",projectId:"top-spin-3ef01",storageBucket:"top-spin-3ef01.firebasestorage.app",messagingSenderId:"939869281373",appId:"1:939869281373:web:5b7fe5304f7052489401b4",measurementId:"G-WC9JD17E9N"};
 var firebaseApp=null,dbRef=null,authRef=null,isSyncingFromFirebase=false,currentUser=null,isAdminMode=false,booted=false;
 var MSGS=[],msgRef=null,BOOT_TS=Date.now();
-function initFirebase(){try{firebaseApp=firebase.initializeApp(firebaseConfig);dbRef=firebase.database().ref('topspin/data');authRef=firebase.auth();try{if(authRef&&!authRef.currentUser){authRef.signInAnonymously().catch(function(){});}}catch(e){}return true;}catch(e){return false;}}
+function initFirebase(){try{if(typeof firebase==='undefined')return false;firebaseApp=firebase.initializeApp(firebaseConfig);dbRef=firebase.database().ref('topspin/data');authRef=firebase.auth();try{if(authRef&&!authRef.currentUser){authRef.signInAnonymously().catch(function(){});}}catch(e){}return true;}catch(e){return false;}}
+function retryFirebase(){if(dbRef)return;if(initFirebase()){loadFromFirebase();setupFirebaseListener();if(!msgRef)initMessages();}}
 function norm(s){s=s||{};s.settings=Object.assign({},DEF_SET,s.settings||{});s.players=s.players||[];s.tournaments=s.tournaments||[];s.matches=s.matches||[];s.awards=s.awards||[];s.playerCodes=s.playerCodes||{};return s;}
 function weight(s){if(!s)return 0;return (s.players?s.players.length:0)*3+(s.tournaments?s.tournaments.length:0)*2+(s.matches?s.matches.length:0)+(s.awards?s.awards.length:0);}
 function loadState(){try{var s=JSON.parse(lsGet(LS_KEY));if(s)return norm(s);}catch(e){}return null;}
@@ -510,7 +505,7 @@ function collectSets(){var sets=[];var bad=false;document.querySelectorAll('#set
 function resultPreview(){var m=state.matches.find(function(x){return x.id===__rmid;});if(!m)return;var cs=collectSets();var sc=setsCountArr(cs.sets);var bc=ballsCountArr(cs.sets);var tb=document.getElementById('tallyBox');if(tb)tb.innerHTML='<div class="who">'+pName(m.playerAId)+'</div><div class="n">'+sc[0]+'</div><div class="sep">:</div><div class="n">'+sc[1]+'</div><div class="who">'+pName(m.playerBId)+'</div>';document.querySelectorAll('#setsWrap .setrow').forEach(function(r){var a=r.querySelector('.pa');var b=r.querySelector('.pb');var av=parseInt(a.value);var bv=parseInt(b.value);a.classList.remove('win');b.classList.remove('win');if(!isNaN(av)&&!isNaN(bv)){if(av>bv)a.classList.add('win');else if(bv>av)b.classList.add('win');}});var rp=document.getElementById('rprev');if(!rp)return;if(sc[0]!==sc[1]){var eng=engine(__rmid);var wA=sc[0]>sc[1];var wId=wA?m.playerAId:m.playerBId,lId=wA?m.playerBId:m.playerAId;var Rw=eng.R[wId],Rl=eng.R[lId];var t=tourn(m.tournamentId);var ids=(t&&t.playerIds&&t.playerIds.length)?t.playerIds:[m.playerAId,m.playerBId];var sum=0,c=0;ids.forEach(function(pid){if(eng.R[pid]!==undefined){sum+=eng.R[pid];c++;}});var kT=kByRsr(c?sum/c:(+state.settings.startRating||1000));var setDiff=Math.abs(sc[0]-sc[1]);var wNew=toursPlayedCount(wId)<=5,lNew=toursPlayedCount(lId)<=5;var dd=rttfDelta(Rw,Rl,setDiff,wNew,lNew,kT);rp.innerHTML='<span class="delta up">'+pName(wId)+' +'+dd.dW+'</span><span class="delta down">'+pName(lId)+' -'+dd.dL+'</span>';}else{rp.innerHTML='<span class="small">Введите счёт</span>';}}
 function saveResult(){var m=state.matches.find(function(x){return x.id===__rmid;});var cs=collectSets();if(cs.bad){toast('Проверьте сеты','err');return;}if(!cs.sets.length){toast('Введите сет','err');return;}if(cs.sets.length>MAX_SETS){toast('Максимум '+MAX_SETS,'err');return;}var sc=setsCountArr(cs.sets);if(sc[0]===sc[1]){toast('Счёт сетов равный','err');return;}m.sets=cs.sets;save();closeModal();render();toast('Сохранено','ok');}
 function clearResult(){var m=state.matches.find(function(x){return x.id===__rmid;});m.sets=null;save();closeModal();render();}
-function awardModal(){if(!isAdminMode)return;if(!state.players.length)return;var emo=['🏆','','','','⭐','','💪','','','🛡️'];__emo='🏆';modal('<h3>Вручить награду</h3><label>Игрок</label><select id="awP">'+state.players.map(function(p){return'<option value="'+p.id+'">'+esc(p.firstName+' '+p.lastName)+'</option>';}).join('')+'</select><label>Награда</label><div class="emorow">'+emo.map(function(e,i){return'<button class="emopt '+(i===0?'on':'')+'" data-action="emo" data-emo="'+e+'">'+e+'</button>';}).join('')+'</div><label>Название</label><input id="awT"><label>Турнир</label><select id="awTid"><option value="">— без турнира —</option>'+state.tournaments.map(function(t){return'<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join('')+'</select><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveAward">Вручить</button></div>');}
+function awardModal(){if(!isAdminMode)return;if(!state.players.length)return;var emo=['🏆','🥇','🥈','🥉','⭐','🔥','💪','🎯','🚀','🛡️'];__emo='🏆';modal('<h3>Вручить награду</h3><label>Игрок</label><select id="awP">'+state.players.map(function(p){return'<option value="'+p.id+'">'+esc(p.firstName+' '+p.lastName)+'</option>';}).join('')+'</select><label>Награда</label><div class="emorow">'+emo.map(function(e,i){return'<button class="emopt '+(i===0?'on':'')+'" data-action="emo" data-emo="'+e+'">'+e+'</button>';}).join('')+'</div><label>Название</label><input id="awT"><label>Турнир</label><select id="awTid"><option value="">— без турнира —</option>'+state.tournaments.map(function(t){return'<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join('')+'</select><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveAward">Вручить</button></div>');}
 function pickEmoji(btn,e){__emo=e;document.querySelectorAll('.emopt').forEach(function(b){b.classList.toggle('on',b===btn);});}
 function saveAward(){var pid=$('#awP').value,title=$('#awT').value.trim()||'Специальная награда',tid=$('#awTid').value||null;state.awards.push({id:uid(),playerId:pid,title:title,emoji:__emo,tournamentId:tid,date:new Date().toISOString().slice(0,10)});save();closeModal();render();toast('Награда вручена — появится на пьедестале','ok');}
 function delAward(id){confirmBox('Удалить награду?',function(){state.awards=state.awards.filter(function(a){return a.id!==id;});save();render();});}
@@ -544,15 +539,14 @@ var manifest={name:'ТОП-СПИН — центр турниров',short_name:
 var blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
 var ml=document.getElementById('manifestLink');if(ml)ml.href=URL.createObjectURL(blob);
 }catch(e){}
-if('serviceWorker' in navigator){try{fetch('sw.js').then(function(r){if(r&&r.ok){navigator.serviceWorker.register('sw.js').catch(function(){});}}).catch(function(){});}catch(e){}}
 })();
 (function init(){
 try{var d=new Date();document.getElementById('todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()];}catch(e){}
 if(lsGet('theme')==='light')document.body.classList.add('light');
 if(lsGet('fontSize')==='big')document.body.classList.add('big-font');
-var fbOk=initFirebase();
 checkSession();
-if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();}else{booted=true;initMessages();}
+booted=true;
+initMessages();
 autoCloseCheck();
 setInterval(autoCloseCheck,20000);
 var sb=document.getElementById('loginSendBtn');if(sb)sb.addEventListener('click',sendPhoneCode);
@@ -564,6 +558,13 @@ document.addEventListener('click',function(e){var el=e.target.closest('[data-act
 if(document.getElementById('loginScreen').style.display==='none'){render();updateBadge();}
 })();
 </script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>window.addEventListener('load',function(){retryFirebase();});</script>
 </body>
 </html>
 </artifact>
