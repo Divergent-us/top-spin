@@ -332,30 +332,30 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 <div class="login-title">ТОП-СПИН</div>
 <div class="login-sub">Центр турниров по настольному теннису</div>
 <div class="login-mode">
-<button class="btn ghost" id="modePlayerBtn"> Игрок</button>
-<button class="btn ghost" id="modeAdminBtn"> Админ</button>
+<button type="button" class="btn ghost" id="modePlayerBtn" onclick="showPhoneStep()"> Игрок</button>
+<button type="button" class="btn ghost" id="modeAdminBtn" onclick="showAdminStep()"> Админ</button>
 </div>
 <div class="login-step active" id="loginStepPhone">
 <label class="login-label">Номер телефона</label>
-<input class="login-input" type="tel" id="loginPhone" maxlength="18">
-<button class="login-btn" id="loginSendBtn">Получить код</button>
+<input class="login-input" type="tel" id="loginPhone" maxlength="18" onkeydown="if(event.key==='Enter'){sendPhoneCode();}">
+<button type="button" class="login-btn" id="loginSendBtn" onclick="sendPhoneCode()">Получить код</button>
 <div class="login-error" id="loginError"></div>
 <div class="login-hint">Вход по персональному коду.<br>Код выдаёт администратор.</div>
 </div>
 <div class="login-step" id="loginStepCode">
 <div style="margin-bottom:14px;font-size:13px;color:var(--mut)">Код для <span id="loginPhoneDisplay" style="color:var(--orange2)"></span></div>
 <label class="login-label">Код подтверждения</label>
-<input class="login-input" type="text" id="loginCode" maxlength="6" inputmode="numeric">
-<button class="login-btn" id="loginVerifyBtn">Войти</button>
+<input class="login-input" type="text" id="loginCode" maxlength="6" inputmode="numeric" onkeydown="if(event.key==='Enter'){verifyPhoneCode();}">
+<button type="button" class="login-btn" id="loginVerifyBtn" onclick="verifyPhoneCode()">Войти</button>
 <div class="login-error" id="loginError2"></div>
-<button class="login-btn secondary" id="loginBackBtn">← Изменить номер</button>
+<button type="button" class="login-btn secondary" id="loginBackBtn" onclick="showPhoneStep()">← Изменить номер</button>
 </div>
 <div class="login-step" id="loginStepAdmin">
 <label class="login-label">Email администратора</label>
 <input class="login-input" type="email" id="adminEmail" style="text-align:left">
 <label class="login-label">Пароль</label>
-<input class="login-input" type="password" id="adminPass" style="text-align:left">
-<button class="login-btn" id="adminLoginBtn">Войти как админ</button>
+<input class="login-input" type="password" id="adminPass" style="text-align:left" onkeydown="if(event.key==='Enter'){adminLogin();}">
+<button type="button" class="login-btn" id="adminLoginBtn" onclick="adminLogin()">Войти как админ</button>
 <div class="login-error" id="loginError3"></div>
 <div class="login-hint">Вход админа защищён Firebase Auth.<br>Код админа не хранится в коде.</div>
 </div>
@@ -491,22 +491,27 @@ function manageMatches(tid){var t=tourn(tid);if(!t)return;var ms=state.matches.f
 function compressImage(file,cb){var r=new FileReader();r.onload=function(e){var img=new Image();img.onload=function(){var mW=200,mH=200,w=img.width,h=img.height;if(w>mW){h=h*mW/w;w=mW;}if(h>mH){w=w*mH/h;h=mH;}var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);cb(c.toDataURL('image/jpeg',0.85));};img.onerror=function(){};img.src=e.target.result;};r.readAsDataURL(file);}
 function playSound(type){if(lsGet('soundEnabled')==='false')return;try{var a=new(window.AudioContext||window.webkitAudioContext)();var o=a.createOscillator();var g=a.createGain();o.connect(g);g.connect(a.destination);if(type==='setEnd'){o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(0.3,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.3);o.start(a.currentTime);o.stop(a.currentTime+0.3);}else if(type==='matchEnd'){o.frequency.setValueAtTime(523,a.currentTime);o.frequency.setValueAtTime(659,a.currentTime+0.15);o.frequency.setValueAtTime(784,a.currentTime+0.3);o.type='sine';g.gain.setValueAtTime(0.35,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.6);o.start(a.currentTime);o.stop(a.currentTime+0.6);}else if(type==='msg'){o.frequency.setValueAtTime(988,a.currentTime);o.frequency.setValueAtTime(1319,a.currentTime+0.12);o.type='sine';g.gain.setValueAtTime(0.3,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.35);o.start(a.currentTime);o.stop(a.currentTime+0.35);}else if(type==='click'){o.frequency.value=600;o.type='square';g.gain.setValueAtTime(0.08,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.05);o.start(a.currentTime);o.stop(a.currentTime+0.05);}}catch(e){}}
 function formatPhone(phone){if(!phone)return'';phone=String(phone).replace(/[^\d+]/g,'');if(phone.charAt(0)==='8'&&phone.length===11){phone='+7'+phone.substring(1);}if(phone&&phone.charAt(0)!=='+'){phone='+'+phone;}return phone;}
-function showPhoneStep(){document.getElementById('loginStepPhone').classList.add('active');document.getElementById('loginStepCode').classList.remove('active');document.getElementById('loginStepAdmin').classList.remove('active');document.getElementById('loginError').textContent='';document.getElementById('loginError2').textContent='';document.getElementById('loginError3').textContent='';var b=document.getElementById('loginSendBtn');if(b){b.disabled=false;b.textContent='Получить код';}}
-function showCodeStep(phone){document.getElementById('loginStepPhone').classList.remove('active');document.getElementById('loginStepCode').classList.add('active');document.getElementById('loginStepAdmin').classList.remove('active');document.getElementById('loginPhoneDisplay').textContent=phone;document.getElementById('loginCode').value='';var btn=document.getElementById('loginVerifyBtn');if(btn){btn.disabled=false;btn.textContent='Войти';}setTimeout(function(){var el=document.getElementById('loginCode');if(el)el.focus();},100);}
-function showAdminStep(){document.getElementById('loginStepPhone').classList.remove('active');document.getElementById('loginStepCode').classList.remove('active');document.getElementById('loginStepAdmin').classList.add('active');document.getElementById('loginError3').textContent='';}
-function sendPhoneCode(){var phoneInput=document.getElementById('loginPhone');var errorEl=document.getElementById('loginError');var btn=document.getElementById('loginSendBtn');if(!phoneInput)return;var phone=formatPhone(phoneInput.value);if(!phone||phone.length<10){errorEl.textContent='Введите корректный номер телефона';return;}var fi=failInfo(phone);if(fi.locked){errorEl.textContent='Слишком много попыток. Подождите '+fi.left+' сек.';return;}errorEl.textContent='';btn.disabled=true;btn.textContent='Проверка...';setTimeout(function(){showCodeStep(phone);btn.disabled=false;btn.textContent='Получить код';},300);}
-function verifyPhoneCode(){var codeInput=document.getElementById('loginCode');var errorEl=document.getElementById('loginError2');var btn=document.getElementById('loginVerifyBtn');var phone=formatPhone(document.getElementById('loginPhone').value);var code=codeInput.value.trim();errorEl.textContent='';if(!code){errorEl.textContent='Введите код';return;}var fi=failInfo(phone);if(fi.locked){errorEl.textContent='Слишком много попыток. Подождите '+fi.left+' сек.';return;}btn.disabled=true;btn.textContent='Проверка...';
-var check=function(codes){codes=codes||{};var stored=codes[phone];var ok=false;if(stored){if(stored===code){ok=true;}}else{ok=Object.keys(codes).some(function(k){return codes[k]===code;});if(ok){codes[phone]=code;state.playerCodes=codes;save();}}
-if(ok){resetFail(phone);completeLoginPlayer(phone);}else{registerFail(phone);var left=failInfo(phone);errorEl.textContent=left.locked?('Слишком много попыток. Подождите '+left.left+' сек.'):'Неверный персональный код';btn.disabled=false;btn.textContent='Войти';}};
+function showPhoneStep(){try{document.getElementById('loginStepPhone').classList.add('active');document.getElementById('loginStepCode').classList.remove('active');document.getElementById('loginStepAdmin').classList.remove('active');document.getElementById('loginError').textContent='';document.getElementById('loginError2').textContent='';document.getElementById('loginError3').textContent='';var b=document.getElementById('loginSendBtn');if(b){b.disabled=false;b.textContent='Получить код';}}catch(e){}}
+function showCodeStep(phone){try{document.getElementById('loginStepPhone').classList.remove('active');document.getElementById('loginStepCode').classList.add('active');document.getElementById('loginStepAdmin').classList.remove('active');document.getElementById('loginPhoneDisplay').textContent=phone;document.getElementById('loginCode').value='';var btn=document.getElementById('loginVerifyBtn');if(btn){btn.disabled=false;btn.textContent='Войти';}setTimeout(function(){var el=document.getElementById('loginCode');if(el)el.focus();},100);}catch(e){}}
+function showAdminStep(){try{document.getElementById('loginStepPhone').classList.remove('active');document.getElementById('loginStepCode').classList.remove('active');document.getElementById('loginStepAdmin').classList.add('active');document.getElementById('loginError3').textContent='';}catch(e){}}
+function sendPhoneCode(){try{var phoneInput=document.getElementById('loginPhone');var errorEl=document.getElementById('loginError');var btn=document.getElementById('loginSendBtn');if(!phoneInput||!btn)return;var phone=formatPhone(phoneInput.value);if(!phone||phone.length<10){errorEl.textContent='Введите корректный номер телефона';return;}var fi=failInfo(phone);if(fi.locked){errorEl.textContent='Слишком много попыток. Подождите '+fi.left+' сек.';return;}errorEl.textContent='';btn.disabled=true;btn.textContent='Проверка...';setTimeout(function(){showCodeStep(phone);btn.disabled=false;btn.textContent='Получить код';},300);}catch(e){try{document.getElementById('loginError').textContent='Ошибка: '+(e&&e.message?e.message:'');}catch(e2){}}}
+function verifyPhoneCode(){var codeInput=document.getElementById('loginCode');var errorEl=document.getElementById('loginError2');var btn=document.getElementById('loginVerifyBtn');try{var phone=formatPhone(document.getElementById('loginPhone').value);var code=codeInput.value.trim();errorEl.textContent='';if(!code){errorEl.textContent='Введите код';return;}var fi=failInfo(phone);if(fi.locked){errorEl.textContent='Слишком много попыток. Подождите '+fi.left+' сек.';return;}btn.disabled=true;btn.textContent='Проверка...';
+var finishOk=function(){resetFail(phone);completeLoginPlayer(phone);};
+var finishBad=function(msg){registerFail(phone);var left=failInfo(phone);errorEl.textContent=left.locked?('Слишком много попыток. Подождите '+left.left+' сек.'):msg;btn.disabled=false;btn.textContent='Войти';};
 sha256(code).then(function(hash){
-var useHash=function(codes){var stored=codes[phone];var ok=false;if(stored&&(stored===hash||stored===code)){ok=true;}if(ok){resetFail(phone);completeLoginPlayer(phone);}else{check(codes);}};
-if(dbRef){withTimeout(dbRef.child('playerCodes').once('value').then(function(s){return s.val()||{};}),3500,null).then(function(fresh){if(fresh){state.playerCodes=Object.assign({},state.playerCodes,fresh);useHash(state.playerCodes);}else{useHash(state.playerCodes||{});}});}else{useHash(state.playerCodes||{});}
+var codes=Object.assign({},state.playerCodes||{});
+var apply=function(fresh){if(fresh){codes=Object.assign({},codes,fresh);state.playerCodes=codes;}
+var stored=codes[phone];var ok=false;
+if(stored){ok=(stored===hash||stored===code);}
+else{ok=Object.keys(codes).some(function(k){return codes[k]===code||codes[k]===hash;});if(ok){codes[phone]=hash;state.playerCodes=codes;save();}}
+if(ok){finishOk();}else{finishBad('Неверный персональный код');}};
+if(dbRef){withTimeout(dbRef.child('playerCodes').once('value').then(function(s){return s.val()||{};}),3500,null).then(function(fresh){apply(fresh);}).catch(function(){apply(null);});}else{apply(null);}
 }).catch(function(){errorEl.textContent='Ошибка проверки кода';btn.disabled=false;btn.textContent='Войти';});
-setTimeout(function(){if(btn.disabled){btn.disabled=false;btn.textContent='Войти';if(!errorEl.textContent)errorEl.textContent='Сервер не ответил вовремя — попробуйте ещё раз';}},12000);}
+setTimeout(function(){if(btn&&btn.disabled){btn.disabled=false;btn.textContent='Войти';if(!errorEl.textContent)errorEl.textContent='Сервер не ответил вовремя — попробуйте ещё раз';}},12000);}catch(e){try{errorEl.textContent='Ошибка: '+(e&&e.message?e.message:'');btn.disabled=false;btn.textContent='Войти';}catch(e2){}}}
 function completeLoginPlayer(phone){try{currentUser={phone:phone,role:'player'};lsSet('topspin_session',JSON.stringify(currentUser));hideLoginScreen();toast('Вход выполнен','ok');beat();render();updateBadge();}catch(e){try{showLoginScreen();document.getElementById('loginError2').textContent='Ошибка входа: '+(e&&e.message?e.message:'');}catch(e2){}}}
-function adminLogin(){var emailEl=document.getElementById('adminEmail');var passEl=document.getElementById('adminPass');var btn=document.getElementById('adminLoginBtn');var err=document.getElementById('loginError3');err.textContent='';var email=(emailEl?emailEl.value:'').trim();var pass=passEl?passEl.value:'';if(!email||!pass){err.textContent='Введите email и пароль';return;}if(!authRef){err.textContent='Firebase не подключён — вход админа недоступен';return;}btn.disabled=true;btn.textContent='Проверка...';
+function adminLogin(){try{var emailEl=document.getElementById('adminEmail');var passEl=document.getElementById('adminPass');var btn=document.getElementById('adminLoginBtn');var err=document.getElementById('loginError3');err.textContent='';var email=(emailEl?emailEl.value:'').trim();var pass=passEl?passEl.value:'';if(!email||!pass){err.textContent='Введите email и пароль';return;}if(!authRef){err.textContent='Firebase не подключён — вход админа недоступен';return;}btn.disabled=true;btn.textContent='Проверка...';
 var wd=setTimeout(function(){btn.disabled=false;btn.textContent='Войти как админ';err.textContent='Сервер авторизации не отвечает. Проверьте интернет и повторите.';},15000);
-try{authRef.signInWithEmailAndPassword(email,pass).then(function(){clearTimeout(wd);btn.disabled=false;btn.textContent='Войти как админ';}).catch(function(e){clearTimeout(wd);btn.disabled=false;btn.textContent='Войти как админ';err.textContent='Неверный email или пароль';});}catch(e){clearTimeout(wd);btn.disabled=false;btn.textContent='Войти как админ';err.textContent='Ошибка входа: '+(e&&e.message?e.message:'');}}
+try{authRef.signInWithEmailAndPassword(email,pass).then(function(){clearTimeout(wd);btn.disabled=false;btn.textContent='Войти как админ';}).catch(function(e){clearTimeout(wd);btn.disabled=false;btn.textContent='Войти как админ';err.textContent='Неверный email или пароль';});}catch(e){clearTimeout(wd);btn.disabled=false;btn.textContent='Войти как админ';err.textContent='Ошибка входа: '+(e&&e.message?e.message:'');}}catch(e){try{document.getElementById('loginError3').textContent='Ошибка: '+(e&&e.message?e.message:'');}catch(e2){}}}
 function hideLoginScreen(){document.getElementById('loginScreen').style.display='none';document.getElementById('mainHeader').style.display='flex';document.getElementById('view').style.display='block';document.getElementById('mainTabbar').style.display='flex';}
 function showLoginScreen(){document.getElementById('loginScreen').style.display='flex';document.getElementById('mainHeader').style.display='none';document.getElementById('view').style.display='none';document.getElementById('mainTabbar').style.display='none';showPhoneStep();}
 function logout(){dropPresence();if(authRef&&firebaseUser){try{authRef.signOut();}catch(e){}}lsSet('topspin_session','');currentUser=null;isAdminMode=false;showLoginScreen();}
@@ -711,21 +716,12 @@ try{var lb=document.getElementById('lightbox');if(lb){lb.addEventListener('click
 var fbOk=false;try{fbOk=initFirebase();}catch(e){fbOk=false;}
 try{if(fbOk){initPresence();}}catch(e){}
 try{
-if(fbOk&&authRef){authRef.onAuthStateChanged(function(u){try{firebaseUser=u;isAdminMode=!!u;if(u){currentUser={email:u.email,role:'admin'};lsSet('topspin_session',JSON.stringify(currentUser));hideLoginScreen();beat();render();updateBadge();}else{var ps=loadPlayerSession();if(ps){currentUser=ps;isAdminMode=false;hideLoginScreen();beat();render();updateBadge();}else{currentUser=null;isAdminMode=false;showLoginScreen();}}}catch(e){try{showLoginScreen();var er=document.getElementById('loginError3');if(er)er.textContent='Ошибка входа: '+(e&&e.message?e.message:'');}catch(e2){}}});}
+if(fbOk&&authRef){authRef.onAuthStateChanged(function(u){try{firebaseUser=u;isAdminMode=!!u;if(u){currentUser={email:u.email,role:'admin'};lsSet('topspin_session',JSON.stringify(currentUser));hideLoginScreen();beat();render();updateBadge();}else{var ps=loadPlayerSession();if(ps){currentUser=ps;isAdminMode=false;hideLoginScreen();beat();render();updateBadge();}else{currentUser=null;isAdminMode=false;showLoginScreen();}}}catch(e){try{showLoginScreen();}catch(e2){}}});}
 else{var ps2=loadPlayerSession();if(ps2){currentUser=ps2;isAdminMode=false;hideLoginScreen();beat();render();updateBadge();}else{showLoginScreen();}}
 }catch(e){try{showLoginScreen();}catch(e2){}}
 try{if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();}else{booted=true;initMessages();}}catch(e){booted=true;}
 try{initLoginBg();}catch(e){}
 try{autoCloseCheck();setInterval(autoCloseCheck,20000);}catch(e){}
-var mpb=document.getElementById('modePlayerBtn');if(mpb)mpb.addEventListener('click',showPhoneStep);
-var mab=document.getElementById('modeAdminBtn');if(mab)mab.addEventListener('click',showAdminStep);
-var sb=document.getElementById('loginSendBtn');if(sb)sb.addEventListener('click',sendPhoneCode);
-var vb=document.getElementById('loginVerifyBtn');if(vb)vb.addEventListener('click',verifyPhoneCode);
-var bb=document.getElementById('loginBackBtn');if(bb)bb.addEventListener('click',showPhoneStep);
-var ab=document.getElementById('adminLoginBtn');if(ab)ab.addEventListener('click',adminLogin);
-var lp=document.getElementById('loginPhone');if(lp)lp.addEventListener('keydown',function(e){if(e.key==='Enter')sendPhoneCode();});
-var lc=document.getElementById('loginCode');if(lc)lc.addEventListener('keydown',function(e){if(e.key==='Enter')verifyPhoneCode();});
-var ap=document.getElementById('adminPass');if(ap)ap.addEventListener('keydown',function(e){if(e.key==='Enter')adminLogin();});
 document.addEventListener('click',function(e){
 var av=e.target&&e.target.closest?e.target.closest('[data-avatar-src]'):null;
 if(av){e.preventDefault();e.stopPropagation();openLightbox(av.getAttribute('data-avatar-src'));return;}
