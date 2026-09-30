@@ -397,7 +397,7 @@ function lsGet(k){try{if(_lsOk)return localStorage.getItem(k);}catch(e){}return 
 function lsSet(k,v){try{if(_lsOk)localStorage.setItem(k,v);}catch(e){}_mem[k]=v;}
 var LS_KEY='topspin_v3',BAK_KEY='topspin_auto_backup',DEF_SET={startRating:1000,kFactor:32};
 var MAX_SETS=20;
-var FCM_VAPID_KEY='';
+var FCM_VAPID_KEY='  BPAhmTURjIIPH1IbbQ-SsCj5Q7fefOnaft_7zk9Nly_8KsTixze5OCkKUW86s2OveyZrnRDg22ywQvjXaiR04Ug';
 var firebaseConfig={apiKey:"AIzaSyBBfeMqpQe5D6-W3QzuX6Q5PHZdmm5FtD8",authDomain:"top-spin-3ef01.firebaseapp.com",databaseURL:"https://top-spin-3ef01-default-rtdb.europe-west1.firebasedatabase.app",projectId:"top-spin-3ef01",storageBucket:"top-spin-3ef01.firebasestorage.app",messagingSenderId:"939869281373",appId:"1:939869281373:web:5b7fe5304f7052489401b4",measurementId:"G-WC9JD17E9N"};
 var firebaseApp=null,dbRef=null,authRef=null,messagingRef=null,firebaseUser=null,isSyncingFromFirebase=false,currentUser=null,isAdminMode=false,booted=false;
 var MSGS=[],msgRef=null,BOOT_TS=Date.now(),__openChatPhone=null,__returnTo=null,__bgRaf=null,__anonDone=false;
