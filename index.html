@@ -38,8 +38,8 @@ body.light .start-time,body.light .start-lbl,body.light .tc-time,body.light .ch-
 body.light .pod-name,body.light .award-name,body.light .picker-item .nm,body.light .ch-title{color:#1a2332}
 .login-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px;overflow-y:auto}
 .login-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
-.login-bg video,.login-bg img,.login-bg canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;filter:blur(3px) saturate(1.3) brightness(1.05);transform:scale(1.03)}
-.login-bg canvas{z-index:1}.login-bg video,.login-bg img{z-index:2}
+.login-bg canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;filter:blur(3px) saturate(1.3) brightness(1.05);transform:scale(1.03);z-index:1}
+.login-bg video,.login-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
 .login-bg-overlay{position:absolute;inset:0;z-index:3;background:radial-gradient(ellipse at center, rgba(10,20,36,.30) 0%, rgba(10,20,36,.52) 55%, rgba(10,20,36,.78) 100%)}
 .login-card{position:relative;z-index:4;max-width:400px;width:100%;background:rgba(21,39,65,.90);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:20px;padding:26px;text-align:center}
 .login-logo{width:72px;height:72px;margin:0 auto 14px}
@@ -285,7 +285,6 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 <div class="login-bg">
 <canvas id="loginFallback"></canvas>
 <video id="loginVideo" autoplay muted loop playsinline style="display:none"></video>
-<img id="loginGif" alt="" style="display:none">
 <div class="login-bg-overlay"></div>
 </div>
 <div class="login-card">
@@ -354,7 +353,7 @@ var LS_KEY='topspin_v3',BAK_KEY='topspin_auto_backup',DEF_SET={startRating:1000,
 var MAX_SETS=20;
 var firebaseConfig={apiKey:"AIzaSyBBfeMqpQe5D6-W3QzuX6Q5PHZdmm5FtD8",authDomain:"top-spin-3ef01.firebaseapp.com",databaseURL:"https://top-spin-3ef01-default-rtdb.europe-west1.firebasedatabase.app",projectId:"top-spin-3ef01",storageBucket:"top-spin-3ef01.firebasestorage.app",messagingSenderId:"939869281373",appId:"1:939869281373:web:5b7fe5304f7052489401b4",measurementId:"G-WC9JD17E9N"};
 var firebaseApp=null,dbRef=null,authRef=null,firebaseUser=null,isSyncingFromFirebase=false,currentUser=null,isAdminMode=false,booted=false;
-var MSGS=[],msgRef=null,BOOT_TS=Date.now(),__openChatPhone=null,__returnTo=null,__bgRaf=null,__anonDone=false;
+var MSGS=[],msgRef=null,BOOT_TS=Date.now(),__openChatPhone=null,__returnTo=null,__bgRaf=null;
 var PRESENCE={},presRef=null,presTimer=null;
 var lastSnap=0;
 var prevRegs={};
@@ -486,7 +485,7 @@ else{ok=Object.keys(codes).some(function(k){return codes[k]===code||codes[k]===h
 if(ok){finishOk();}else{finishBad('Неверный персональный код');}};
 if(dbRef){withTimeout(dbRef.child('playerCodes').once('value').then(function(s){return s.val()||{};}),3500,null).then(function(fresh){apply(fresh);}).catch(function(){apply(null);});}else{apply(null);}
 }).catch(function(){errorEl.textContent='Ошибка проверки кода';btn.disabled=false;btn.textContent='Войти';});
-setTimeout(function(){if(btn&&btn.disabled){btn.disabled=false;btn.textContent='Войти';if(!errorEl.textContent)errorEl.textContent='Сервер не ответил вовремя — попробуйте ещё раз';}},12000);}catch(e){try{btn.disabled=false;btn.textContent='Войти';}catch(e2){}}}
+setTimeout(function(){if(btn&&btn.disabled){btn.disabled=false;btn.textContent='Войти';if(!errorEl.textContent)errorEl.textContent='Сервер не ответил вовремя — попробуйте ещё раз';}},12000);}catch(e){try{var btn=document.getElementById('loginVerifyBtn');if(btn){btn.disabled=false;btn.textContent='Войти';}}catch(e2){}}}
 function completeLoginPlayer(phone){try{currentUser={phone:phone,role:'player'};lsSet('topspin_session',JSON.stringify(currentUser));hideLoginScreen();toast('Вход выполнен','ok');beat();subscribePush();render();updateBadge();}catch(e){try{showLoginScreen();}catch(e2){}}}
 function adminLogin(){try{var emailEl=document.getElementById('adminEmail');var passEl=document.getElementById('adminPass');var btn=document.getElementById('adminLoginBtn');var err=document.getElementById('loginError3');err.textContent='';var email=(emailEl?emailEl.value:'').trim();var pass=passEl?passEl.value:'';if(!email||!pass){err.textContent='Введите email и пароль';return;}if(!authRef){err.textContent='Firebase не подключён';return;}btn.disabled=true;btn.textContent='Проверка...';
 var wd=setTimeout(function(){btn.disabled=false;btn.textContent='Войти как админ';err.textContent='Сервер не отвечает. Проверьте интернет.';},15000);
@@ -625,9 +624,8 @@ ctx.fillStyle='#ffa41b';ctx.shadowColor='rgba(255,164,27,.85)';ctx.shadowBlur=20
 }catch(e){}
 __bgRaf=requestAnimationFrame(frame);}
 __bgRaf=requestAnimationFrame(frame);}catch(e){}}
-function initLoginBg(){try{var video=document.getElementById('loginVideo');var gif=document.getElementById('loginGif');var canvas=document.getElementById('loginFallback');
+function initLoginBg(){try{var video=document.getElementById('loginVideo');var canvas=document.getElementById('loginFallback');
 if(canvas){canvas.style.display='block';startBgAnim(canvas);}
-if(gif){gif.style.display='none';}
 if(video){video.style.display='none';video.onerror=function(){video.style.display='none';};video.addEventListener('loadeddata',function(){video.style.display='block';});video.src='login-bg.mp4';}
 }catch(e){}}
 function weekRange(){var d=new Date();var day=(d.getDay()+6)%7;var s=new Date(d);s.setHours(0,0,0,0);s.setDate(s.getDate()-day);var e=new Date(s.getTime()+7*86400000-1);return[s.getTime(),e.getTime()];}
@@ -778,6 +776,8 @@ try{if(lsGet('theme')==='light')document.body.classList.add('light');if(lsGet('f
 try{var lb=document.getElementById('lightbox');if(lb){lb.addEventListener('click',function(){closeLightbox();});}document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeLightbox();}});}catch(e){}
 var fbOk=false;try{fbOk=initFirebase();}catch(e){fbOk=false;}
 try{if(fbOk){initPresence();}}catch(e){}
+// ВАЖНО: анонимный вход в Firebase, чтобы база читалась ДО входа пользователя
+try{if(fbOk&&authRef){authRef.signInAnonymously().catch(function(){});}catch(e){}}
 try{
 if(fbOk&&authRef){
 authRef.onAuthStateChanged(function(u){
@@ -807,10 +807,10 @@ if(document.getElementById('loginScreen').style.display==='none'){render();updat
 </html>
 </artifact>
 
-Теперь **обновлённый сервис-воркер `sw.js`** (замените старый файл в корне сайта) — он показывает пуш-уведомления, даже когда приложение закрыто:
+Теперь файл **`sw.js`** — создайте файл с именем ровно `sw.js` в корне репозитория (рядом с `index.html`) и вставьте этот код:
 
-<artifact identifier="topspin-sw-v62" type="application/vnd.ant.code" language="javascript" title="sw.js — сервис-воркер с пуш-уведомлениями">
-// ТОП-СПИН sw.js — пуш-уведомления + базовый PWA
+<artifact identifier="topspin-sw-v63" type="application/vnd.ant.code" language="javascript" title="sw.js — сервис-воркер с пуш-уведомлениями">
+// ТОП-СПИН sw.js — пуш-уведомления (работают даже когда приложение закрыто)
 self.addEventListener('install', function(e){ self.skipWaiting(); });
 self.addEventListener('activate', function(e){ e.waitUntil(self.clients.claim()); });
 
