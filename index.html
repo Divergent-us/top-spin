@@ -756,29 +756,3 @@ if(document.getElementById('loginScreen').style.display==='none'){render();updat
 </html>
 </artifact>
 
-Также добавьте файл **`firebase-messaging-sw.js`** рядом с `index.html` (в корне сайта) — он нужен, чтобы уведомления приходили **даже когда приложение закрыто**:
-
-<artifact identifier="firebase-messaging-sw" type="application/vnd.ant.code" language="javascript" title="firebase-messaging-sw.js — сервис-воркер для фоновых уведомлений">
-// Сервис-воркер для фоновых push-уведомлений ТОП-СПИН
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
-
-firebase.initializeApp({
-  apiKey:"AIzaSyBBfeMqpQe5D6-W3QzuX6Q5PHZdmm5FtD8",
-  authDomain:"top-spin-3ef01.firebaseapp.com",
-  projectId:"top-spin-3ef01",
-  messagingSenderId:"939869281373",
-  appId:"1:939869281373:web:5b7fe5304f7052489401b4"
-});
-
-try{
-  var messaging=firebase.messaging();
-  // Фоновое уведомление (когда приложение закрыто)
-  messaging.onBackgroundMessage(function(payload){
-    var title=(payload.notification&&payload.notification.title)||'ТОП-СПИН';
-    var body=(payload.notification&&payload.notification.body)||'';
-    self.registration.showNotification(title,{body:body,icon:'apple-touch-icon.png'});
-  });
-}catch(e){}
-</artifact>
-
