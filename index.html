@@ -862,9 +862,12 @@ async function analyzeGameStyle(playerId) {
     const btn = document.querySelector('.ai-btn-analyze');
     const responseBox = document.getElementById('aiResponseBox');
     
-    // ⚠️ ЗАМЕНИТЕ ЭТОТ URL НА ВАШ РЕАЛЬНЫЙ АДРЕС WORKER'A (БЕЗ СЛЭША В КОНЦЕ!)
-    // Пример: "https://ts-agent-v2.your-name.workers.dev"
-    const WORKER_URL = "https://topspin-brain.styleman81.workers.dev"; 
+    // ⚠️ ЗАМЕНИТЕ ЭТОТ URL НА ВАШ РЕАЛЬНЫЙ АДРЕС WORKER'A
+    // Важно: Без слэша в конце!
+    let WORKER_URL = "https://ts-agent-final.styleman81.workers.dev"; 
+    
+    // Автоматическая очистка URL от лишнего слэша на всякий случай
+    WORKER_URL = WORKER_URL.trim().replace(/\/$/, ""); 
 
     if (!btn || !responseBox) return;
 
@@ -876,7 +879,7 @@ async function analyzeGameStyle(playerId) {
     responseBox.innerHTML = '<span class="mut small">Обращение к ИИ...</span>';
 
     try {
-        // 1. Сбор данных
+        // 1. Сбор данных (остается прежним)
         const eng = engine();
         const stats = playerStats(playerId, eng);
         const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId).slice(-10).reverse();
@@ -897,10 +900,7 @@ async function analyzeGameStyle(playerId) {
         const userContent = `Рейтинг: ${rating}. Винрейт: ${winRate}%. Серия: ${streak}. Последние игры:\n${matchSummary}`;
 
         // 2. Отправка запроса
-        // Используем trim() на всякий случай, чтобы убрать пробелы
-        const cleanUrl = WORKER_URL.trim().replace(/\/$/, ""); 
-        
-        const response = await fetch(cleanUrl, {
+        const response = await fetch(WORKER_URL, {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json" 
