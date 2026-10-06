@@ -316,6 +316,71 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 .cup-img,.cup-svg{max-height:320px}
 .award-emoji{font-size:64px}
 }
+/* --- Стили для ИИ Тренера --- */
+.ai-trainer-card {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid #3aa9ff;
+    border-radius: var(--rad);
+    padding: 16px;
+    margin-top: 16px;
+    position: relative;
+    overflow: hidden;
+}
+.ai-trainer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-family: var(--fd);
+    color: var(--blue);
+    font-size: 14px;
+    letter-spacing: 0.05em;
+}
+.ai-icon {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+.ai-btn-analyze {
+    width: 100%;
+    background: rgba(58, 169, 255, 0.15);
+    border: 1px solid rgba(58, 169, 255, 0.4);
+    color: var(--blue);
+    font-weight: 700;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+.ai-btn-analyze:hover {
+    background: rgba(58, 169, 255, 0.25);
+    transform: translateY(-1px);
+}
+.ai-response-area {
+    margin-top: 12px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--txt);
+    display: none; /* Скрыто по умолчанию */
+    white-space: pre-wrap;
+}
+.ai-loading {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid transparent;
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -653,6 +718,19 @@ html+=challengesHtml(myPlayer.id);
 html+='<div class="row-actions"><button class="btn ghost w100 '+(un?'msg-alert':'')+'" data-action="inbox">💬 '+(un?('Вам новое сообщение ('+un+')'):'Сообщения')+'</button></div>';
 html+='<div class="row-actions"><button class="btn primary w100" data-action="newTraining">＋ Буду тренироваться</button></div>';
 html+='<div class="card rise" style="margin-top:12px"><div class="count-lbl" style="margin-bottom:6px">График успеха (динамика рейтинга)</div><div style="color:var(--green)">'+spark(eng.hist[myPlayer.id],300,60)+'</div></div>';
+// === ДОБАВЬТЕ ЭТОТ БЛОК НИЖЕ ===
+html += '<div class="ai-trainer-card">' +
+        '   <div class="ai-trainer-header">' +
+        '       <svg class="ai-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' +
+        '       ЛИЧНЫЙ ИИ-ТРЕНЕР' +
+        '   </div>' +
+        '   <button class="ai-btn-analyze" onclick="analyzeGameStyle(\'' + myPlayer.id + '\')">' +
+        '       🧠 Проанализировать мою игру' +
+        '   </button>' +
+        '   <div id="aiResponseBox" class="ai-response-area"></div>' +
+        '</div>';
+// ================================
+
 if(myTrainings.length){html+='<div class="sec-title">Мои тренировки <span class="cnt">'+myTrainings.length+'</span></div><div class="train-list">'+myTrainings.sort(function(a,b){return trainingMs(a)-trainingMs(b);}).map(function(tr){var d=new Date((tr.date||'2000-01-01')+'T12:00');var day=d.getDate();var mon=MON[d.getMonth()];var pts=(tr.participantIds||[]).map(function(pid){var p=player(pid);return p?'<span class="tc-name">👤 '+esc(p.firstName+' '+p.lastName)+'</span>':'';}).join('');return'<div class="train-card rise"><div class="tc-left"><div class="tc-time">🏓 '+day+' '+mon+' · '+(tr.time||'')+'</div><div class="tc-sub">Орг: '+esc(tr.createdBy||'')+' · 👥 '+(tr.participantIds||[]).length+'</div>'+(pts?'<div class="tc-names">'+pts+'</div>':'')+'</div></div>';}).join('')+'</div>';}
 if(myUpcoming.length){html+='<div class="sec-title">Мои турниры (активные) <span class="cnt">'+myUpcoming.length+'</span></div><div class="list">';myUpcoming.forEach(function(t){html+='<div class="trow rise" style="cursor:default"><div class="datebox"><b>'+new Date((t.date||'2000-01-01')+'T12:00').getDate()+'</b><span>'+MON[new Date((t.date||'2000-01-01')+'T12:00').getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span class="start-lbl">старт '+(t.startTime||'—')+'</span></div></div><div style="display:flex;flex-direction:column;gap:6px;flex:none"><button class="btn danger sm" data-action="unregisterFromTournament" data-tid="'+t.id+'">Отписаться</button><button class="btn ghost sm" data-action="viewParticipants" data-id="'+t.id+'">Открыть</button></div></div>';});html+='</div>';}
 if(myPast.length){html+='<div class="sec-title">История моих турниров <span class="cnt">'+myPast.length+'</span></div><div class="list">';myPast.forEach(function(t){var stnd=standings(t.id);var place=stnd.findIndex(function(r){return r.pid===myPlayer.id;})+1;html+='<button class="trow rise" data-action="openTournament" data-id="'+t.id+'"><div class="datebox"><b>'+new Date((t.date||'2000-01-01')+'T12:00').getDate()+'</b><span>'+MON[new Date((t.date||'2000-01-01')+'T12:00').getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span>'+(place?('место: '+place):'участник')+'</span></div></div>'+I_CHEV+'</button>';});html+='</div>';}
@@ -774,6 +852,88 @@ if(el)dispatch(el);
 });
 if(document.getElementById('loginScreen').style.display==='none'){render();updateBadge();}
 })();
+// === НАСТРОЙКИ AGENT ===
+// ⚠️ ОБЯЗАТЕЛЬНО замените этот текст на ваш реальный ключ от Groq!
+
+const GROQ_MODEL = "llama-3.1-8b-instant";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+async function analyzeGameStyle(playerId) {
+    const btn = document.querySelector('.ai-btn-analyze');
+    const responseBox = document.getElementById('aiResponseBox');
+    
+    // !!! ВАЖНО: Вставьте сюда URL вашего Cloudflare Worker'a !!!
+    const WORKER_URL = "topspin-brain.styleman81.workers.dev"; 
+    
+    if (!WORKER_URL || WORKER_URL.includes("ВАШ")) {
+        alert("Ошибка: Не настроен URL Worker'а.\nЗамените переменную WORKER_URL в коде.");
+        return;
+    }
+
+    // UI Feedback
+    const originalBtnText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="ai-loading"></span> Анализ...';
+    responseBox.style.display = 'block';
+    responseBox.innerHTML = '<span class="mut small">Обращение к облачному ИИ...</span>';
+
+    try {
+        // 1. Сбор данных игрока (этот код остается без изменений)
+        const eng = engine();
+        const stats = playerStats(playerId, eng);
+        const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId).slice(-10).reverse();
+        
+        let matchSummary = history.length ? history.map(m => {
+            const isA = m.playerAId === playerId;
+            const oppName = pNameRaw(isA ? m.playerBId : m.playerAId);
+            const sc = setsCountArr(m.sets);
+            const res = matchWinner(m) === playerId ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
+            return `${res} против ${oppName} (${sc[0]}:${sc[1]})`;
+        }).join('\n') : "Нет истории матчей.";
+
+        const rating = eng.R[playerId];
+        const winRate = stats.winp;
+        const streak = stats.streak;
+
+        const systemPrompt = `Ты - тренер по настольному теннису. Дай 3 совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов.`;
+        const userContent = `Рейтинг: ${rating}. Винрейт: ${winRate}%. Серия: ${streak}. Последние игры:\n${matchSummary}`;
+
+        // 2. Отправка запроса в Cloudflare Worker
+        // Мы НЕ передаем API ключ здесь! Он спрятан в Cloudflare.
+        const response = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "llama-3.1-8b-instant", // Модель, которую использует Groq
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userContent }
+                ],
+                temperature: 0.7,
+                max_tokens: 500
+            })
+        });
+
+        if (!response.ok) throw new Error(`Ошибка сети: ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.error) throw new Error(data.error);
+
+        // 3. Вывод результата
+        const aiText = data.choices[0].message.content;
+        responseBox.innerHTML = `<div style="white-space:pre-wrap;">${esc(aiText)}</div>`;
+
+    } catch (error) {
+        console.error(error);
+        responseBox.innerHTML = `<span style="color:var(--red)">❌ Ошибка агента: ${error.message}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalBtnText;
+    }
+}
+
+    
 </script>
+
 </body>
 </html>
