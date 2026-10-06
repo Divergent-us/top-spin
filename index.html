@@ -862,7 +862,8 @@ async function analyzeGameStyle(playerId) {
     const responseBox = document.getElementById('aiResponseBox');
     
     // !!! ВАЖНО: Вставьте сюда URL вашего Cloudflare Worker'a !!!
-    const WORKER_URL = "https://topspin-brain.styleman81.workers.dev"; 
+    // ✅ ПРАВИЛЬНО
+const WORKER_URL = "https://topspin-brain.styleman81.workers.dev"; 
     
     if (!WORKER_URL || WORKER_URL.includes("ВАШ")) {
         alert("Ошибка: Не настроен URL Worker'а.\nЗамените переменную WORKER_URL в коде.");
