@@ -862,80 +862,51 @@ async function analyzeGameStyle(playerId) {
     const btn = document.querySelector('.ai-btn-analyze');
     const responseBox = document.getElementById('aiResponseBox');
     
-    // ⚠️ ВАЖНО: УБЕДИТЕСЬ, ЧТО ЭТОТ URL СОВПАДАЕТ С ВАШИМ WORKER'OM В CLOUDFLARE
-    // Без слэша в конце!
+    // ⚠️ ЗАМЕНИТЕ ЭТОТ URL НА ВАШ РЕАЛЬНЫЙ АДРЕС WORKER'A (БЕЗ СЛЭША В КОНЦЕ!)
+    // Пример: "https://ts-agent-v2.your-name.workers.dev"
     const WORKER_URL = "https://topspin-brain.styleman81.workers.dev"; 
 
-    if (!btn || !responseBox) {
-        console.error("Элементы интерфейса агента не найдены");
-        return;
-    }
+    if (!btn || !responseBox) return;
 
     // UI Feedback
     const originalBtnText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="ai-loading"></span> Анализ...';
     responseBox.style.display = 'block';
-    responseBox.innerHTML = '<span class="mut small">Обращение к облачному ИИ...</span>';
+    responseBox.innerHTML = '<span class="mut small">Обращение к ИИ...</span>';
 
     try {
-        // 1. Сбор данных игрока из вашего приложения (engine())
+        // 1. Сбор данных
         const eng = engine();
         const stats = playerStats(playerId, eng);
+        const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId).slice(-10).reverse();
         
-        // Получаем последние 10 сыгранных матчей текущего игрока
-        const history = eng.played.filter(function(m){
-            return m.playerAId === playerId || m.playerBId === playerId;
-        }).slice(-10).reverse();
-        
-        let matchSummary = "";
-        if (history.length > 0) {
-            matchSummary = history.map(function(m) {
-                const isA = m.playerAId === playerId;
-                const oppId = isA ? m.playerBId : m.playerAId;
-                const oppName = pNameRaw(oppId);
-                const sc = setsCountArr(m.sets);
-                const result = matchWinner(m) === playerId ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
-                return `${result} против ${oppName} (${sc[0]}:${sc[1]})`;
-            }).join('\n');
-        } else {
-            matchSummary = "Нет истории сыгранных матчей.";
-        }
+        let matchSummary = history.length ? history.map(m => {
+            const isA = m.playerAId === playerId;
+            const oppName = pNameRaw(isA ? m.playerBId : m.playerAId);
+            const sc = setsCountArr(m.sets);
+            const res = matchWinner(m) === playerId ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
+            return `${res} против ${oppName} (${sc[0]}:${sc[1]})`;
+        }).join('\n') : "Нет истории матчей.";
 
         const rating = eng.R[playerId];
         const winRate = stats.winp;
         const streak = stats.streak;
 
-        // 2. Формируем промпты для ИИ
-        const systemPrompt = `Ты - профессиональный тренер по настольному теннису с опытом работы в сборной России.
-Твоя задача: проанализировать статистику ученика клуба ТОП-СПИН и дать 3 конкретных совета по улучшению игры.
+        const systemPrompt = `Ты - тренер по настольному теннису. Дай 3 совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов.`;
+        const userContent = `Рейтинг: ${rating}. Винрейт: ${winRate}%. Серия: ${streak}. Последние игры:\n${matchSummary}`;
 
-ФОРМАТ ОТВЕТА (строго):
-1. 🔥 ТЕХНИКА: (Совет по ударам, стойке, подаче, основанный на счете сетов/мячей)
-2. 🧠 ТАКТИКА: (Совет по выбору соперников, игре в концовках, адаптации к стилю оппонентов)
-3. 💪 МЕНТАЛИТЕТ: (Совет по психологии, серии побед/поражений, уверенности)
-
-СТИЛЬ: Дружелюбный, мотивирующий, без воды. Максимум 150 слов всего.
-Используй эмодзи для структуры.`;
-
-        const userContent = `ДАННЫЕ ИГРОКА:
-- Текущий рейтинг (RTTF): ${rating}
-- Винрейт: ${winRate}% (${stats.w} побед / ${stats.l} поражений)
-- Серия: ${streak > 0 ? '+' + streak + ' побед подряд' : 'нет активной серии'}
-- Статистика мячей: выиграно ${stats.bw}, проиграно ${stats.bl}
-- Последние 10 матчей:
-${matchSummary}
-
-Проанализируй эти данные и дай советы.`;
-
-        // 3. Отправка запроса в Cloudflare Worker
-        const response = await fetch(WORKER_URL, {
+        // 2. Отправка запроса
+        // Используем trim() на всякий случай, чтобы убрать пробелы
+        const cleanUrl = WORKER_URL.trim().replace(/\/$/, ""); 
+        
+        const response = await fetch(cleanUrl, {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json" 
             },
             body: JSON.stringify({
-                model: "llama-3.1-8b-instant", // Модель, которую использует Groq за кулисами
+                model: "llama-3.1-8b-instant",
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: userContent }
@@ -945,31 +916,22 @@ ${matchSummary}
             })
         });
 
-        // Обработка ошибок сети и API
-        if (response.status === 404) {
-             throw new Error("Worker 404: Проверьте URL воркера в коде (должен быть без слэша в конце).");
-        }
-        
         if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`Ошибка API (${response.status}): ${errText.substring(0, 100)}...`);
+             throw new Error(`Ошибка сети: ${response.status}`);
         }
         
         const data = await response.json();
         
         if (data.error) throw new Error(data.error);
 
-        // 4. Вывод результата
-        // Ожидаем формат ответа OpenAI/Groq: { choices: [ { message: { content: "..." } } ] }
-        const aiText = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : "Не удалось получить ответ от ИИ.";
-        
-        responseBox.innerHTML = `<div style="white-space:pre-wrap; line-height:1.6;">${esc(aiText)}</div>`;
+        // 3. Вывод результата
+        const aiText = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : "Не удалось получить ответ.";
+        responseBox.innerHTML = `<div style="white-space:pre-wrap;">${esc(aiText)}</div>`;
 
     } catch (error) {
         console.error(error);
         responseBox.innerHTML = `<span style="color:var(--red)">❌ Ошибка агента:<br><small>${error.message}</small></span>`;
     } finally {
-        // Возвращаем кнопку в исходное состояние
         btn.disabled = false;
         btn.innerHTML = originalBtnText;
     }
