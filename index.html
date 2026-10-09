@@ -862,17 +862,10 @@ async function analyzeGameStyle(playerId) {
     const btn = document.querySelector('.ai-btn-analyze');
     const responseBox = document.getElementById('aiResponseBox');
     
-    // ⚠️ ЖЕСТКАЯ ФИКСАЦИЯ URL. 
-    // Убедитесь, что здесь стоит ТОЧНЫЙ адрес вашего воркера ts-agent-v3
-    let RAW_URL = "https://ts-agent-v3.styleman81.workers.dev";
-    
-    // Автоматическая очистка: удаляем пробелы по краям и ЛЮБОЙ слэш в самом конце
-    const WORKER_URL = RAW_URL.trim().replace(/\/$/, "");
+    // ⚠️ ПРОВЕРЬТЕ ЭТОТ АДРЕС! Он должен совпадать с адресом из Шага 2
+    const WORKER_URL = "https://ts-agent-v3.styleman81.workers.dev"; 
 
-    if (!btn || !responseBox) {
-        console.error("Кнопка или блок ответа не найдены");
-        return;
-    }
+    if (!btn || !responseBox) return;
 
     // UI Feedback
     const originalBtnText = btn.innerHTML;
@@ -882,39 +875,27 @@ async function analyzeGameStyle(playerId) {
     responseBox.innerHTML = '<span class="mut small">Подключение к ИИ...</span>';
 
     try {
-        // 1. Сбор данных игрока
+        // ... (код сбора статистики остается прежним) ...
         const eng = engine();
         const stats = playerStats(playerId, eng);
+        const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId).slice(-10).reverse();
         
-        // Берем последние 10 матчей
-        const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId)
-                                  .slice(-10)
-                                  .reverse();
-        
-        let matchSummary = "";
-        if (history.length > 0) {
-            matchSummary = history.map(m => {
-                const isA = m.playerAId === playerId;
-                const oppId = isA ? m.playerBId : m.playerAId;
-                const oppName = pNameRaw(oppId);
-                const sc = setsCountArr(m.sets);
-                const result = matchWinner(m) === playerId ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
-                return `${result} против ${oppName} (${sc[0]}:${sc[1]})`;
-            }).join('\n');
-        } else {
-            matchSummary = "Нет истории сыгранных матчей.";
-        }
+        let matchSummary = history.length ? history.map(m => {
+            const isA = m.playerAId === playerId;
+            const oppName = pNameRaw(isA ? m.playerBId : m.playerAId);
+            const sc = setsCountArr(m.sets);
+            const res = matchWinner(m) === playerId ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
+            return `${res} против ${oppName} (${sc[0]}:${sc[1]})`;
+        }).join('\n') : "Нет истории матчей.";
 
         const rating = eng.R[playerId];
         const winRate = stats.winp;
         const streak = stats.streak;
 
-        // 2. Промпт для ИИ
         const systemPrompt = `Ты - тренер по настольному теннису. Дай 3 совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов.`;
         const userContent = `Рейтинг: ${rating}. Винрейт: ${winRate}%. Серия: ${streak}. Последние игры:\n${matchSummary}`;
 
-        // 3. Отправка запроса
-        // Используем именно очищенный WORKER_URL
+        // Запрос к воркеру
         const response = await fetch(WORKER_URL, {
             method: "POST",
             headers: { 
@@ -931,25 +912,22 @@ async function analyzeGameStyle(playerId) {
             })
         });
 
-        // Детальная диагностика ошибки
         if (!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorBody.substring(0, 100)}...`);
+             const errBody = await response.text();
+             throw new Error(`Ошибка API (${response.status}): ${errBody.substring(0, 100)}...`);
         }
         
         const data = await response.json();
         
-        if (data.error) {
-             throw new Error(data.error.message || data.error);
-        }
+        if (data.error) throw new Error(data.error);
 
-        // 4. Вывод результата
+        // Вывод результата
         const aiText = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : "Не удалось получить ответ.";
         responseBox.innerHTML = `<div style="white-space:pre-wrap;">${esc(aiText)}</div>`;
 
     } catch (error) {
         console.error(error);
-        responseBox.innerHTML = `<span style="color:var(--red)">❌ Ошибка:<br><small>${error.message}</small></span>`;
+        responseBox.innerHTML = `<span style="color:var(--red)">❌ Ошибка агента:<br><small>${error.message}</small></span>`;
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalBtnText;
