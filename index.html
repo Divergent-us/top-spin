@@ -935,8 +935,11 @@ async function analyzeGameStyle(playerId) {
             headers: { 
                 "Content-Type": "application/json" 
             },
-            body: JSON.stringify(payload)
-        });
+         body: JSON.stringify({
+    messages: messagesArray, // <-- Это важно
+    temperature: 0.7,
+    max_tokens: 500
+});
 
         if (!response.ok) {
              const errBody = await response.text();
