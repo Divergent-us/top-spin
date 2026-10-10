@@ -852,38 +852,34 @@ if(el)dispatch(el);
 });
 if(document.getElementById('loginScreen').style.display==='none'){render();updateBadge();}
 })();
-// === НАСТРОЙКИ AGENT ===
-// ⚠️ ОБЯЗАТЕЛЬНО замените этот текст на ваш реальный ключ от Groq!
- 
-const GROQ_MODEL = "gemma2-9b-it";
+</script>
+// === КОНФИГУРАЦИЯ AGENT ===
+const GROQ_API_KEY = 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; // ⚠️ ЗАМЕНИТЕ НА РЕАЛЬНЫЙ КЛЮЧ
+const GROQ_MODEL = "llama-3.1-8b-instant";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 async function analyzeGameStyle(playerId) {
     const btn = document.querySelector('.ai-btn-analyze');
     const responseBox = document.getElementById('aiResponseBox');
     
-    // URL вашего воркера (убедитесь, что он правильный!)
-    const WORKER_URL = "https://ts-agent-v3.styleman81.workers.dev"; 
+    if (!GROQ_API_KEY || GROQ_API_KEY.includes("ВАШ")) {
+        alert("Ошибка: Не настроен API ключ Groq.\nЗайдите в код и замените переменную GROQ_API_KEY.");
+        return;
+    }
 
-    if (!btn || !responseBox) return;
-
-    // UI Feedback
-    const originalBtnText = btn.innerHTML;
+    // 1. UI Feedback
     btn.disabled = true;
-    btn.innerHTML = '<span class="ai-loading"></span> Анализ...';
+    btn.innerHTML = '<span class="ai-loading"></span> Анализ данных...';
     responseBox.style.display = 'block';
-    responseBox.innerHTML = '<span class="mut small">Формирую запрос к ИИ...</span>';
+    responseBox.innerHTML = '<span class="mut small">Агент изучает вашу историю матчей...</span>';
 
     try {
-        // 1. Сбор данных игрока
+        // 2. Сбор контекста из State
         const eng = engine();
         const stats = playerStats(playerId, eng);
+        const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId).slice(-10).reverse();
         
-        // Получаем последние 10 матчей
-        const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId)
-                                  .slice(-10)
-                                  .reverse();
-        
+        // Формируем текстовое описание для ИИ
         let matchSummary = "";
         if (history.length > 0) {
             matchSummary = history.map(m => {
@@ -902,34 +898,32 @@ async function analyzeGameStyle(playerId) {
         const winRate = stats.winp;
         const streak = stats.streak;
 
-        // 2. Формирование промптов (Строго текстовые строки!)
-        const systemPrompt = "Ты - профессиональный тренер по настольному теннису. Дай 3 конкретных совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов. Используй эмодзи.";
-        
-        const userContent = `Рейтинг: ${rating}. Винрейт: ${winRate}%. Серия: ${streak}. Последние игры:\n${matchSummary}`;
+        // 3. Промпт для ИИ (System Message)
+        const systemPrompt = `
+Ты - профессиональный тренер по настольному теннису с опытом работы в сборной России.
+Твоя задача: проанализировать статистику игрока клуба ТОП-СПИН и дать 3 конкретных совета по улучшению игры.
 
-        // 3. ЖЕСТКАЯ СБОРКА МАССИВА MESSAGES
-        // Убедимся, что каждый элемент имеет ТОЛЬКО role и content
-        const messagesArray = [
-            { 
-                role: "system", 
-                content: systemPrompt 
-            },
-            { 
-                role: "user", 
-                content: userContent 
-            }
-        ];
+ФОРМАТ ОТВЕТА (строго):
+1. 🔥 ТЕХНИКА: (Совет по ударам, стойке, подаче, основанный на счете сетов/мячей)
+2. 🧠 ТАКТИКА: (Совет по выбору соперников, игре в концовках, адаптации к стилю оппонентов)
+3. 💪 МЕНТАЛИТЕТ: (Совет по психологии, серии побед/поражений, уверенности)
 
-        // 4. Отправка запроса
-        const payload = {
-            messages: messagesArray,
-            temperature: 0.7,
-            max_tokens: 500
-            // Поле model НЕ передаем сюда, его подставит Cloudflare Worker
-        };
+СТИЛЬ: Дружелюбный, мотивирующий, без воды. Максимум 150 слов всего.
+Используй эмодзи для структуры.`;
 
-        console.log("Sending Payload:", JSON.stringify(payload)); // Для отладки
+        // 4. User Message с данными
+        const userContent = `
+ДАННЫЕ ИГРОКА:
+- Текущий рейтинг (RTTF): ${rating}
+- Винрейт: ${winRate}% (${stats.w} побед / ${stats.l} поражений)
+- Серия: ${streak > 0 ? '+' + streak + ' побед подряд' : 'нет активной серии'}
+- Статистика мячей: выиграно ${stats.bw}, проиграно ${stats.bl}
+- Последние 10 матчей:
+${matchSummary}
 
+Проанализируй эти данные и дай советы.`;
+
+        // 5. Запрос к API
         const response = await fetch(GROQ_URL, {
             method: "POST",
             headers: {
@@ -947,33 +941,22 @@ async function analyzeGameStyle(playerId) {
             })
         });
 
-        if (!response.ok) {
-             const errBody = await response.text();
-             throw new Error(`Ошибка API (${response.status}): ${errBody.substring(0, 200)}...`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const data = await response.json();
-        
-        if (data.error) throw new Error(data.error.message || data.error);
-
-        // 5. Вывод результата
-        // Проверяем структуру ответа от Groq/OpenAI
-        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-             throw new Error("Некорректный ответ от ИИ: " + JSON.stringify(data));
-        }
-
         const aiText = data.choices[0].message.content;
-        responseBox.innerHTML = `<div style="white-space:pre-wrap; line-height:1.6;">${esc(aiText)}</div>`;
+
+        // 6. Вывод результата
+        responseBox.innerHTML = `<div style="white-space:pre-wrap;">${esc(aiText)}</div>`;
 
     } catch (error) {
         console.error(error);
-        responseBox.innerHTML = `<span style="color:var(--red)">❌ Ошибка агента:<br><small>${error.message}</small></span>`;
+        responseBox.innerHTML = `<span style="color:var(--red)">❌ Ошибка связи с ИИ.<br>${error.message}</span>`;
     } finally {
+        // Reset Button
         btn.disabled = false;
-        btn.innerHTML = originalBtnText;
+        btn.innerHTML = '🧠 Проанализировать мою игру';
     }
 }
-</script>
-
 </body>
 </html>
