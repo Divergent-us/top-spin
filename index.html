@@ -865,7 +865,7 @@ async function analyzeGameStyle(playerId) {
     // ⚠️ ЗАМЕНИТЕ ЭТОТ URL НА ВАШ РЕАЛЬНЫЙ АДРЕС WORKER'A
     // Важно: Без слэша в конце!
     let rawUrl = "https://topspin-ai.styleman81.workers.dev";
-    let cleanUrl = new URL(rawUrl).origin;
+    
     // Автоматическая очистка URL от лишнего слэша на всякий случай
     WORKER_URL = WORKER_URL.trim().replace(/\/$/, ""); 
 
