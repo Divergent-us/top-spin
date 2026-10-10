@@ -862,7 +862,7 @@ async function analyzeGameStyle(playerId) {
     const btn = document.querySelector('.ai-btn-analyze');
     const responseBox = document.getElementById('aiResponseBox');
     
-    // ⚠️ ПРОВЕРЬТЕ ЭТОТ АДРЕС! Он должен совпадать с адресом из Шага 2
+    // URL вашего воркера (убедитесь, что он правильный!)
     const WORKER_URL = "https://ts-agent-v3.styleman81.workers.dev"; 
 
     if (!btn || !responseBox) return;
@@ -872,58 +872,89 @@ async function analyzeGameStyle(playerId) {
     btn.disabled = true;
     btn.innerHTML = '<span class="ai-loading"></span> Анализ...';
     responseBox.style.display = 'block';
-    responseBox.innerHTML = '<span class="mut small">Подключение к ИИ...</span>';
+    responseBox.innerHTML = '<span class="mut small">Формирую запрос к ИИ...</span>';
 
     try {
-        // ... (код сбора статистики остается прежним) ...
+        // 1. Сбор данных игрока
         const eng = engine();
         const stats = playerStats(playerId, eng);
-        const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId).slice(-10).reverse();
         
-        let matchSummary = history.length ? history.map(m => {
-            const isA = m.playerAId === playerId;
-            const oppName = pNameRaw(isA ? m.playerBId : m.playerAId);
-            const sc = setsCountArr(m.sets);
-            const res = matchWinner(m) === playerId ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
-            return `${res} против ${oppName} (${sc[0]}:${sc[1]})`;
-        }).join('\n') : "Нет истории матчей.";
+        // Получаем последние 10 матчей
+        const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId)
+                                  .slice(-10)
+                                  .reverse();
+        
+        let matchSummary = "";
+        if (history.length > 0) {
+            matchSummary = history.map(m => {
+                const isA = m.playerAId === playerId;
+                const oppId = isA ? m.playerBId : m.playerAId;
+                const oppName = pNameRaw(oppId);
+                const sc = setsCountArr(m.sets);
+                const result = matchWinner(m) === playerId ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
+                return `${result} против ${oppName} (${sc[0]}:${sc[1]})`;
+            }).join('\n');
+        } else {
+            matchSummary = "Нет истории сыгранных матчей.";
+        }
 
         const rating = eng.R[playerId];
         const winRate = stats.winp;
         const streak = stats.streak;
 
-        const systemPrompt = `Ты - тренер по настольному теннису. Дай 3 совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов.`;
+        // 2. Формирование промптов (Строго текстовые строки!)
+        const systemPrompt = "Ты - профессиональный тренер по настольному теннису. Дай 3 конкретных совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов. Используй эмодзи.";
+        
         const userContent = `Рейтинг: ${rating}. Винрейт: ${winRate}%. Серия: ${streak}. Последние игры:\n${matchSummary}`;
 
-        // Запрос к воркеру
+        // 3. ЖЕСТКАЯ СБОРКА МАССИВА MESSAGES
+        // Убедимся, что каждый элемент имеет ТОЛЬКО role и content
+        const messagesArray = [
+            { 
+                role: "system", 
+                content: systemPrompt 
+            },
+            { 
+                role: "user", 
+                content: userContent 
+            }
+        ];
+
+        // 4. Отправка запроса
+        const payload = {
+            messages: messagesArray,
+            temperature: 0.7,
+            max_tokens: 500
+            // Поле model НЕ передаем сюда, его подставит Cloudflare Worker
+        };
+
+        console.log("Sending Payload:", JSON.stringify(payload)); // Для отладки
+
         const response = await fetch(WORKER_URL, {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json" 
             },
-        body: JSON.stringify({
-    // model убрано, его выберет Cloudflare Worker автоматически
-    messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent }
-    ],
-    temperature: 0.7,
-    max_tokens: 500
-})
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
              const errBody = await response.text();
-             throw new Error(`Ошибка API (${response.status}): ${errBody.substring(0, 100)}...`);
+             throw new Error(`Ошибка API (${response.status}): ${errBody.substring(0, 200)}...`);
         }
         
         const data = await response.json();
         
-        if (data.error) throw new Error(data.error);
+        if (data.error) throw new Error(data.error.message || data.error);
 
-        // Вывод результата
-        const aiText = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : "Не удалось получить ответ.";
-        responseBox.innerHTML = `<div style="white-space:pre-wrap;">${esc(aiText)}</div>`;
+        // 5. Вывод результата
+        // Проверяем структуру ответа от Groq/OpenAI
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+             throw new Error("Некорректный ответ от ИИ: " + JSON.stringify(data));
+        }
+
+        const aiText = data.choices[0].message.content;
+        responseBox.innerHTML = `<div style="white-space:pre-wrap; line-height:1.6;">${esc(aiText)}</div>`;
 
     } catch (error) {
         console.error(error);
