@@ -902,7 +902,7 @@ async function analyzeGameStyle(playerId) {
                 "Content-Type": "application/json" 
             },
             body: JSON.stringify({
-                model: model: "llama-3.3-70b-versatile", // Или более легкая: "llama-3.2-3b-preview",
+                model: "llama-3.3-70b-versatile", // Или более легкая: "llama-3.2-3b-preview",
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: userContent }
