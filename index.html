@@ -862,16 +862,19 @@ async function analyzeGameStyle(playerId) {
     const btn = document.querySelector('.ai-btn-analyze');
     const responseBox = document.getElementById('aiResponseBox');
     
-    // ⚠️ ЗАМЕНИТЕ ЭТОТ URL НА ВАШ РЕАЛЬНЫЙ АДРЕС WORKER'A
-    // Важно: Без слэша в конце!
-    let rawUrl = "https://topspin-ai.styleman81.workers.dev";
+    // 1. ИСПОЛЬЗУЕМ let, А НЕ const (чтобы избежать ошибки Assignment to constant)
+    let rawWorkerUrl = "https://topspin-ai.styleman81.workers.dev"; // ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL, ЕСЛИ ОН ДРУГОЙ
+
+    // 2. ЖЕСТКАЯ ОЧИСТКА ОТ СЛЭША (гарантированно превращает любой URL в https://domain.com без слэша на конце)
+    let WORKER_URL = new URL(rawWorkerUrl).origin;
     
-    // Автоматическая очистка URL от лишнего слэша на всякий случай
-    WORKER_URL = WORKER_URL.trim().replace(/\/$/, ""); 
+    console.log("Отправка запроса на чистый URL:", WORKER_URL);
 
-    if (!btn || !responseBox) return;
+    if (!btn || !responseBox) {
+        console.error("Элементы интерфейса не найдены");
+        return;
+    }
 
-    // UI Feedback
     const originalBtnText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="ai-loading"></span> Анализ...';
@@ -879,49 +882,70 @@ async function analyzeGameStyle(playerId) {
     responseBox.innerHTML = '<span class="mut small">Обращение к ИИ...</span>';
 
     try {
-        // 1. Сбор данных (остается прежним)
+        // Сбор данных (ваш существующий код)
         const eng = engine();
         const stats = playerStats(playerId, eng);
         const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId).slice(-10).reverse();
         
-        let matchSummary = history.length ? history.map(m => {
-            const isA = m.playerAId === playerId;
-            const oppName = pNameRaw(isA ? m.playerBId : m.playerAId);
-            const sc = setsCountArr(m.sets);
-            const res = matchWinner(m) === playerId ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
-            return `${res} против ${oppName} (${sc[0]}:${sc[1]})`;
-        }).join('\n') : "Нет истории матчей.";
+        let matchSummary = "";
+        if (history.length > 0) {
+            matchSummary = history.map(m => {
+                const isA = m.playerAId === playerId;
+                const oppId = isA ? m.playerBId : m.playerAId;
+                const oppName = pNameRaw(oppId);
+                const sc = setsCountArr(m.sets);
+                const result = matchWinner(m) === playerId ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
+                return `${result} против ${oppName} (${sc[0]}:${sc[1]})`;
+            }).join('\n');
+        } else {
+            matchSummary = "Нет истории сыгранных матчей.";
+        }
 
         const rating = eng.R[playerId];
         const winRate = stats.winp;
         const streak = stats.streak;
 
-        const systemPrompt = `Ты - тренер по настольному теннису. Дай 3 совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов.`;
+        // Формирование промптов
+        const systemPrompt = "Ты - профессиональный тренер по настольному теннису. Дай 3 конкретных совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов. Используй эмодзи.";
         const userContent = `Рейтинг: ${rating}. Винрейт: ${winRate}%. Серия: ${streak}. Последние игры:\n${matchSummary}`;
 
-        // 2. Отправка запроса
-        onst response = await fetch(cleanUrl, {
-    method: "POST",
-    headers: { 
-        "Content-Type": "application/json" 
-    },
-    body: JSON.stringify({
-        messages: messagesArray,
-        temperature: 0.7,
-        max_tokens: 500
-    })
-});
+        // ИДЕАЛЬНАЯ СТРУКТУРА СООБЩЕНИЙ (без лишних полей, чтобы не было ошибки 400)
+        const messagesArray = [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent }
+        ];
+
+        // Отправка запроса
+        const response = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json" 
+            },
+            body: JSON.stringify({
+                messages: messagesArray,
+                temperature: 0.7,
+                max_tokens: 500
+            })
+        });
+
         if (!response.ok) {
-             throw new Error(`Ошибка сети: ${response.status}`);
+            const errBody = await response.text();
+            throw new Error(`Ошибка API (${response.status}): ${errBody.substring(0, 200)}...`);
         }
         
         const data = await response.json();
         
-        if (data.error) throw new Error(data.error);
+        if (data.error) {
+            throw new Error(data.error.message || JSON.stringify(data.error));
+        }
 
-        // 3. Вывод результата
-        const aiText = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : "Не удалось получить ответ.";
-        responseBox.innerHTML = `<div style="white-space:pre-wrap;">${esc(aiText)}</div>`;
+        // Вывод результата
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error("Некорректный ответ от ИИ: " + JSON.stringify(data));
+        }
+
+        const aiText = data.choices[0].message.content;
+        responseBox.innerHTML = `<div style="white-space:pre-wrap; line-height:1.6;">${esc(aiText)}</div>`;
 
     } catch (error) {
         console.error(error);
