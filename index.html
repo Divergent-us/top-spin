@@ -901,15 +901,15 @@ async function analyzeGameStyle(playerId) {
             headers: { 
                 "Content-Type": "application/json" 
             },
-            body: JSON.stringify({
-                model: "llama-3.1-8b-instant", // Или более легкая: "llama-3.2-3b-preview",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userContent }
-                ],
-                temperature: 0.7,
-                max_tokens: 500
-            })
+        body: JSON.stringify({
+    // model убрано, его выберет Cloudflare Worker автоматически
+    messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent }
+    ],
+    temperature: 0.7,
+    max_tokens: 500
+})
         });
 
         if (!response.ok) {
