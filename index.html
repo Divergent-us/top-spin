@@ -1011,7 +1011,7 @@ async function analyzeGameStyle(playerId) {
 
       setStatus("Регистрирую service worker...");
 
-      const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+      const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" });
       await navigator.serviceWorker.ready;
 
       setStatus("Получаю FCM-токен...");
