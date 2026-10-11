@@ -956,6 +956,104 @@ async function analyzeGameStyle(playerId) {
     }
 }
 </script>
+<div id="pushTestBox" style="margin:12px;padding:12px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(0,0,0,.18);color:#fff;">
+  <strong>Тест Push-уведомлений</strong>
+  <div style="margin-top:8px;">
+    <button id="enablePushBtn" style="padding:8px 12px;border-radius:8px;border:0;background:#22c55e;color:#052e16;font-weight:700;cursor:pointer;">
+      Включить push-тест
+    </button>
+  </div>
+  <div id="pushStatus" style="margin-top:8px;font-size:13px;opacity:.85;">
+    Статус: не проверено
+  </div>
+</div>
 
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBBfeMqpQe5D6-W3QzuX6Q5PHZdmm5FtD8",
+    projectId: "top-spin-3ef01",
+    messagingSenderId: "939869281373",
+    appId: "1:939869281373:web:5b7fe5304f7052489401b4"
+  };
+
+  const vapidKey = "BPAhmTURjIIPH1IbbQ-SsCj5Q7fefOnaft_7zk9Nly_8KsTixze5OCkKUW86s2OveyZrnRDg22ywQvjXaiR04Ug";
+
+  const btn = document.getElementById("enablePushBtn");
+  const statusEl = document.getElementById("pushStatus");
+
+  function setStatus(text) {
+    if (statusEl) statusEl.textContent = "Статус: " + text;
+  }
+
+  async function enablePush() {
+    try {
+      if (!("serviceWorker" in navigator)) {
+        setStatus("Браузер не поддерживает Service Worker");
+        return;
+      }
+
+      if (!("Notification" in window)) {
+        setStatus("Браузер не поддерживает уведомления");
+        return;
+      }
+
+      setStatus("Запрашиваю разрешение...");
+
+      const permission = await Notification.requestPermission();
+
+      if (permission !== "granted") {
+        setStatus("Разрешение на уведомления не выдано");
+        return;
+      }
+
+      setStatus("Регистрирую service worker...");
+
+      const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+      await navigator.serviceWorker.ready;
+
+      setStatus("Получаю FCM-токен...");
+
+      const app = initializeApp(firebaseConfig, "topspinPushTestApp");
+      const messaging = getMessaging(app);
+
+      const token = await getToken(messaging, {
+        vapidKey,
+        serviceWorkerRegistration: registration
+      });
+
+      if (!token) {
+        setStatus("Токен не получен. Открой консоль браузера");
+        return;
+      }
+
+      console.log("FCM TOKEN:", token);
+
+      setStatus("Push работает. Токен получен. Полное значение токена — в консоли браузера.");
+
+      onMessage(messaging, (payload) => {
+        console.log("[firebase-messaging] Foreground message:", payload);
+
+        const title = payload.notification?.title || "TopSpin";
+        const body = payload.notification?.body || "Новое уведомление";
+
+        if (Notification.permission === "granted") {
+          new Notification(title, {
+            body,
+            data: payload.data || {}
+          });
+        }
+      });
+
+    } catch (error) {
+      console.error("Push test error:", error);
+      setStatus("Ошибка: " + (error?.message || error));
+    }
+  }
+
+  btn?.addEventListener("click", enablePush);
+</script>
 </body>
 </html>
