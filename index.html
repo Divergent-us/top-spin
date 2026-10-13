@@ -316,71 +316,20 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 .cup-img,.cup-svg{max-height:320px}
 .award-emoji{font-size:64px}
 }
-/* --- Стили для ИИ Тренера --- */
-.ai-trainer-card {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border: 1px solid #3aa9ff;
-    border-radius: var(--rad);
-    padding: 16px;
-    margin-top: 16px;
-    position: relative;
-    overflow: hidden;
-}
-.ai-trainer-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    font-family: var(--fd);
-    color: var(--blue);
-    font-size: 14px;
-    letter-spacing: 0.05em;
-}
-.ai-icon {
-    width: 24px;
-    height: 24px;
-    fill: currentColor;
-}
-.ai-btn-analyze {
-    width: 100%;
-    background: rgba(58, 169, 255, 0.15);
-    border: 1px solid rgba(58, 169, 255, 0.4);
-    color: var(--blue);
-    font-weight: 700;
-    padding: 12px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-}
-.ai-btn-analyze:hover {
-    background: rgba(58, 169, 255, 0.25);
-    transform: translateY(-1px);
-}
-.ai-response-area {
-    margin-top: 12px;
-    background: rgba(0,0,0,0.2);
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--txt);
-    display: none; /* Скрыто по умолчанию */
-    white-space: pre-wrap;
-}
-.ai-loading {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border: 2px solid transparent;
-    border-top-color: var(--blue);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+.ai-trainer-card{background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid #3aa9ff;border-radius:var(--rad);padding:16px;margin-top:16px;position:relative;overflow:hidden}
+.ai-trainer-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-family:var(--fd);color:var(--blue);font-size:14px;letter-spacing:0.05em}
+.ai-icon{width:24px;height:24px;fill:currentColor}
+.ai-btn-analyze{width:100%;background:rgba(58,169,255,0.15);border:1px solid rgba(58,169,255,0.4);color:var(--blue);font-weight:700;padding:12px;border-radius:10px;cursor:pointer;transition:all 0.2s;display:flex;justify-content:center;align-items:center;gap:8px}
+.ai-btn-analyze:hover{background:rgba(58,169,255,0.25);transform:translateY(-1px)}
+.ai-response-area{margin-top:12px;background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;font-size:13px;line-height:1.5;color:var(--txt);display:none;white-space:pre-wrap}
+.ai-loading{display:inline-block;width:14px;height:14px;border:2px solid transparent;border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.push-enable-card{background:linear-gradient(135deg,rgba(65,224,141,.12),rgba(58,169,255,.08));border:1px solid rgba(65,224,141,.4);border-radius:var(--rad);padding:14px;margin-top:14px;display:flex;align-items:center;gap:12px}
+.push-enable-card .pe-ico{flex:none;width:42px;height:42px;border-radius:50%;background:rgba(65,224,141,.18);border:1px solid rgba(65,224,141,.5);display:flex;align-items:center;justify-content:center;font-size:20px}
+.push-enable-card .pe-body{flex:1;min-width:0}
+.push-enable-card .pe-title{font-weight:800;font-size:14px;margin-bottom:2px}
+.push-enable-card .pe-sub{font-size:11.5px;color:var(--mut);line-height:1.4}
+.push-enable-card .pe-btn{flex:none}
 </style>
 </head>
 <body>
@@ -396,8 +345,8 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 <div class="login-title">ТОП-СПИН</div>
 <div class="login-sub">Центр турниров по настольному теннису</div>
 <div class="login-mode">
-<button type="button" class="btn ghost" id="modePlayerBtn" onclick="showPhoneStep()"> Игрок</button>
-<button type="button" class="btn ghost" id="modeAdminBtn" onclick="showAdminStep()"> Админ</button>
+<button type="button" class="btn ghost" id="modePlayerBtn" onclick="showPhoneStep()">Игрок</button>
+<button type="button" class="btn ghost" id="modeAdminBtn" onclick="showAdminStep()">Админ</button>
 </div>
 <div class="login-step active" id="loginStepPhone">
 <label class="login-label">Номер телефона</label>
@@ -450,26 +399,39 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 <div id="toast-root"></div>
 <div id="lightbox"><img id="lightboxImg" alt=""></div>
 <script>
+/* ============================================================
+   ТОП-СПИН v4 — с отдельной веткой trainings и push-уведомлениями
+   ============================================================ */
 var _mem={},_lsOk=false;try{localStorage.setItem('__t','1');localStorage.removeItem('__t');_lsOk=true;}catch(e){}
 function lsGet(k){try{if(_lsOk)return localStorage.getItem(k);}catch(e){}return _mem[k]||null;}
 function lsSet(k,v){try{if(_lsOk)localStorage.setItem(k,v);}catch(e){}_mem[k]=v;}
-var LS_KEY='topspin_v3',BAK_KEY='topspin_auto_backup',DEF_SET={startRating:1000,kFactor:32};
+var LS_KEY='topspin_v4',BAK_KEY='topspin_auto_backup',DEF_SET={startRating:1000,kFactor:32};
 var MAX_SETS=20;
 var firebaseConfig={apiKey:"AIzaSyBBfeMqpQe5D6-W3QzuX6Q5PHZdmm5FtD8",authDomain:"top-spin-3ef01.firebaseapp.com",databaseURL:"https://top-spin-3ef01-default-rtdb.europe-west1.firebasedatabase.app",projectId:"top-spin-3ef01",storageBucket:"top-spin-3ef01.firebasestorage.app",messagingSenderId:"939869281373",appId:"1:939869281373:web:5b7fe5304f7052489401b4",measurementId:"G-WC9JD17E9N"};
 var firebaseApp=null,dbRef=null,authRef=null,firebaseUser=null,isSyncingFromFirebase=false,currentUser=null,isAdminMode=false,booted=false;
 var MSGS=[],msgRef=null,BOOT_TS=Date.now(),__openChatPhone=null,__returnTo=null,__bgRaf=null;
 var PRESENCE={},presRef=null,presTimer=null;
+var TRAIN_REF=null,TRAIN_BOOT=false;
+var FCM_TOKEN=null,FCM_MSG=null;
 var SVG_GEAR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 function bellSVG(on){return on?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><line x1="4" y1="4" x2="20" y2="20"/></svg>';}
 function initFirebase(){try{firebaseApp=firebase.initializeApp(firebaseConfig);dbRef=firebase.database().ref('topspin/data');authRef=firebase.auth();return true;}catch(e){return false;}}
-function norm(s){s=s||{};s.settings=Object.assign({},DEF_SET,s.settings||{});s.players=s.players||[];s.tournaments=s.tournaments||[];s.matches=s.matches||[];s.awards=s.awards||[];s.playerCodes=s.playerCodes||{};s.trainings=s.trainings||[];s.deletedTrainings=s.deletedTrainings||[];return s;}
+function norm(s){s=s||{};s.settings=Object.assign({},DEF_SET,s.settings||{});s.players=s.players||[];s.tournaments=s.tournaments||[];s.matches=s.matches||[];s.awards=s.awards||[];s.playerCodes=s.playerCodes||{};s.trainings=s.trainings||[];return s;}
 function weight(s){if(!s)return 0;return (s.players?s.players.length:0)*3+(s.tournaments?s.tournaments.length:0)*2+(s.matches?s.matches.length:0)+(s.awards?s.awards.length:0);}
 function loadState(){try{var s=JSON.parse(lsGet(LS_KEY));if(s)return norm(s);}catch(e){}return null;}
 function loadBackup(){try{var s=JSON.parse(lsGet(BAK_KEY));if(s)return norm(s);}catch(e){}return null;}
 var state=loadState()||loadBackup()||norm({});
 var ui={tab:'arena',tournamentId:null,playerId:null,ratingSort:'r'};
 var __cb=null,__emo='',__rmid=null,__pendingAvatar=null;
-function save(){try{if(state.players&&state.players.length){lsSet(BAK_KEY,JSON.stringify(state));}lsSet(LS_KEY,JSON.stringify(state));saveToFirebase();}catch(e){}}
+var __saveTimer=null;
+function save(){
+  try{
+    if(state.players&&state.players.length){lsSet(BAK_KEY,JSON.stringify(state));}
+    lsSet(LS_KEY,JSON.stringify(state));
+  }catch(e){}
+  clearTimeout(__saveTimer);
+  __saveTimer=setTimeout(saveToFirebase,500);
+}
 function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);}
 var $=function(s){return document.querySelector(s);};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
@@ -570,21 +532,15 @@ dbRef.child('players').set(state.players).catch(function(){updateSyncIndicator('
 dbRef.child('tournaments').set(state.tournaments).catch(function(){updateSyncIndicator('error');});
 dbRef.child('matches').set(state.matches).catch(function(){updateSyncIndicator('error');});
 dbRef.child('awards').set(state.awards).catch(function(){updateSyncIndicator('error');});
-dbRef.child('trainings').set(state.trainings||[]).catch(function(){});
-dbRef.child('deletedTrainings').set(state.deletedTrainings||[]).catch(function(){});
 if(isAdminMode){dbRef.child('settings').set(state.settings).catch(function(){});dbRef.child('playerCodes').set(state.playerCodes).catch(function(){});}
 updateSyncIndicator('synced');
 }catch(e){updateSyncIndicator('error');}}
 function loadFromFirebase(){if(!dbRef){booted=true;return;}var local=loadState();var backup=loadBackup();dbRef.once('value').then(function(snap){var data=snap.val();var remote=(data&&data.players)?norm(data):null;var cands=[local,backup,remote].filter(function(x){return !!x;});var chosen=null;for(var i=0;i<cands.length;i++){if(!chosen||weight(cands[i])>weight(chosen))chosen=cands[i];}
-if(chosen&&weight(chosen)>0){state=chosen;migratePlayers();cleanTrainings();lsSet(LS_KEY,JSON.stringify(state));lsSet(BAK_KEY,JSON.stringify(state));if(isAdminMode){saveToFirebase();}render();toast('История восстановлена: игроков '+state.players.length+', турниров '+state.tournaments.length,'ok');}
+if(chosen&&weight(chosen)>0){state=chosen;migratePlayers();lsSet(LS_KEY,JSON.stringify(state));lsSet(BAK_KEY,JSON.stringify(state));if(isAdminMode){saveToFirebase();}render();toast('История восстановлена: игроков '+state.players.length+', турниров '+state.tournaments.length,'ok');}
 booted=true;updateSyncIndicator('synced');updateBadge();}).catch(function(){booted=true;updateSyncIndicator('error');});}
 function setupFirebaseListener(){if(!dbRef)return;dbRef.on('value',function(snap){if(isSyncingFromFirebase||!booted)return;var data=snap.val();if(data&&data.players){var remote=norm(data);if(JSON.stringify(remote)!==JSON.stringify(state)){isSyncingFromFirebase=true;
-var locTr=(state.trainings||[]).slice();var locDel=(state.deletedTrainings||[]).slice();
-state=remote;migratePlayers();
-state.deletedTrainings=unionArr(state.deletedTrainings,locDel);
-state.trainings=(state.trainings||[]).filter(function(tr){return state.deletedTrainings.indexOf(tr.id)<0;});
-locTr.forEach(function(tr){if(state.deletedTrainings.indexOf(tr.id)<0){var ex=state.trainings.find(function(x){return x.id===tr.id;});if(!ex){state.trainings.push(tr);}else{ex.participantIds=unionArr(ex.participantIds,tr.participantIds);}}});
-cleanTrainings();
+state.players=remote.players;state.tournaments=remote.tournaments;state.matches=remote.matches;state.awards=remote.awards;state.settings=remote.settings;state.playerCodes=remote.playerCodes;
+migratePlayers();
 lsSet(LS_KEY,JSON.stringify(state));lsSet(BAK_KEY,JSON.stringify(state));render();updateBadge();updateSyncIndicator('synced');setTimeout(function(){isSyncingFromFirebase=false;},100);}}});}
 function startMs(t){return new Date((t.date||'2000-01-01')+'T'+(t.startTime||'00:00')+':00').getTime();}
 function endMs(t){return new Date((t.date||'2000-01-01')+'T'+(t.endTime||'23:59')+':00').getTime();}
@@ -592,7 +548,6 @@ function effEndMs(t){return endMs(t);}
 function trainingMs(tr){return new Date((tr.date||'2000-01-01')+'T'+(tr.time||'00:00')+':00').getTime();}
 function unionArr(a,b){var r=(a||[]).slice();(b||[]).forEach(function(x){if(r.indexOf(x)<0)r.push(x);});return r;}
 function trainingIsPast(tr){var t=trainingMs(tr);if(!t||isNaN(t))return true;return t<(Date.now()-14*86400000);}
-function cleanTrainings(){state.trainings=state.trainings||[];state.deletedTrainings=state.deletedTrainings||[];var del={};state.deletedTrainings.forEach(function(id){del[id]=1;});state.trainings=state.trainings.filter(function(tr){return !del[tr.id]&&!trainingIsPast(tr);});}
 function autoCloseCheck(){if(!booted)return;var now=Date.now();var changed=false;state.tournaments.forEach(function(t){if(!t.closed&&t.date&&t.endTime){if(now>effEndMs(t)){t.closed=true;changed=true;}}});if(changed){save();render();}}
 function setsCountArr(sets){var a=0,b=0;for(var i=0;i<sets.length;i++){if(sets[i][0]>sets[i][1])a++;else if(sets[i][1]>sets[i][0])b++;}return[a,b];}
 function ballsCountArr(sets){var a=0,b=0;for(var i=0;i<sets.length;i++){a+=sets[i][0];b+=sets[i][1];}return[a,b];}
@@ -647,90 +602,38 @@ function viewTournamentDetail(tid){var t=tourn(tid);if(!t){ui.tournamentId=null;
 var ptags=ids.map(function(pid){var p=player(pid);return p?'<span class="ptag">'+miniAvatar(p)+'<span>'+esc(p.firstName+' '+p.lastName)+'</span></span>':'';}).join('');
 html+='<div class="sec-title">Записаны на турнир <span class="cnt">'+ids.length+'</span></div><div class="card rise"><div class="ptags">'+(ptags||'<span class="mut small">Пока никто не записан</span>')+'</div></div>';
 if(stnd.length){html+='<div class="sec-title">Таблица турнира</div><div class="card rise" style="overflow-x:auto"><table class="tbl"><tr><th>#</th><th>Игрок</th><th>В-П</th><th>Сеты</th><th>Мячи</th></tr>';stnd.forEach(function(r,i){var p=player(r.pid);html+='<tr><td class="rk">'+(i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+r.pid+'">'+esc(p?p.firstName+' '+p.lastName:'—')+'</td><td>'+r.w+'В-'+r.l+'П</td><td>'+r.sw+':'+r.sl+'</td><td>'+r.bw+':'+r.bl+'</td></tr>';});html+='</table></div>';}return html;}
-function newTraining(){
-  var my=getPlayerByPhone(myPhone());
-  if(!my){toast('Сначала создайте профиль','err');return;}
-  var today=new Date().toISOString().slice(0,10);
-  modal('<button class="modal-x" data-action="closeModal">✕</button><h3>🏓 Буду тренироваться</h3>'+
-    '<div class="mut small">Создайте заявку на тренировку. Другие игроки увидят её на Арене и смогут записаться.</div>'+
-    '<label>Дата</label><input id="trD" type="date" value="'+today+'">'+
-    '<label>Время</label><input id="trT" type="time" value="18:00">'+
-    '<div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button>'+
-    '<button class="btn primary" data-action="confirmTraining">Создать</button></div>');
-}
-
-function confirmTraining(){
-  var my=getPlayerByPhone(myPhone());
-  if(!my){toast('Сначала создайте профиль','err');return;}
-  var d=(document.querySelector('#trD')?document.querySelector('#trD').value:'');
-  var tm=(document.querySelector('#trT')?document.querySelector('#trT').value:'');
-  if(!d||!tm){toast('Укажите дату и время','err');return;}
-  state.trainings=state.trainings||[];
-  state.trainings.push({
-    id:uid(),
-    date:d,
-    time:tm,
-    creatorId:my.id,
-    participantIds:[my.id],
-    createdBy:myName()
-  });
-  save();closeModal();render();
-  toast('Тренировка создана! Другие игроки увидят её.','ok');
-}
-
-function joinTraining(id){
-  var my=getPlayerByPhone(myPhone());
-  if(!my){toast('Сначала создайте профиль','err');return;}
-  var tr=(state.trainings||[]).find(function(x){return x.id===id;});
-  if(!tr)return;
-  if((tr.participantIds||[]).indexOf(my.id)>=0){toast('Вы уже записаны','err');return;}
-  tr.participantIds=tr.participantIds||[];
-  tr.participantIds.push(my.id);
-  save();render();
-  toast('Вы записаны на тренировку!','ok');
-}
-
-function leaveTraining(id){var my=getPlayerByPhone(myPhone());if(!my&&!isAdminMode){toast('Профиль не найден','err');return;}
-var idx=(state.trainings||[]).findIndex(function(x){return x.id===id;});if(idx<0)return;
-var tr=state.trainings[idx];
-var isCreator=(my&&(tr.creatorId===my.id||((tr.creatorPhone||'')!==''&&tr.creatorPhone===myPhone())));
-if(my){tr.participantIds=(tr.participantIds||[]).filter(function(x){return x!==my.id;});}
-var remove=isCreator||isAdminMode||(tr.participantIds||[]).length===0;
-if(remove){if((state.deletedTrainings||[]).indexOf(tr.id)<0){state.deletedTrainings=state.deletedTrainings||[];state.deletedTrainings.push(tr.id);}state.trainings.splice(idx,1);toast('Тренировка удалена у всех игроков');}
-else{toast('Вы отписались от тренировки');}
-cleanTrainings();save();render();}
+/* ===== ТРЕНИРОВКИ: работа через отдельный Firebase-ref ===== */
+function initTrainings(){if(!dbRef){TRAIN_BOOT=true;return;}TRAIN_REF=firebase.database().ref('topspin/trainings');TRAIN_REF.on('value',function(snap){var data=snap.val()||{};var arr=[];Object.keys(data).forEach(function(k){var tr=data[k];if(!tr)return;tr.id=k;arr.push(tr);});arr=arr.filter(function(tr){return !trainingIsPast(tr);});state.trainings=arr;lsSet(LS_KEY,JSON.stringify(state));TRAIN_BOOT=true;if(currentUser&&(ui.tab==='arena'||ui.tab==='profile')){render();}});}
+function trainingWrite(tr,cb){if(!TRAIN_REF){toast('Нет связи с сервером','err');return;}TRAIN_REF.child(tr.id).set(tr).then(function(){if(cb)cb();}).catch(function(e){toast('Ошибка сохранения','err');});}
+function trainingDelete(id,cb){if(!TRAIN_REF)return;TRAIN_REF.child(id).remove().then(function(){if(cb)cb();}).catch(function(){});}
+function newTraining(){var my=getPlayerByPhone(myPhone());if(!my){toast('Сначала создайте профиль','err');return;}var today=new Date().toISOString().slice(0,10);modal('<button class="modal-x" data-action="closeModal">✕</button><h3>🏓 Буду тренироваться</h3><div class="mut small">Создайте заявку. Все игроки и админ увидят её мгновенно.</div><label>Дата</label><input id="trD" type="date" value="'+today+'"><label>Время</label><input id="trT" type="time" value="18:00"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="confirmTraining">Создать</button></div>');}
+function confirmTraining(){var my=getPlayerByPhone(myPhone());if(!my){toast('Сначала создайте профиль','err');return;}var d=(document.querySelector('#trD')?document.querySelector('#trD').value:'');var tm=(document.querySelector('#trT')?document.querySelector('#trT').value:'');if(!d||!tm){toast('Укажите дату и время','err');return;}if(!TRAIN_REF){toast('Нет связи с сервером','err');return;}var tr={date:d,time:tm,creatorId:my.id,creatorPhone:myPhone(),participantIds:[my.id],createdBy:myName(),createdAt:Date.now()};var newKey=TRAIN_REF.push().key;tr.id=newKey;trainingWrite(tr,function(){closeModal();toast('Тренировка создана! Все увидят её.','ok');if(FCM_MSG){try{FCM_MSG=null;}catch(e){}}});}
+function joinTraining(id){var my=getPlayerByPhone(myPhone());if(!my){toast('Сначала создайте профиль','err');return;}var tr=(state.trainings||[]).find(function(x){return x.id===id;});if(!tr){toast('Тренировка не найдена','err');return;}if((tr.participantIds||[]).indexOf(my.id)>=0){toast('Вы уже записаны','err');return;}tr.participantIds=tr.participantIds||[];tr.participantIds.push(my.id);trainingWrite(tr,function(){toast('Вы записаны!','ok');});}
+function leaveTraining(id){var my=getPlayerByPhone(myPhone());if(!my&&!isAdminMode){toast('Профиль не найден','err');return;}var tr=(state.trainings||[]).find(function(x){return x.id===id;});if(!tr)return;var isCreator=(my&&(tr.creatorId===my.id||((tr.creatorPhone||'')!==''&&tr.creatorPhone===myPhone())));if(my){tr.participantIds=(tr.participantIds||[]).filter(function(x){return x!==my.id;});}var remove=isCreator||isAdminMode||(tr.participantIds||[]).length===0;if(remove){trainingDelete(id,function(){toast('Тренировка удалена у всех');});}else{trainingWrite(tr,function(){toast('Вы отписались');});}}
+/* ===== ЧЕЛЛЕНДЖИ ===== */
 function weekRange(){var d=new Date();var day=(d.getDay()+6)%7;var s=new Date(d);s.setHours(0,0,0,0);s.setDate(s.getDate()-day);var e=new Date(s.getTime()+7*86400000-1);return[s.getTime(),e.getTime()];}
 function computeChallenges(pid){var wr=weekRange();var ws=wr[0],we=wr[1];var ms=state.matches.filter(function(m){var tm=mKey(m);return tm>=ws&&tm<=we&&m.sets&&m.sets.length&&matchWinner(m)&&(m.playerAId===pid||m.playerBId===pid);}).sort(function(a,b){return mKey(a)-mKey(b);});var played=ms.length;var wins=ms.filter(function(m){return matchWinner(m)===pid;}).length;var opp={};ms.forEach(function(m){var o=(m.playerAId===pid)?m.playerBId:m.playerAId;opp[o]=1;});var oppCount=Object.keys(opp).length;var streak=0,maxStreak=0;ms.forEach(function(m){if(matchWinner(m)===pid){streak++;if(streak>maxStreak)maxStreak=streak;}else{streak=0;}});var trJoined=(state.trainings||[]).filter(function(tr){var t=trainingMs(tr);return t>=ws&&t<=we&&(tr.participantIds||[]).indexOf(pid)>=0;}).length;return[{emoji:'🏓',title:'Сыграть 5 матчей за неделю',goal:5,cur:played},{emoji:'🏆',title:'Одержать 3 победы',goal:3,cur:wins},{emoji:'🤝',title:'Сразиться с 3 разными соперниками',goal:3,cur:oppCount},{emoji:'🔥',title:'Серия из 2 побед подряд',goal:2,cur:maxStreak},{emoji:'🎽',title:'Попасть на 1 тренировку',goal:1,cur:trJoined}];}
-function challengesHtml(pid){var wr=weekRange();var list=computeChallenges(pid);var doneCount=list.filter(function(c){return c.cur>=c.goal;}).length;var cards=list.map(function(c){var done=c.cur>=c.goal;var pct=Math.min(100,Math.round((c.cur/c.goal)*100));return'<div class="ch-card'+(done?' done':'')+'"><div class="ch-emoji">'+c.emoji+'</div><div class="ch-body"><div class="ch-title">'+esc(c.title)+'</div><div class="ch-sub">'+(done?'Выполнено ✓':Math.min(c.cur,c.goal)+' / '+c.goal)+'</div><div class="ch-bar"><span style="width:'+pct+'%"></span></div></div><div class="ch-emoji">'+(done?'🎉':'⏳')+'</div></div>';}).join('');var endDate=new Date(wr[1]+1);var endStr=endDate.getDate()+' '+MONF[endDate.getMonth()];return'<div class="sec-title">🎯 Челленджи недели <span class="cnt">'+doneCount+'/'+list.length+'</span></div><div class="card rise"><div class="ch-head"><span>До конца недели ('+endStr+'):</span></div><div class="ch-list">'+cards+'</div><div class="mut small" style="margin-top:10px">Челленджи обновляются каждый понедельник. Выполняйте, чтобы получать уважение клуба! 💪</div></div>';}
+function challengesHtml(pid){var wr=weekRange();var list=computeChallenges(pid);var doneCount=list.filter(function(c){return c.cur>=c.goal;}).length;var cards=list.map(function(c){var done=c.cur>=c.goal;var pct=Math.min(100,Math.round((c.cur/c.goal)*100));return'<div class="ch-card'+(done?' done':'')+'"><div class="ch-emoji">'+c.emoji+'</div><div class="ch-body"><div class="ch-title">'+esc(c.title)+'</div><div class="ch-sub">'+(done?'Выполнено ✓':Math.min(c.cur,c.goal)+' / '+c.goal)+'</div><div class="ch-bar"><span style="width:'+pct+'%"></span></div></div><div class="ch-emoji">'+(done?'🎉':'⏳')+'</div></div>';}).join('');var endDate=new Date(wr[1]+1);var endStr=endDate.getDate()+' '+MONF[endDate.getMonth()];return'<div class="sec-title">🎯 Челленджи недели <span class="cnt">'+doneCount+'/'+list.length+'</span></div><div class="card rise"><div class="ch-head"><span>До конца недели ('+endStr+'):</span></div><div class="ch-list">'+cards+'</div><div class="mut small" style="margin-top:10px">Челленджи обновляются каждый понедельник.</div></div>';}
+/* ===== АРЕНА ===== */
 function viewArena(eng){if(!state.players.length){return'<div class="sec-title">Арена</div><div class="empty rise"><div class="big">🏓</div><b>Добро пожаловать в ТОП-СПИН!</b>'+(isAdminMode?'<div class="row-actions"><button class="btn primary" data-action="newPlayer">Добавить игроков</button><button class="btn ghost" data-action="demo">Демо-данные</button></div>':'')+'</div>';}var ts=[].concat(state.tournaments).sort(function(a,b){return new Date((a.date||'2000-01-01')+'T'+(a.startTime||'00:00'))-new Date((b.date||'2000-01-01')+'T'+(b.startTime||'00:00'));});var live=ts.filter(function(t){return tStatus(t)==='live';});var upcoming=ts.filter(function(t){return tStatus(t)==='upcoming';});var hero=live[0]||upcoming[0]||null;var heroHtml='';if(hero){var st=tStatus(hero);var parts=(hero.playerIds||[]).length;var mAll=state.matches.filter(function(m){return m.tournamentId===hero.id;});var mDone=mAll.filter(function(m){return matchWinner(m);}).length;var countHtml='';if(st==='live'){countHtml='<div class="count-lbl">осталось играть до '+(hero.endTime||'—')+'</div><div class="count cd" data-end="'+hero.date+'T'+(hero.endTime||'23:59')+':00">--:--:--</div>';}else if(st==='upcoming'){countHtml='<div class="count-lbl" style="color:var(--lime)">до старта турнира</div><div class="count cd" data-end="'+hero.date+'T'+(hero.startTime||'10:00')+':00">--:--:--</div>';}else{var stnd0=standings(hero.id);var winCard='';if(stnd0.length){var wp=player(stnd0[0].pid);winCard='<button class="winner-card" data-action="openPlayer" data-id="'+stnd0[0].pid+'">'+avatarHtml(wp,'reg')+'<span>Победил: '+esc(pNameRaw(stnd0[0].pid))+'</span></button>';}countHtml='<div class="count-lbl">турнир завершён</div><div class="count" style="font-size:20px;color:var(--green)">ТУРНИР ЗАВЕРШЁН</div>'+winCard;}var timeLine='<div class="start-time">🕑 с '+(hero.startTime||'—')+' до '+(hero.endTime||'—')+'</div>';var openBtn='<button class="btn ghost" data-action="openTournament" data-id="'+hero.id+'">Открыть турнир</button>';var heroPt=(hero.playerIds||[]).map(function(pid){var p=player(pid);return p?'<span class="ptag">'+miniAvatar(p)+'<span>'+esc(p.firstName+' '+p.lastName)+'</span></span>':'';}).join('');var heroList=heroPt?'<div class="ptags" style="margin-top:8px">'+heroPt+'</div>':'';heroHtml='<div class="card hero rise"><div class="kick">'+statusChip(hero)+'<span class="small">'+fmtDate(hero.date)+'</span></div><h2>'+esc(hero.name)+'</h2><div class="meta"><span>👥 '+parts+' уч.</span><span>🏓 '+mDone+'/'+mAll.length+'</span></div>'+timeLine+heroList+'<div class="hero-body"><div class="hb-left">'+countHtml+'</div><div class="cup-wrap"><img class="cup-img" src="cup.png" alt="">'+CUP_SVG+'</div></div><div class="row-actions">'+registerBtnHtml(hero,false)+openBtn+(st==='live'&&isAdminMode?'<button class="btn ghost" data-action="closeNow" data-id="'+hero.id+'">Завершить досрочно</button>':'')+'</div></div>';}else{heroHtml='<div class="card hero rise"><div class="kick"><span class="status-dot upcoming"></span><span class="small">нет активных</span></div><h2>Нет активных турниров</h2><div class="meta">Прошедшие турниры смотрите во вкладке «Турниры»</div><div class="hero-body"><div class="hb-left"><div class="count-lbl">кубок соревнований</div></div><div class="cup-wrap"><img class="cup-img" src="cup.png" alt="">'+CUP_SVG+'</div></div>'+(isAdminMode?'<div class="row-actions"><button class="btn primary" data-action="newTournament">＋ Новый турнир</button></div>':'')+'</div>';}var upList=upcoming.filter(function(t){return t!==hero;});var upHtml='';if(upList.length){upHtml='<div class="sec-title">Предстоящие турниры <span class="cnt">'+upList.length+'</span></div><div class="list">'+upList.map(function(t){var d=new Date((t.date||'2000-01-01')+'T12:00');return'<div class="trow rise" style="cursor:default"><div class="datebox"><b>'+d.getDate()+'</b><span>'+MON[d.getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span class="start-lbl">старт '+(t.startTime||'—')+'</span><span class="cd-inline cd" data-end="'+t.date+'T'+(t.startTime||'10:00')+':00">--:--:--</span></div></div><div style="display:flex;flex-direction:column;gap:6px;flex:none">'+registerBtnHtml(t,true)+'<button class="btn ghost sm" data-action="viewParticipants" data-id="'+t.id+'">Открыть</button></div></div>';}).join('')+'</div>';}
-var trains=(state.trainings||[]).filter(function(tr){var ts2=new Date((tr.date||'2000-01-01')+'T'+(tr.time||'00:00')).getTime();return ts2>=(Date.now()-3600000);}).sort(function(a,b){return trainingMs(a)-trainingMs(b);});var trainHtml='<div class="sec-title">🏓 Тренировки <span class="cnt">'+trains.length+'</span></div>'+(currentUser?'<button class="btn primary sm" data-action="newTraining" style="margin-bottom:8px">＋ Буду тренироваться</button>':'')+'<div class="train-list">'+(trains.length?trains.map(function(tr){var my=getPlayerByPhone(myPhone());var joined=my&&(tr.participantIds||[]).indexOf(my.id)>=0;var isCreator=my&&(tr.creatorId===my.id);var d=new Date((tr.date||'2000-01-01')+'T12:00');var day=d.getDate();var mon=MON[d.getMonth()];var btnHtml='';if(!my){btnHtml='<button class="btn primary sm" data-action="createProfile">Создать профиль</button>';}else if(isCreator){btnHtml='<button class="btn danger sm" data-action="leaveTraining" data-id="'+tr.id+'">Отменить</button>';}else if(joined){btnHtml='<button class="btn ghost sm" data-action="leaveTraining" data-id="'+tr.id+'">Отписаться</button>';}else{btnHtml='<button class="btn primary sm" data-action="joinTraining" data-id="'+tr.id+'">Записаться</button>';}var pts=(tr.participantIds||[]).map(function(pid){var p=player(pid);return p?'<span class="tc-name">👤 '+esc(p.firstName+' '+p.lastName)+'</span>':'';}).join('');return'<div class="train-card rise"><div class="tc-left"><div class="tc-time">🏓 '+day+' '+mon+' · '+(tr.time||'')+'</div><div class="tc-sub">Орг: '+esc(tr.createdBy||'')+' · 👥 '+(tr.participantIds||[]).length+'</div>'+(pts?'<div class="tc-names">'+pts+'</div>':'')+'</div><div class="tc-btn">'+btnHtml+'</div></div>';}).join(''):'<div class="mut small" style="padding:8px">Пока нет тренировок. Создайте первую!</div>')+'</div>';
+var trains=(state.trainings||[]).filter(function(tr){var ts2=trainingMs(tr);return ts2>=(Date.now()-3600000);}).sort(function(a,b){return trainingMs(a)-trainingMs(b);});var trainHtml='<div class="sec-title">🏓 Тренировки <span class="cnt">'+trains.length+'</span></div>'+(currentUser?'<button class="btn primary sm" data-action="newTraining" style="margin-bottom:8px">＋ Буду тренироваться</button>':'')+'<div class="train-list">'+(trains.length?trains.map(function(tr){var my=getPlayerByPhone(myPhone());var joined=my&&(tr.participantIds||[]).indexOf(my.id)>=0;var isCreator=my&&(tr.creatorId===my.id);var d=new Date((tr.date||'2000-01-01')+'T12:00');var day=d.getDate();var mon=MON[d.getMonth()];var btnHtml='';if(!my){btnHtml='<button class="btn primary sm" data-action="createProfile">Создать профиль</button>';}else if(isCreator){btnHtml='<button class="btn danger sm" data-action="leaveTraining" data-id="'+tr.id+'">Отменить</button>';}else if(joined){btnHtml='<button class="btn ghost sm" data-action="leaveTraining" data-id="'+tr.id+'">Отписаться</button>';}else{btnHtml='<button class="btn primary sm" data-action="joinTraining" data-id="'+tr.id+'">Записаться</button>';}var pts=(tr.participantIds||[]).map(function(pid){var p=player(pid);return p?'<span class="tc-name">👤 '+esc(p.firstName+' '+p.lastName)+'</span>':'';}).join('');return'<div class="train-card rise"><div class="tc-left"><div class="tc-time">🏓 '+day+' '+mon+' · '+(tr.time||'')+'</div><div class="tc-sub">Орг: '+esc(tr.createdBy||'')+' · 👥 '+(tr.participantIds||[]).length+'</div>'+(pts?'<div class="tc-names">'+pts+'</div>':'')+'</div><div class="tc-btn">'+btnHtml+'</div></div>';}).join(''):'<div class="mut small" style="padding:8px">Пока нет тренировок. Создайте первую!</div>')+'</div>';
 var sorted=[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});var podium=sorted.slice(0,3);var podHtml='';if(podium.length>=2){var cell=function(p,i){var medal=i===0?'🥇':(i===1?'🥈':'');var aw=playerAwards(p.id);var awHtml=aw.length?'<div class="pod-awards">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'';return'<div class="pod p'+(i+1)+'">'+podPhoto(p)+'<div class="bar">'+eng.R[p.id]+'</div><div class="pod-name">'+medal+' '+esc(p.firstName)+' '+esc(p.lastName)+'</div>'+awHtml+'</div>';};var order=[cell(podium[1],1),cell(podium[0],0)];if(podium[2])order.push(cell(podium[2],2));podHtml='<div class="sec-title">Подиум рейтинга</div><div class="card rise"><div class="podium">'+order.join('')+'</div></div>';}var last5=eng.played.slice(-5).reverse();var movHtml='';if(last5.length){movHtml='<div class="sec-title">История матчей</div><div class="card rise">'+last5.map(function(m){var w=matchWinner(m);var wN=w===m.playerAId?pName(m.playerAId):pName(m.playerBId);var lN=w===m.playerAId?pName(m.playerBId):pName(m.playerAId);var dd=Math.abs(eng.mdelta[m.id].A);var t=tourn(m.tournamentId);return'<div class="mover mini"><div style="flex:1"><b>'+wN+'</b> — <b>'+lN+'</b><small>'+(t?esc(t.name):'')+' '+setsCountArr(m.sets).join(':')+'</small></div><span class="delta up">+'+dd+'</span><span class="delta down">-'+dd+'</span></div>';}).join('')+'</div>';}return heroHtml+upHtml+trainHtml+'<div class="counters rise"><div class="counter"><b>'+state.players.length+'</b><span>игроков</span></div><div class="counter"><b>'+state.tournaments.length+'</b><span>турниров</span></div><div class="counter"><b>'+eng.played.length+'</b><span>матчей</span></div><div class="counter"><b>'+state.awards.length+'</b><span>наград</span></div></div>'+podHtml+movHtml;}
 function viewTournaments(){var ts=[].concat(state.tournaments).sort(function(a,b){return new Date((b.date||'2000-01-01')+'T'+(b.endTime||'23:59'))-new Date((a.date||'2000-01-01')+'T'+(a.endTime||'23:59'));});var rows=ts.map(function(t,i){var d=new Date((t.date||'2000-01-01')+'T12:00');var mAll=state.matches.filter(function(m){return m.tournamentId===t.id;});var mDone=mAll.filter(function(m){return matchWinner(m);}).length;var day=d.getDate();var mon=MON[d.getMonth()];var ids=t.playerIds||[];var winHtml='';if(tStatus(t)==='finished'){var stnd=standings(t.id);if(stnd.length){winHtml=winPhoto(player(stnd[0].pid));}}
 return'<button class="trow rise" data-action="openTournament" data-id="'+t.id+'"><div class="datebox"><b>'+day+'</b><span>'+mon+'</span></div><div class="info"><div class="nm" style="display:flex;align-items:center;gap:8px"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(t.name)+'</span>'+winHtml+'</div><div class="sub">'+statusChip(t)+'<span>👥 '+ids.length+' запис.</span><span>🏓 '+mDone+'/'+mAll.length+'</span></div></div>'+I_CHEV+'</button>';}).join('');return'<div class="sec-title">Турниры <span class="cnt">'+ts.length+'</span></div>'+(isAdminMode?'<button class="btn primary w100" data-action="newTournament" style="margin-bottom:12px">＋ Новый турнир</button>':'')+'<div class="list">'+(rows||'<div class="empty"><div class="big">📅</div><b>Пока нет турниров</b></div>')+'</div>';}
-function viewPlayers(eng){var rows=[].concat(state.players).sort(function(a,b){return(a.firstName+a.lastName).localeCompare(b.firstName+b.lastName,'ru');}).map(function(p,i){var st=playerStats(p.id,eng);var last=eng.last[p.id];return'<div class="prow rise" data-search="'+(p.firstName+' '+p.lastName).toLowerCase()+'" data-action="openPlayer" data-id="'+p.id+'">'+avatarHtml(p)+'<div class="info"><div class="nm">'+esc(p.firstName)+' '+esc(p.lastName)+'</div><div class="sub">'+(st.m?(st.w+' побед / '+st.m+' матчей'):'ещё не играл(а)')+'</div></div><button class="iconbtn" data-action="chatWith" data-id="'+p.id+'" style="flex:none;font-size:16px">💬</button><div class="rat">'+eng.R[p.id]+'</div>'+I_CHEV+'</div>';}).join('');return'<div class="sec-title">Игроки <span class="cnt">'+state.players.length+'</span></div><div style="display:flex;gap:8px;margin-bottom:12px"><input id="pSearch" placeholder="Поиск игрока…">'+(isAdminMode?'<button class="btn primary" style="flex:none" data-action="newPlayer">＋</button>':'')+'</div><div class="list" id="pList">'+(rows||'<div class="empty"><div class="big">👥</div><b>Список пуст</b></div>')+'</div>';}
+function viewPlayers(eng){var rows=[].concat(state.players).sort(function(a,b){return(a.firstName+a.lastName).localeCompare(b.firstName+b.lastName,'ru');}).map(function(p,i){var st=playerStats(p.id,eng);return'<div class="prow rise" data-search="'+(p.firstName+' '+p.lastName).toLowerCase()+'" data-action="openPlayer" data-id="'+p.id+'">'+avatarHtml(p)+'<div class="info"><div class="nm">'+esc(p.firstName)+' '+esc(p.lastName)+'</div><div class="sub">'+(st.m?(st.w+' побед / '+st.m+' матчей'):'ещё не играл(а)')+'</div></div><button class="iconbtn" data-action="chatWith" data-id="'+p.id+'" style="flex:none;font-size:16px">💬</button><div class="rat">'+eng.R[p.id]+'</div>'+I_CHEV+'</div>';}).join('');return'<div class="sec-title">Игроки <span class="cnt">'+state.players.length+'</span></div><div style="display:flex;gap:8px;margin-bottom:12px"><input id="pSearch" placeholder="Поиск игрока…">'+(isAdminMode?'<button class="btn primary" style="flex:none" data-action="newPlayer">＋</button>':'')+'</div><div class="list" id="pList">'+(rows||'<div class="empty"><div class="big">👥</div><b>Список пуст</b></div>')+'</div>';}
 function filterPlayers(q){q=q.toLowerCase();document.querySelectorAll('#pList .prow').forEach(function(r){r.style.display=r.dataset.search.indexOf(q)>=0?'':'none';});}
-function viewPlayer(pid){var p=player(pid);if(!p){ui.playerId=null;return viewPlayers(engine());}var eng=engine();var st=playerStats(pid,eng);var last=eng.last[pid];var history=eng.played.filter(function(m){return m.playerAId===pid||m.playerBId===pid;}).slice(-10).reverse();var aw=playerAwards(pid);return'<button class="backlink" data-action="backPlayers">← Все игроки</button><div class="card hero rise" style="display:flex;gap:14px;align-items:center">'+avatarHtml(p,'lg')+'<div style="flex:1"><h2 style="font-size:19px">'+esc(p.firstName)+' '+esc(p.lastName)+'</h2><div style="font-size:27px;color:var(--ball)">'+eng.R[pid]+'</div>'+(aw.length?'<div style="font-size:18px;margin-top:4px">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'')+'</div>'+(isAdminMode?'<button class="iconbtn" data-action="editPlayer" data-id="'+pid+'">✎</button>':'')+'</div><div class="row-actions"><button class="btn ghost w100" data-action="chatWith" data-id="'+pid+'">💬 Написать сообщение</button></div><div class="card rise" style="margin-top:12px"><div class="count-lbl" style="margin-bottom:6px">График успеха (динамика рейтинга)</div><div style="color:var(--green)">'+spark(eng.hist[pid],300,60)+'</div></div><div class="sec-title">Статистика</div><div class="statgrid rise"><div class="stat"><b>'+st.m+'</b><span>матчей</span></div><div class="stat"><b>'+st.w+'</b><span>побед</span></div><div class="stat"><b>'+st.l+'</b><span>поражений</span></div><div class="stat"><b>'+st.winp+'%</b><span>% побед</span></div><div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div><div class="stat"><b>'+st.bw+':'+st.bl+'</b><span>мячи</span></div></div>'+(aw.length?'<div class="sec-title">Награды игрока</div><div class="rise">'+aw.map(function(a){return awRowHtml(a);}).join('')+'</div>':'')+(history.length?'<div class="sec-title">Последние матчи</div><div class="card rise">'+history.map(function(m){var isA=m.playerAId===pid;var opp=isA?m.playerBId:m.playerAId;var w=matchWinner(m)===pid;var sc=setsCountArr(m.sets);return'<div class="mover"><div style="flex:1"><b>'+pName(opp)+'</b><small>'+(isA?sc[0]+':'+sc[1]:sc[1]+':'+sc[0])+'</small></div><span class="delta '+(w?'up':'down')+'">'+(w?'W':'L')+'</span></div>';}).join('')+'</div>':'');}
-function viewRating(eng){var list=[].concat(state.players);if(ui.ratingSort==='w')list.sort(function(a,b){return playerStats(b.id,eng).w-playerStats(a.id,eng).w||eng.R[b.id]-eng.R[a.id];});else list.sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});var rows=list.map(function(p,i){var st=playerStats(p.id,eng);var aw=playerAwards(p.id);var awStr=aw.length?' '+aw.map(function(a){return a.emoji;}).join(''):'';return'<tr><td class="rk">'+(i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+p.id+'">'+esc(p.firstName)+' '+esc(p.lastName)+awStr+'</td><td>'+st.w+'В–'+st.l+'П</td><td style="text-align:right">'+eng.R[p.id]+'</td></tr>';}).join('');return'<div class="sec-title">Рейтинг игроков</div><div class="seg"><button class="'+(ui.ratingSort==='r'?'on':'')+'" data-action="sortR">По рейтингу</button><button class="'+(ui.ratingSort==='w'?'on':'')+'" data-action="sortW">По победам</button></div><div class="card rise" style="overflow-x:auto">'+(rows?'<table class="tbl"><tr><th>#</th><th>Игрок</th><th>В-П</th><th style="text-align:right">рейтинг</th></tr>'+rows+'</table>':'<div class="empty"><b>Рейтинг пуст</b></div>')+'</div>'+(isAdminMode?'<div class="row-actions"><button class="btn ghost" data-action="exportRatingCSV">Excel</button><button class="btn ghost" data-action="exportRatingPDF">PDF</button></div>':'')+'<div class="mut small" style="margin-top:10px">Рейтинг по правилам RTTF: дельта=[(100−(Rпоб−Rпор))/10]×k×D; k по среднему рейтингу турнира, D по разнице сетов; новички (≤5 турниров): D=1, k=1/0.5.</div>';}
+function viewPlayer(pid){var p=player(pid);if(!p){ui.playerId=null;return viewPlayers(engine());}var eng=engine();var st=playerStats(pid,eng);var history=eng.played.filter(function(m){return m.playerAId===pid||m.playerBId===pid;}).slice(-10).reverse();var aw=playerAwards(pid);return'<button class="backlink" data-action="backPlayers">← Все игроки</button><div class="card hero rise" style="display:flex;gap:14px;align-items:center">'+avatarHtml(p,'lg')+'<div style="flex:1"><h2 style="font-size:19px">'+esc(p.firstName)+' '+esc(p.lastName)+'</h2><div style="font-size:27px;color:var(--ball)">'+eng.R[pid]+'</div>'+(aw.length?'<div style="font-size:18px;margin-top:4px">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'')+'</div>'+(isAdminMode?'<button class="iconbtn" data-action="editPlayer" data-id="'+pid+'">✎</button>':'')+'</div><div class="row-actions"><button class="btn ghost w100" data-action="chatWith" data-id="'+pid+'">💬 Написать сообщение</button></div><div class="card rise" style="margin-top:12px"><div class="count-lbl" style="margin-bottom:6px">График успеха (динамика рейтинга)</div><div style="color:var(--green)">'+spark(eng.hist[pid],300,60)+'</div></div><div class="sec-title">Статистика</div><div class="statgrid rise"><div class="stat"><b>'+st.m+'</b><span>матчей</span></div><div class="stat"><b>'+st.w+'</b><span>побед</span></div><div class="stat"><b>'+st.l+'</b><span>поражений</span></div><div class="stat"><b>'+st.winp+'%</b><span>% побед</span></div><div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div><div class="stat"><b>'+st.bw+':'+st.bl+'</b><span>мячи</span></div></div>'+(aw.length?'<div class="sec-title">Награды игрока</div><div class="rise">'+aw.map(function(a){return awRowHtml(a);}).join('')+'</div>':'')+(history.length?'<div class="sec-title">Последние матчи</div><div class="card rise">'+history.map(function(m){var isA=m.playerAId===pid;var opp=isA?m.playerBId:m.playerAId;var w=matchWinner(m)===pid;var sc=setsCountArr(m.sets);return'<div class="mover"><div style="flex:1"><b>'+pName(opp)+'</b><small>'+(isA?sc[0]+':'+sc[1]:sc[1]+':'+sc[0])+'</small></div><span class="delta '+(w?'up':'down')+'">'+(w?'W':'L')+'</span></div>';}).join('')+'</div>':'');}
+function viewRating(eng){var list=[].concat(state.players);if(ui.ratingSort==='w')list.sort(function(a,b){return playerStats(b.id,eng).w-playerStats(a.id,eng).w||eng.R[b.id]-eng.R[a.id];});else list.sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});var rows=list.map(function(p,i){var st=playerStats(p.id,eng);var aw=playerAwards(p.id);var awStr=aw.length?' '+aw.map(function(a){return a.emoji;}).join(''):'';return'<tr><td class="rk">'+(i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+p.id+'">'+esc(p.firstName)+' '+esc(p.lastName)+awStr+'</td><td>'+st.w+'В–'+st.l+'П</td><td style="text-align:right">'+eng.R[p.id]+'</td></tr>';}).join('');return'<div class="sec-title">Рейтинг игроков</div><div class="seg"><button class="'+(ui.ratingSort==='r'?'on':'')+'" data-action="sortR">По рейтингу</button><button class="'+(ui.ratingSort==='w'?'on':'')+'" data-action="sortW">По победам</button></div><div class="card rise" style="overflow-x:auto">'+(rows?'<table class="tbl"><tr><th>#</th><th>Игрок</th><th>В-П</th><th style="text-align:right">рейтинг</th></tr>'+rows+'</table>':'<div class="empty"><b>Рейтинг пуст</b></div>')+'</div>'+(isAdminMode?'<div class="row-actions"><button class="btn ghost" data-action="exportRatingCSV">Excel</button><button class="btn ghost" data-action="exportRatingPDF">PDF</button></div>':'')+'<div class="mut small" style="margin-top:10px">Рейтинг по правилам RTTF: дельта=[(100−(Rпоб−Rпор))/10]×k×D.</div>';}
 function awRowHtml(a){var p=player(a.playerId);var mc=a.emoji==='🥇'?'g':a.emoji==='🥈'?'s':a.emoji==='🥉'?'b':a.emoji==='💎'?'d':'';return'<div class="award-card '+mc+'"><div class="award-emoji">'+a.emoji+'</div><div class="award-mid">'+avatarHtml(p,'reg')+'<div class="award-info"><div class="award-title">'+esc(a.title)+'</div><div class="award-name">'+esc(p?p.firstName+' '+p.lastName:'—')+'</div><div class="award-sub">'+((a.tournamentId&&tourn(a.tournamentId))?esc(tourn(a.tournamentId).name):'вне турнира')+' • '+fmtDate(a.date)+'</div></div></div>'+(isAdminMode?'<button class="iconbtn del" data-action="delAward" data-id="'+a.id+'">✕</button>':'')+'</div>';}
 function viewAwards(){var list=[].concat(state.awards).sort(function(a,b){return String(b.date||'').localeCompare(String(a.date||''));});var cards=list.map(function(a){return awRowHtml(a);}).join('');return'<div class="sec-title">Награды <span class="cnt">'+state.awards.length+'</span></div>'+(isAdminMode?'<button class="btn primary w100" data-action="newAward" style="margin-bottom:13px">Вручить награду</button>':'')+(cards?'<div class="rise">'+cards+'</div>':'<div class="empty"><div class="big">🏆</div><b>Наград пока нет</b></div>');}
+function pushCardHtml(){try{if(!('Notification' in window))return'';if(!('serviceWorker' in navigator))return'';if(Notification.permission==='granted'&&FCM_TOKEN){return'';}return'<div class="push-enable-card"><div class="pe-ico">🔔</div><div class="pe-body"><div class="pe-title">Включить уведомления</div><div class="pe-sub">Получайте push о новых тренировках, сообщениях и старте турниров</div></div><div class="pe-btn"><button class="btn primary sm" data-action="enablePush">Включить</button></div></div>';}catch(e){return'';}}
 function viewProfile(){var eng=engine();var myPlayer=getPlayerByPhone(myPhone());var un=unreadCount();if(!myPlayer){return'<div class="sec-title">Мой кабинет</div><div class="empty rise"><div class="big">👤</div><b>Профиль не найден</b><div class="row-actions"><button class="btn primary" data-action="createProfile">Создать профиль</button></div></div>';}var st=playerStats(myPlayer.id,eng);var myTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)!==-1;});var myUpcoming=myTournaments.filter(function(t){return tStatus(t)!=='finished';});var myPast=myTournaments.filter(function(t){return tStatus(t)==='finished';});var availableTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)===-1&&tStatus(t)!=='finished';});var myTrainings=(state.trainings||[]).filter(function(tr){return (tr.participantIds||[]).indexOf(myPlayer.id)>=0&&trainingMs(tr)>=Date.now()-3600000;});var aw=playerAwards(myPlayer.id);var html='<div class="sec-title">Мой кабинет</div><div class="profile-card rise">'+avatarHtml(myPlayer,'xl')+'<div class="profile-info"><div class="profile-name">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div><div class="profile-phone">'+(currentUser?currentUser.phone:'')+'</div><div class="profile-rating-num">'+eng.R[myPlayer.id]+'</div>'+(aw.length?'<div style="font-size:18px;margin-top:4px">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'')+'</div><button class="iconbtn" data-action="editMyProfile">✎</button></div>';
+html+=pushCardHtml();
 html+=challengesHtml(myPlayer.id);
 html+='<div class="row-actions"><button class="btn ghost w100 '+(un?'msg-alert':'')+'" data-action="inbox">💬 '+(un?('Вам новое сообщение ('+un+')'):'Сообщения')+'</button></div>';
 html+='<div class="row-actions"><button class="btn primary w100" data-action="newTraining">＋ Буду тренироваться</button></div>';
 html+='<div class="card rise" style="margin-top:12px"><div class="count-lbl" style="margin-bottom:6px">График успеха (динамика рейтинга)</div><div style="color:var(--green)">'+spark(eng.hist[myPlayer.id],300,60)+'</div></div>';
-// === ДОБАВЬТЕ ЭТОТ БЛОК НИЖЕ ===
-html += '<div class="ai-trainer-card">' +
-        '   <div class="ai-trainer-header">' +
-        '       <svg class="ai-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' +
-        '       ЛИЧНЫЙ ИИ-ТРЕНЕР' +
-        '   </div>' +
-        '   <button class="ai-btn-analyze" onclick="analyzeGameStyle(\'' + myPlayer.id + '\')">' +
-        '       🧠 Проанализировать мою игру' +
-        '   </button>' +
-        '   <div id="aiResponseBox" class="ai-response-area"></div>' +
-        '</div>';
-// ================================
-
+html+='<div class="ai-trainer-card"><div class="ai-trainer-header"><svg class="ai-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>ЛИЧНЫЙ ИИ-ТРЕНЕР</div><button class="ai-btn-analyze" onclick="analyzeGameStyle(\'' + myPlayer.id + '\')">🧠 Проанализировать мою игру</button><div id="aiResponseBox" class="ai-response-area"></div></div>';
 if(myTrainings.length){html+='<div class="sec-title">Мои тренировки <span class="cnt">'+myTrainings.length+'</span></div><div class="train-list">'+myTrainings.sort(function(a,b){return trainingMs(a)-trainingMs(b);}).map(function(tr){var d=new Date((tr.date||'2000-01-01')+'T12:00');var day=d.getDate();var mon=MON[d.getMonth()];var pts=(tr.participantIds||[]).map(function(pid){var p=player(pid);return p?'<span class="tc-name">👤 '+esc(p.firstName+' '+p.lastName)+'</span>':'';}).join('');return'<div class="train-card rise"><div class="tc-left"><div class="tc-time">🏓 '+day+' '+mon+' · '+(tr.time||'')+'</div><div class="tc-sub">Орг: '+esc(tr.createdBy||'')+' · 👥 '+(tr.participantIds||[]).length+'</div>'+(pts?'<div class="tc-names">'+pts+'</div>':'')+'</div></div>';}).join('')+'</div>';}
 if(myUpcoming.length){html+='<div class="sec-title">Мои турниры (активные) <span class="cnt">'+myUpcoming.length+'</span></div><div class="list">';myUpcoming.forEach(function(t){html+='<div class="trow rise" style="cursor:default"><div class="datebox"><b>'+new Date((t.date||'2000-01-01')+'T12:00').getDate()+'</b><span>'+MON[new Date((t.date||'2000-01-01')+'T12:00').getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span class="start-lbl">старт '+(t.startTime||'—')+'</span></div></div><div style="display:flex;flex-direction:column;gap:6px;flex:none"><button class="btn danger sm" data-action="unregisterFromTournament" data-tid="'+t.id+'">Отписаться</button><button class="btn ghost sm" data-action="viewParticipants" data-id="'+t.id+'">Открыть</button></div></div>';});html+='</div>';}
 if(myPast.length){html+='<div class="sec-title">История моих турниров <span class="cnt">'+myPast.length+'</span></div><div class="list">';myPast.forEach(function(t){var stnd=standings(t.id);var place=stnd.findIndex(function(r){return r.pid===myPlayer.id;})+1;html+='<button class="trow rise" data-action="openTournament" data-id="'+t.id+'"><div class="datebox"><b>'+new Date((t.date||'2000-01-01')+'T12:00').getDate()+'</b><span>'+MON[new Date((t.date||'2000-01-01')+'T12:00').getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span>'+(place?('место: '+place):'участник')+'</span></div></div>'+I_CHEV+'</button>';});html+='</div>';}
@@ -752,7 +655,7 @@ function openAppearanceModal(){var ct=document.body.classList.contains('light')?
 function setTheme(theme){if(theme==='light'){document.body.classList.add('light');lsSet('theme','light');}else{document.body.classList.remove('light');lsSet('theme','dark');}closeModal();render();}
 function setFontSize(size){if(size==='big'){document.body.classList.add('big-font');lsSet('fontSize','big');}else{document.body.classList.remove('big-font');lsSet('fontSize','normal');}closeModal();render();}
 function toggleSound(){var cur=lsGet('soundEnabled')!=='false';lsSet('soundEnabled',cur?'false':'true');openAppearanceModal();}
-function settingsModal(){if(isAdminMode){modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Настройки</h3><div class="settings-info">Админ: '+esc(currentUser?currentUser.email:'')+' | Старт='+state.settings.startRating+' | Рейтинг: RTTF</div><label>Стартовый рейтинг</label><input id="setR" type="number" value="'+state.settings.startRating+'"><div class="row-actions"><button class="btn primary" data-action="saveSettings">Сохранить</button></div><div class="row-actions"><button class="btn ghost" data-action="managePlayerCodes">Коды игроков</button><button class="btn ghost" data-action="openAppearance">Оформление</button></div><div class="row-actions"><button class="btn ghost" data-action="exportRatingPDF">Рейтинг PDF</button><button class="btn ghost" data-action="exportAllData">Бэкап</button></div><div class="row-actions"><button class="btn ghost" data-action="importData">Импорт</button><button class="btn ghost" data-action="demo">Демо</button></div><input type="file" id="impFile" accept=".json" style="display:none" onchange="importFile(this)"><div class="row-actions"><button class="btn danger" data-action="resetAll">Сбросить всё</button></div><div class="row-actions"><button class="btn danger w100" data-action="logout">Выйти</button></div>');}else{modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Настройки</h3><div class="settings-info">'+esc(currentUser?(currentUser.phone||currentUser.email):'')+'</div><div class="row-actions"><button class="btn ghost w100" data-action="openAppearance">Оформление</button></div><div class="row-actions"><button class="btn danger w100" data-action="logout">Выйти</button></div>');}}
+function settingsModal(){if(isAdminMode){modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Настройки</h3><div class="settings-info">Админ: '+esc(currentUser?currentUser.email:'')+' | Старт='+state.settings.startRating+' | RTTF</div><label>Стартовый рейтинг</label><input id="setR" type="number" value="'+state.settings.startRating+'"><div class="row-actions"><button class="btn primary" data-action="saveSettings">Сохранить</button></div><div class="row-actions"><button class="btn ghost" data-action="managePlayerCodes">Коды игроков</button><button class="btn ghost" data-action="openAppearance">Оформление</button></div><div class="row-actions"><button class="btn ghost" data-action="exportRatingPDF">Рейтинг PDF</button><button class="btn ghost" data-action="exportAllData">Бэкап</button></div><div class="row-actions"><button class="btn ghost" data-action="importData">Импорт</button><button class="btn ghost" data-action="demo">Демо</button></div><input type="file" id="impFile" accept=".json" style="display:none" onchange="importFile(this)"><div class="row-actions"><button class="btn danger" data-action="resetAll">Сбросить всё</button></div><div class="row-actions"><button class="btn danger w100" data-action="logout">Выйти</button></div>');}else{modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Настройки</h3><div class="settings-info">'+esc(currentUser?(currentUser.phone||currentUser.email):'')+'</div><div class="row-actions"><button class="btn ghost w100" data-action="enablePush">🔔 Включить уведомления</button></div><div class="row-actions"><button class="btn ghost w100" data-action="openAppearance">Оформление</button></div><div class="row-actions"><button class="btn danger w100" data-action="logout">Выйти</button></div>');}}
 function saveSettings(){var rEl=document.getElementById('setR');if(!rEl)return;var v=parseInt(rEl.value)||1000;state.settings.startRating=v;save();closeModal();render();toast('Настройки сохранены','ok');}
 function managePlayerCodes(){var codes=state.playerCodes||{};var keys=Object.keys(codes);var html='<button class="modal-x" data-action="closeModal">✕</button><h3>Коды игроков</h3><div class="mut small">Коды хранятся только как SHA-256 хеш.</div>';if(keys.length){keys.forEach(function(phone){html+='<div class="code-item"><span class="phone">'+esc(phone)+'</span><span class="code">hash: '+esc(String(codes[phone]).slice(0,10))+'…</span><button class="iconbtn" data-action="removePlayerCode" data-phone="'+esc(phone)+'">✕</button></div>';});}else{html+='<div class="empty"><b>Кодов пока нет</b></div>';}html+='<div class="row-actions"><button class="btn primary w100" data-action="addPlayerCodeModal">＋ Добавить код</button></div><div class="row-actions"><button class="btn ghost w100" data-action="closeModal">Закрыть</button></div>';modal(html);}
 function addPlayerCodeModal(){modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Добавить код</h3><label>Номер телефона</label><input id="pcPhone" type="tel"><label>Код (4-6 цифр)</label><input id="pcCode" type="text" maxlength="6"><div class="mut small">Сохранится только хеш кода.</div><div class="row-actions"><button class="btn ghost" data-action="managePlayerCodes">Назад</button><button class="btn primary" data-action="savePlayerCode">Сохранить</button></div>');}
@@ -761,7 +664,7 @@ function removePlayerCode(phone){delete state.playerCodes[phone];save();managePl
 function playerModal(pid){if(!isAdminMode)return;var p=pid?player(pid):null;__pendingAvatar=p&&p.avatar?p.avatar:null;var avHtml=__pendingAvatar?'<div class="av-preview" id="avPrev"><img src="'+__pendingAvatar+'"><span class="del-av" data-action="clearAvatar">✕</span></div>':'<div class="av-preview" id="avPrev"></div>';modal('<button class="modal-x" data-action="closeModal">✕</button><h3>'+(p?'Редактировать игрока':'Новый игрок')+'</h3><label>Фото</label>'+avHtml+'<input type="file" id="pfAvatar" accept="image/*"><label>Имя</label><input id="pf" value="'+(p?esc(p.firstName):'')+'"><label>Фамилия</label><input id="pl" value="'+(p?esc(p.lastName):'')+'"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="savePlayer" data-id="'+(pid||'')+'">Сохранить</button></div>'+(p?'<button class="btn danger w100" data-action="delPlayer" data-id="'+pid+'">Удалить</button>':''));var fi=document.getElementById('pfAvatar');if(fi){fi.addEventListener('change',function(){if(this.files&&this.files[0]){compressImage(this.files[0],function(b64){__pendingAvatar=b64;refreshAvatarPreview();});}});}}
 function refreshAvatarPreview(){var prev=document.getElementById('avPrev');if(!prev)return;if(__pendingAvatar){prev.innerHTML='<img src="'+__pendingAvatar+'"><span class="del-av" data-action="clearAvatar">✕</span>';}else{prev.innerHTML='';}}
 function savePlayer(pid){var f=normalizeName((document.querySelector('#pf')?document.querySelector('#pf').value:'').trim()),l=normalizeName((document.querySelector('#pl')?document.querySelector('#pl').value:'').trim());if(!f||!l){toast('Введите имя и фамилию','err');return;}var av=__pendingAvatar||null;if(pid){var p=player(pid);p.firstName=f;p.lastName=l;p.avatar=av;toast('Обновлено','ok');}else{state.players.push({id:uid(),firstName:f,lastName:l,avatar:av,phone:null});toast('Игрок добавлен','ok');}save();closeModal();render();}
-function delPlayer(pid){confirmBox('Удалить игрока?',function(){state.players=state.players.filter(function(p){return p.id!==pid;});state.matches=state.matches.filter(function(m){return m.playerAId!==pid&&m.playerBId!==pid;});state.awards=state.awards.filter(function(a){return a.playerId!==pid;});state.tournaments.forEach(function(t){t.playerIds=(t.playerIds||[]).filter(function(x){return x!==pid;});});(state.trainings||[]).forEach(function(tr){tr.participantIds=(tr.participantIds||[]).filter(function(x){return x!==pid;});});save();ui.playerId=null;render();toast('Удалено');});}
+function delPlayer(pid){confirmBox('Удалить игрока?',function(){state.players=state.players.filter(function(p){return p.id!==pid;});state.matches=state.matches.filter(function(m){return m.playerAId!==pid&&m.playerBId!==pid;});state.awards=state.awards.filter(function(a){return a.playerId!==pid;});state.tournaments.forEach(function(t){t.playerIds=(t.playerIds||[]).filter(function(x){return x!==pid;});});(state.trainings||[]).forEach(function(tr){if((tr.participantIds||[]).indexOf(pid)>=0){tr.participantIds=tr.participantIds.filter(function(x){return x!==pid;});trainingWrite(tr);}});save();ui.playerId=null;render();toast('Удалено');});}
 function tournamentModal(tid){if(!isAdminMode)return;var t=tid?tourn(tid):null;var today=new Date().toISOString().slice(0,10);modal('<button class="modal-x" data-action="closeModal">✕</button><h3>'+(t?'Редактировать турнир':'Новый турнир')+'</h3><label>Название</label><input id="tn" value="'+(t?esc(t.name):'')+'"><label>Дата</label><input id="td" type="date" value="'+(t?t.date:today)+'"><div class="frm2"><div><label>Начало</label><input id="ts" type="time" value="'+(t?t.startTime:'10:00')+'"></div><div><label>Окончание</label><input id="te" type="time" value="'+(t?t.endTime:'14:00')+'"></div></div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveTournament" data-id="'+(tid||'')+'">Сохранить</button></div>');}
 function saveTournament(tid){var n=(document.querySelector('#tn')?document.querySelector('#tn').value:'').trim(),d=(document.querySelector('#td')?document.querySelector('#td').value:''),s=(document.querySelector('#ts')?document.querySelector('#ts').value:''),e=(document.querySelector('#te')?document.querySelector('#te').value:'');if(!n||!d){toast('Укажите название и дату','err');return;}if(tid){var t=tourn(tid);t.name=n;t.date=d;t.startTime=s;t.endTime=e;toast('Обновлено','ok');}else{state.tournaments.push({id:uid(),name:n,date:d,startTime:s,endTime:e,playerIds:[],closed:false});toast('Турнир создан','ok');}save();closeModal();render();}
 function delTournament(tid){confirmBox('Удалить турнир?',function(){state.tournaments=state.tournaments.filter(function(t){return t.id!==tid;});state.matches=state.matches.filter(function(m){return m.tournamentId!==tid;});state.awards=state.awards.filter(function(a){return a.tournamentId!==tid;});save();ui.tournamentId=null;render();toast('Удалено');});}
@@ -781,14 +684,13 @@ function resultSheet(mid){if(!isAdminMode)return;var m=state.matches.find(functi
 function setRowHtml(i,a,b){return'<div class="setrow"><span class="setlabel">Сет '+(i+1)+'</span><input type="number" class="setin pa" value="'+((a==null)?'':a)+'" oninput="resultPreview()"><span class="colon">:</span><input type="number" class="setin pb" value="'+((b==null)?'':b)+'" oninput="resultPreview()"><button class="iconbtn rm" data-action="rmSet">✕</button></div>';}
 function addSetRow(){var wrap=document.getElementById('setsWrap');if(!wrap)return;if(wrap.children.length>=MAX_SETS){toast('Максимум '+MAX_SETS,'err');return;}wrap.insertAdjacentHTML('beforeend',setRowHtml(wrap.children.length,null,null));resultPreview();}
 function collectSets(){var sets=[];var bad=false;document.querySelectorAll('#setsWrap .setrow').forEach(function(r){var a=r.querySelector('.pa').value,b=r.querySelector('.pb').value;if(a===''&&b==='')return;if(a===''||b===''||a===b){bad=true;return;}sets.push([+a,+b]);});return{sets:sets,bad:bad};}
-function resultPreview(){var m=state.matches.find(function(x){return x.id===__rmid;});if(!m)return;var cs=collectSets();var sc=setsCountArr(cs.sets);var bc=ballsCountArr(cs.sets);var tb=document.getElementById('tallyBox');if(tb)tb.innerHTML='<div class="who">'+pName(m.playerAId)+'</div><div class="n">'+sc[0]+'</div><div class="sep">:</div><div class="n">'+sc[1]+'</div><div class="who">'+pName(m.playerBId)+'</div>';document.querySelectorAll('#setsWrap .setrow').forEach(function(r){var a=r.querySelector('.pa');var b=r.querySelector('.pb');var av=parseInt(a.value);var bv=parseInt(b.value);a.classList.remove('win');b.classList.remove('win');if(!isNaN(av)&&!isNaN(bv)){if(av>bv)a.classList.add('win');else if(bv>av)b.classList.add('win');}});var rp=document.getElementById('rprev');if(!rp)return;if(sc[0]!==sc[1]){var eng=engine(__rmid);var wA=sc[0]>sc[1];var wId=wA?m.playerAId:m.playerBId,lId=wA?m.playerBId:m.playerAId;var Rw=eng.R[wId],Rl=eng.R[lId];var t=tourn(m.tournamentId);var ids=(t&&t.playerIds&&t.playerIds.length)?t.playerIds:[m.playerAId,m.playerBId];var sum=0,c=0;ids.forEach(function(pid){if(eng.R[pid]!==undefined){sum+=eng.R[pid];c++;}});var kT=kByRsr(c?sum/c:(+state.settings.startRating||1000));var setDiff=Math.abs(sc[0]-sc[1]);var wNew=toursPlayedCount(wId)<=5,lNew=toursPlayedCount(lId)<=5;var dd=rttfDelta(Rw,Rl,setDiff,wNew,lNew,kT);rp.innerHTML='<span class="delta up">'+pName(wId)+' +'+dd.dW+'</span><span class="delta down">'+pName(lId)+' -'+dd.dL+'</span>';}else{rp.innerHTML='<span class="small">Введите счёт</span>';}}
+function resultPreview(){var m=state.matches.find(function(x){return x.id===__rmid;});if(!m)return;var cs=collectSets();var sc=setsCountArr(cs.sets);var tb=document.getElementById('tallyBox');if(tb)tb.innerHTML='<div class="who">'+pName(m.playerAId)+'</div><div class="n">'+sc[0]+'</div><div class="sep">:</div><div class="n">'+sc[1]+'</div><div class="who">'+pName(m.playerBId)+'</div>';document.querySelectorAll('#setsWrap .setrow').forEach(function(r){var a=r.querySelector('.pa');var b=r.querySelector('.pb');var av=parseInt(a.value);var bv=parseInt(b.value);a.classList.remove('win');b.classList.remove('win');if(!isNaN(av)&&!isNaN(bv)){if(av>bv)a.classList.add('win');else if(bv>av)b.classList.add('win');}});var rp=document.getElementById('rprev');if(!rp)return;if(sc[0]!==sc[1]){var eng=engine(__rmid);var wA=sc[0]>sc[1];var wId=wA?m.playerAId:m.playerBId,lId=wA?m.playerBId:m.playerAId;var Rw=eng.R[wId],Rl=eng.R[lId];var t=tourn(m.tournamentId);var ids=(t&&t.playerIds&&t.playerIds.length)?t.playerIds:[m.playerAId,m.playerBId];var sum=0,c=0;ids.forEach(function(pid){if(eng.R[pid]!==undefined){sum+=eng.R[pid];c++;}});var kT=kByRsr(c?sum/c:(+state.settings.startRating||1000));var setDiff=Math.abs(sc[0]-sc[1]);var wNew=toursPlayedCount(wId)<=5,lNew=toursPlayedCount(lId)<=5;var dd=rttfDelta(Rw,Rl,setDiff,wNew,lNew,kT);rp.innerHTML='<span class="delta up">'+pName(wId)+' +'+dd.dW+'</span><span class="delta down">'+pName(lId)+' -'+dd.dL+'</span>';}else{rp.innerHTML='<span class="small">Введите счёт</span>';}}
 function saveResult(){var m=state.matches.find(function(x){return x.id===__rmid;});var cs=collectSets();if(cs.bad){toast('Проверьте сеты','err');return;}if(!cs.sets.length){toast('Введите сет','err');return;}if(cs.sets.length>MAX_SETS){toast('Максимум '+MAX_SETS,'err');return;}var sc=setsCountArr(cs.sets);if(sc[0]===sc[1]){toast('Счёт сетов равный','err');return;}m.sets=cs.sets;save();playSound('matchEnd');closeModal();if(__returnTo){var rt=__returnTo;__returnTo=null;manageMatches(rt);}else{render();}toast('Сохранено','ok');}
 function clearResult(){var m=state.matches.find(function(x){return x.id===__rmid;});m.sets=null;save();closeModal();if(__returnTo){var rt=__returnTo;__returnTo=null;manageMatches(rt);}else{render();}}
-function awardModal(){if(!isAdminMode)return;if(!state.players.length)return;var emo=['🏆','','','','⭐','','','','','️'];__emo='';modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Вручить награду</h3><label>Игрок</label><select id="awP">'+state.players.map(function(p){return'<option value="'+p.id+'">'+esc(p.firstName+' '+p.lastName)+'</option>';}).join('')+'</select><label>Награда</label><div class="emorow">'+emo.map(function(e,i){return'<button class="emopt '+(i===0?'on':'')+'" data-action="emo" data-emo="'+e+'">'+e+'</button>';}).join('')+'</div><label>Название</label><input id="awT"><label>Турнир</label><select id="awTid"><option value="">— без турнира —</option>'+state.tournaments.map(function(t){return'<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join('')+'</select><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveAward">Вручить</button></div>');}
+function awardModal(){if(!isAdminMode)return;if(!state.players.length)return;var emo=['🏆','⭐','🎖','👑','💎','🔥','🎯','⚡','🥇','️'];__emo='';modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Вручить награду</h3><label>Игрок</label><select id="awP">'+state.players.map(function(p){return'<option value="'+p.id+'">'+esc(p.firstName+' '+p.lastName)+'</option>';}).join('')+'</select><label>Награда</label><div class="emorow">'+emo.map(function(e,i){return'<button class="emopt '+(i===0?'on':'')+'" data-action="emo" data-emo="'+e+'">'+e+'</button>';}).join('')+'</div><label>Название</label><input id="awT"><label>Турнир</label><select id="awTid"><option value="">— без турнира —</option>'+state.tournaments.map(function(t){return'<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join('')+'</select><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveAward">Вручить</button></div>');}
 function pickEmoji(btn,e){__emo=e;document.querySelectorAll('.emopt').forEach(function(b){b.classList.toggle('on',b===btn);});}
-function saveAward(){var el=document.querySelector('#awP');var pid=el?el.value:'';var title=(document.querySelector('#awT')?document.querySelector('#awT').value:'').trim()||'Специальная награда';var tidEl=document.querySelector('#awTid');var tid=tidEl?tidEl.value:null;state.awards.push({id:uid(),playerId:pid,title:title,emoji:__emo,tournamentId:tid,date:new Date().toISOString().slice(0,10)});save();closeModal();render();toast('Награда вручена — появится во вкладке Награды','ok');}
+function saveAward(){var el=document.querySelector('#awP');var pid=el?el.value:'';var title=(document.querySelector('#awT')?document.querySelector('#awT').value:'').trim()||'Специальная награда';var tidEl=document.querySelector('#awTid');var tid=tidEl?tidEl.value:null;state.awards.push({id:uid(),playerId:pid,title:title,emoji:__emo,tournamentId:tid,date:new Date().toISOString().slice(0,10)});save();closeModal();render();toast('Награда вручена','ok');}
 function delAward(id){confirmBox('Удалить награду?',function(){state.awards=state.awards.filter(function(a){return a.id!==id;});save();render();});}
-function awardPodium(tid){var t=tourn(tid);var st=standings(tid);if(st.length<3){toast('Нужно 3 участника','err');return;}var defs=[['🥇','Чемпион турнира'],['🥈','Серебряный призёр'],['🥉','Бронзовый призёр']];var added=0;defs.forEach(function(d,i){if(!state.awards.some(function(a){return a.tournamentId===tid&&a.title===d[1];})){state.awards.push({id:uid(),tournamentId:tid,playerId:st[i].pid,title:d[1],emoji:d[0],date:t.date});added++;}});save();render();toast('Вручено '+added,'ok');}
 function getPlayerByPhone(phone){if(!phone)return null;return state.players.find(function(p){return p.phone===phone;})||null;}
 function createProfileModal(){modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Создать профиль</h3><p class="mut small">Ваш номер: '+(currentUser?currentUser.phone:'')+'</p><label>Имя</label><input id="profFirstName"><label>Фамилия</label><input id="profLastName"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveProfile">Создать</button></div>');}
 function saveProfile(){var f=normalizeName((document.querySelector('#profFirstName')?document.querySelector('#profFirstName').value:'').trim()),l=normalizeName((document.querySelector('#profLastName')?document.querySelector('#profLastName').value:'').trim());if(!f||!l){toast('Имя и фамилия','err');return;}if(!currentUser||!currentUser.phone){toast('Нет номера','err');return;}var existing=getPlayerByPhone(currentUser.phone);if(existing){toast('Уже есть','err');return;}var sameName=state.players.find(function(p){return(p.firstName+' '+p.lastName).toLowerCase()===(f+' '+l).toLowerCase();});if(sameName){sameName.phone=currentUser.phone;save();closeModal();render();toast('Профиль привязан к вашей истории','ok');return;}state.players.push({id:uid(),firstName:f,lastName:l,avatar:null,phone:currentUser.phone});save();closeModal();render();toast('Профиль создан','ok');}
@@ -797,30 +699,111 @@ function saveMyProfile(){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer)r
 function registerToTournament(tid){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer){toast('Создайте профиль','err');return;}var t=tourn(tid);if(!t)return;if(tStatus(t)==='finished'){toast('Турнир завершён — запись закрыта','err');return;}if((t.playerIds||[]).indexOf(myPlayer.id)!==-1){toast('Вы уже записаны','err');return;}t.playerIds=t.playerIds||[];t.playerIds.push(myPlayer.id);save();render();toast('Вы записаны на «'+t.name+'»','ok');}
 function exportRatingCSV(){try{var eng=engine();var rows=[['Место','Игрок','Рейтинг','Побед','Поражений']];[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];}).forEach(function(p,i){var st=playerStats(p.id,eng);rows.push([i+1,p.firstName+' '+p.lastName,eng.R[p.id],st.w,st.l]);});var ws=XLSX.utils.aoa_to_sheet(rows);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Рейтинг');XLSX.writeFile(wb,'rating.xlsx');toast('Excel готов','ok');}catch(e){toast('Не удалось экспортировать','err');}}
 function exportRatingPDF(){try{var eng=engine();var sorted=[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});if(!sorted.length)return;var canvas=document.createElement('canvas');var scale=2,rowH=40*scale,totalH=60*scale+80*scale+(sorted.length+1)*rowH,totalW=800*scale;canvas.width=totalW;canvas.height=totalH;var ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,totalW,totalH);var y=60*scale;ctx.fillStyle='#000';ctx.font='bold '+(24*scale)+'px Arial';ctx.textAlign='center';ctx.fillText('Рейтинг ТОП-СПИН (RTTF)',totalW/2,y);y+=60*scale;ctx.font='bold '+(16*scale)+'px Arial';ctx.textAlign='left';ctx.fillText('#',30*scale,y);ctx.fillText('Игрок',80*scale,y);ctx.textAlign='right';ctx.fillText('Рейтинг',760*scale,y);y+=rowH;ctx.font=(16*scale)+'px Arial';sorted.forEach(function(p,i){ctx.textAlign='left';ctx.fillText(String(i+1),30*scale,y);ctx.fillText(p.firstName+' '+p.lastName,80*scale,y);ctx.textAlign='right';ctx.fillText(String(eng.R[p.id]),760*scale,y);y+=rowH;});var img=canvas.toDataURL('image/png');var pdf=new jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});var pw=pdf.internal.pageSize.getWidth();var ih=pw*(totalH/totalW);pdf.addImage(img,'PNG',0,0,pw,ih);pdf.save('rating.pdf');toast('PDF готов','ok');}catch(e){toast('Не удалось создать PDF','err');}}
-function exportTournamentCSV(tid){try{var t=tourn(tid);if(!t)return;var rows=[['Место','Игрок','И','В','П','Сеты','Мячи','Очки']];standings(tid).forEach(function(r,i){rows.push([i+1,pNameRaw(r.pid),r.w+r.l,r.w,r.l,r.sw+':'+r.sl,r.bw+':'+r.bl,r.w*2+r.l]);});var ws=XLSX.utils.aoa_to_sheet(rows);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Результаты');XLSX.writeFile(wb,'tournament.xlsx');toast('Excel готов','ok');}catch(e){toast('Не удалось экспортировать','err');}}
-function exportTournamentPDF(tid){try{var t=tourn(tid);if(!t)return;var stnd=standings(tid);if(!stnd.length)return;var canvas=document.createElement('canvas');var scale=2,rowH=40*scale,totalH=80*scale+(stnd.length+1)*rowH,totalW=900*scale;canvas.width=totalW;canvas.height=totalH;var ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,totalW,totalH);var y=50*scale;ctx.fillStyle='#000';ctx.font='bold '+(22*scale)+'px Arial';ctx.textAlign='center';ctx.fillText(t.name,totalW/2,y);y+=50*scale;ctx.font='bold '+(14*scale)+'px Arial';ctx.textAlign='left';ctx.fillText('#',20*scale,y);ctx.fillText('Игрок',60*scale,y);ctx.textAlign='right';ctx.fillText('Очки',860*scale,y);y+=rowH;ctx.font=(14*scale)+'px Arial';stnd.forEach(function(r,i){ctx.textAlign='left';ctx.fillText(String(i+1),20*scale,y);ctx.fillText(pNameRaw(r.pid),60*scale,y);ctx.textAlign='right';ctx.fillText(String(r.w*2+r.l),860*scale,y);y+=rowH;});var img=canvas.toDataURL('image/png');var pdf=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});var pw=pdf.internal.pageSize.getWidth();var ih=pw*(totalH/totalW);pdf.addImage(img,'PNG',0,0,pw,ih);pdf.save('tournament.pdf');toast('PDF готов','ok');}catch(e){toast('Не удалось создать PDF','err');}}
 function exportAllData(){var json=JSON.stringify(state,null,2);modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Резервная копия</h3><p class="mut small">Нажмите «Копировать» и сохраните текст в файл .json, либо «Поделиться».</p><textarea id="bakText" readonly style="width:100%;height:200px;font-size:11px;font-family:monospace">'+esc(json)+'</textarea><div class="row-actions"><button class="btn primary" data-action="copyBackup">Копировать</button>'+(typeof navigator!=='undefined'&&navigator.share?'<button class="btn ghost" data-action="shareBackup">Поделиться</button>':'')+'<button class="btn ghost" data-action="closeModal">Закрыть</button></div>');}
-function shareBackup(){var json=JSON.stringify(state,null,2);if(navigator.share){navigator.share({title:'ТОП-СПИН бэкап',text:json}).then(function(){toast('Отправлено','ok');}).catch(function(){toast('Не поделились','err');});}else{toast('Поделиться недоступно','err');}}
+function shareBackup(){var json=JSON.stringify(state,null,2);if(navigator.share){navigator.share({title:'ТОП-СПИН бэкап',text:json}).then(function(){toast('Отправлено','ok');}).catch(function(){});}else{toast('Поделиться недоступно','err');}}
 function copyBackup(){var ta=document.getElementById('bakText');if(!ta)return;ta.focus();ta.select();try{document.execCommand('copy');toast('Скопировано в буфер','ok');}catch(e){toast('Выделите текст и скопируйте вручную','err');}}
 function importFile(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!d.players)throw 0;state=norm(d);migratePlayers();save();closeModal();render();toast('Импортировано','ok');}catch(e){toast('Файл не подходит','err');}};r.readAsText(f);}
 function resetAll(){confirmBox('Удалить ВСЕ данные?',function(){state=norm({});save();ui={tab:'arena',tournamentId:null,playerId:null,ratingSort:'r'};render();toast('Очищено');});}
 function loadDemo(){confirmBox('Загрузить демо?',function(){var defs=[['Александр','Волков'],['Дмитрий','Соколов'],['Иван','Крылов'],['Мария','Орлова'],['Павел','Лебедев'],['Анна','Смирнова']];var players=defs.map(function(d,i){return{id:'dp'+(i+1),firstName:d[0],lastName:d[1],avatar:null,phone:null};});var y=new Date(Date.now()-86400000).toISOString().slice(0,10);var t={id:'tdemo',name:'Кубок ТОП-СПИН',date:y,startTime:'16:00',endTime:'20:00',playerIds:players.map(function(p){return p.id;}),closed:false};var strength={'dp1':6,'dp2':4,'dp3':2,'dp4':5,'dp5':1,'dp6':3};var TPL=[[[11,7],[11,8],[11,6]],[[11,9],[8,11],[11,7],[11,5]],[[12,10],[11,8],[9,11],[11,9]],[[11,5],[11,9],[11,7]],[[11,8],[11,6],[7,11],[11,9]]];var pairs=roundRobin(players.map(function(p){return p.id;}));var matches=pairs.map(function(pr,i){var winA=strength[pr[0]]>strength[pr[1]];if(i%3===2)winA=!winA;var sets=TPL[i%TPL.length].map(function(s){return[s[0],s[1]];});if(!winA)sets=sets.map(function(s){return[s[1],s[0]];});return{id:'dm'+i,tournamentId:'tdemo',playerAId:pr[0],playerBId:pr[1],time:addMinutes('16:00',i*15),sets:sets};});state=norm({players:players,tournaments:[t],matches:matches,awards:[],trainings:[]});save();render();toast('Демо загружено','ok');});}
-function dispatch(el){var act=el.dataset.action;var id=el.dataset.id;var tid=el.dataset.tid;switch(act){case'tab':setTab(el.dataset.tab);break;case'openMenu':menuModal();break;case'menuSettings':settingsModal();break;case'menuBell':toggleSoundBell();menuModal();break;case'settings':settingsModal();break;case'openAppearance':openAppearanceModal();break;case'setTheme':setTheme(el.dataset.theme);break;case'setFontSize':setFontSize(el.dataset.size);break;case'toggleSound':toggleSound();break;case'logout':logout();break;case'managePlayerCodes':managePlayerCodes();break;case'addPlayerCodeModal':addPlayerCodeModal();break;case'savePlayerCode':savePlayerCode();break;case'removePlayerCode':removePlayerCode(el.dataset.phone);break;case'chatWith':chatModal(id);break;case'sendMsgTo':(function(){var ta=document.getElementById('chatText');sendMsg(id,ta?ta.value:'');})();break;case'inbox':inboxModal();break;case'sendBroadcast':(function(){var ta=document.getElementById('bcText');sendMsg('',ta?ta.value:'');inboxModal();})();break;case'manageMatches':manageMatches(tid);break;case'resultFromManage':__returnTo=tid;resultSheet(id);break;case'addMatchFromManage':__returnTo=tid;matchModal(tid);break;case 'newTraining': newTraining(); break;
-case 'confirmTraining': confirmTraining(); break;case'joinTraining':joinTraining(id);break;case'leaveTraining':leaveTraining(id);break;case'newPlayer':ui.tab='players';ui.playerId=null;render();playerModal();break;case'editPlayer':playerModal(id);break;case'savePlayer':savePlayer(id||null);break;case'delPlayer':delPlayer(id);break;case'clearAvatar':__pendingAvatar=null;refreshAvatarPreview();break;case'newTournament':tournamentModal();break;case'editTournament':tournamentModal(id);break;case'saveTournament':saveTournament(id||null);break;case'delTournament':delTournament(id);break;case'openTournament':openTournament(id);break;case'viewParticipants':viewParticipants(id,false);break;case'viewParticipantsFull':viewParticipants(id,true);break;case'closeNow':closeTournamentNow(id);break;case'reopen':reopenTournament(id);break;case'addParticipant':addParticipantModal(tid);break;case'pickParticipant':pickParticipant(tid,id);break;case'addAllParticipants':addAllParticipants(tid);break;case'removeParticipant':removeParticipant(tid,id);break;case'unregisterFromTournament':unregisterFromTournament(tid);break;case'newMatch':matchModal(tid);break;case'editMatch':matchModal(tid,id);break;case'saveMatch':saveMatch(tid,id||null);break;case'delMatch':delMatch(id);break;case'result':resultSheet(id);break;case'addSet':addSetRow();break;case'rmSet':el.closest('.setrow').remove();resultPreview();break;case'saveResult':saveResult();break;case'clearResult':clearResult();break;case'openPlayer':openPlayer(id);break;case'backPlayers':ui.playerId=null;render();break;case'backTournaments':ui.tournamentId=null;render();break;case'sortR':ui.ratingSort='r';render();break;case'sortW':ui.ratingSort='w';render();break;case'newAward':awardModal();break;case'emo':pickEmoji(el,el.dataset.emo);break;case'saveAward':saveAward();break;case'delAward':delAward(id);break;case'awardPodium':awardPodium(id);break;case'saveSettings':saveSettings();break;case'exportRatingCSV':exportRatingCSV();break;case'exportRatingPDF':exportRatingPDF();break;case'exportTournamentCSV':exportTournamentCSV(el.dataset.tid);break;case'exportTournamentPDF':exportTournamentPDF(el.dataset.tid);break;case'exportAllData':exportAllData();break;case'copyBackup':copyBackup();break;case'shareBackup':shareBackup();break;case'importData':document.getElementById('impFile').click();break;case'demo':loadDemo();break;case'resetAll':resetAll();break;case'closeModal':closeModal();break;case'confirmYes':if(__cb)__cb();__cb=null;closeModal();break;case'createProfile':createProfileModal();break;case'saveProfile':saveProfile();break;case'editMyProfile':editMyProfileModal();break;case'saveMyProfile':saveMyProfile();break;case'registerToTournament':registerToTournament(tid);break;}}
+/* ===== PUSH-УВЕДОМЛЕНИЯ ===== */
+var VAPID_KEY="BPAhmTURjIIPH1IbbQ-SsCj5Q7fefOnaft_7zk9Nly_8KsTixze5OCkKUW86s2OveyZrnRDg22ywQvjXaiR04Ug";
+var FCM_SW_URL='./firebase-messaging-sw.js';
+var FCM_SW_SCOPE='./';
+async function enablePush(){
+  try{
+    if(!('serviceWorker' in navigator)){toast('Браузер не поддерживает SW','err');return;}
+    if(!('Notification' in window)){toast('Браузер не поддерживает уведомления','err');return;}
+    var perm=await Notification.requestPermission();
+    if(perm!=='granted'){toast('Разрешение не выдано','err');return;}
+    toast('Регистрирую SW…');
+    var reg;
+    try{reg=await navigator.serviceWorker.register(FCM_SW_URL,{scope:FCM_SW_SCOPE});}
+    catch(e){console.error('SW reg error',e);toast('Ошибка регистрации SW: '+e.message,'err');return;}
+    await navigator.serviceWorker.ready;
+    var app2=firebase.initializeApp(firebaseConfig,'pushApp');
+    var messaging=firebase.messaging(app2);
+    var token=await messaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+    if(!token){toast('Токен не получен. Проверьте VAPID.','err');return;}
+    FCM_TOKEN=token;
+    FCM_MSG=messaging;
+    var phone=currentUser?(currentUser.phone||currentUser.email||'anon'):'anon';
+    var key=String(phone).replace(/[.#$/\[\]]/g,'_');
+    if(dbRef){await dbRef.child('pushTokens').child(key).set({token:token,updatedAt:Date.now(),name:myName()});}
+    try{lsSet('topspin_push_token',token);}catch(e){}
+    toast('Уведомления включены!','ok');
+    messaging.onMessage(function(payload){try{var title=(payload.notification&&payload.notification.title)||'ТОП-СПИН';var body=(payload.notification&&payload.notification.body)||'';if(Notification.permission==='granted'){new Notification(title,{body:body,icon:'./icon-192.png'});}}catch(e){}});
+    if(currentUser&&ui.tab==='profile'){render();}
+  }catch(e){console.error('enablePush',e);toast('Ошибка: '+(e.message||e),'err');}
+}
+/* ===== ИИ-ТРЕНЕР ===== */
+var WORKER_URL="https://topspin-ai.styleman81.workers.dev";
+function aiCacheKey(pid){return 'ai_'+pid+'_'+new Date().toISOString().slice(0,10);}
+async function analyzeGameStyle(playerId){
+  var btn=document.querySelector('.ai-btn-analyze');
+  var box=document.getElementById('aiResponseBox');
+  if(!btn||!box)return;
+  var cacheKey=aiCacheKey(playerId);
+  if(state.aiCache&&state.aiCache[cacheKey]){
+    box.style.display='block';
+    box.innerHTML='<div style="white-space:pre-wrap;line-height:1.6;">'+esc(state.aiCache[cacheKey])+'</div>';
+    return;
+  }
+  var orig=btn.innerHTML;
+  btn.disabled=true;
+  btn.innerHTML='<span class="ai-loading"></span> Анализ…';
+  box.style.display='block';
+  box.innerHTML='<span class="mut small">Обращение к ИИ…</span>';
+  try{
+    var eng=engine();
+    var stats=playerStats(playerId,eng);
+    var history=eng.played.filter(function(m){return m.playerAId===playerId||m.playerBId===playerId;}).slice(-10).reverse();
+    var summary='';
+    if(history.length){
+      summary=history.map(function(m){
+        var isA=m.playerAId===playerId;
+        var oppId=isA?m.playerBId:m.playerAId;
+        var oppName=pNameRaw(oppId);
+        var sc=setsCountArr(m.sets);
+        var res=matchWinner(m)===playerId?'ПОБЕДА':'ПОРАЖЕНИЕ';
+        return res+' против '+oppName+' ('+sc[0]+':'+sc[1]+')';
+      }).join('\n');
+    }else{summary='Нет истории матчей.';}
+    var rating=eng.R[playerId];
+    var sys='Ты профессиональный тренер по настольному теннису. Дай 3 конкретных совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов. Используй эмодзи.';
+    var usr='Рейтинг: '+rating+'. Винрейт: '+stats.winp+'%. Серия: '+stats.streak+'. Последние игры:\n'+summary;
+    var body={messages:[{role:'system',content:sys},{role:'user',content:usr}],temperature:0.7,max_tokens:500};
+    var resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!resp.ok){var eb=await resp.text();throw new Error('API '+resp.status+': '+eb.slice(0,200));}
+    var data=await resp.json();
+    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
+    if(!data.choices||!data.choices[0]||!data.choices[0].message)throw new Error('Некорректный ответ: '+JSON.stringify(data).slice(0,200));
+    var aiText=data.choices[0].message.content;
+    box.innerHTML='<div style="white-space:pre-wrap;line-height:1.6;">'+esc(aiText)+'</div>';
+    state.aiCache=state.aiCache||{};
+    state.aiCache[cacheKey]=aiText;
+    try{lsSet(LS_KEY,JSON.stringify(state));}catch(e){}
+  }catch(err){
+    console.error(err);
+    box.innerHTML='<span style="color:var(--red)">❌ Ошибка ИИ:<br><small>'+esc(err.message)+'</small></span>';
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML=orig;
+  }
+}
+function dispatch(el){var act=el.dataset.action;var id=el.dataset.id;var tid=el.dataset.tid;switch(act){case'tab':setTab(el.dataset.tab);break;case'openMenu':menuModal();break;case'menuSettings':settingsModal();break;case'menuBell':toggleSoundBell();menuModal();break;case'openAppearance':openAppearanceModal();break;case'setTheme':setTheme(el.dataset.theme);break;case'setFontSize':setFontSize(el.dataset.size);break;case'toggleSound':toggleSound();break;case'logout':logout();break;case'managePlayerCodes':managePlayerCodes();break;case'addPlayerCodeModal':addPlayerCodeModal();break;case'savePlayerCode':savePlayerCode();break;case'removePlayerCode':removePlayerCode(el.dataset.phone);break;case'chatWith':chatModal(id);break;case'sendMsgTo':(function(){var ta=document.getElementById('chatText');sendMsg(id,ta?ta.value:'');})();break;case'inbox':inboxModal();break;case'sendBroadcast':(function(){var ta=document.getElementById('bcText');sendMsg('',ta?ta.value:'');inboxModal();})();break;case'manageMatches':manageMatches(tid);break;case'resultFromManage':__returnTo=tid;resultSheet(id);break;case'addMatchFromManage':__returnTo=tid;matchModal(tid);break;case'newTraining':newTraining();break;case'confirmTraining':confirmTraining();break;case'joinTraining':joinTraining(id);break;case'leaveTraining':leaveTraining(id);break;case'newPlayer':ui.tab='players';ui.playerId=null;render();playerModal();break;case'editPlayer':playerModal(id);break;case'savePlayer':savePlayer(id||null);break;case'delPlayer':delPlayer(id);break;case'clearAvatar':__pendingAvatar=null;refreshAvatarPreview();break;case'newTournament':tournamentModal();break;case'editTournament':tournamentModal(id);break;case'saveTournament':saveTournament(id||null);break;case'delTournament':delTournament(id);break;case'openTournament':openTournament(id);break;case'viewParticipants':viewParticipants(id,false);break;case'closeNow':closeTournamentNow(id);break;case'reopen':reopenTournament(id);break;case'addParticipant':addParticipantModal(tid);break;case'pickParticipant':pickParticipant(tid,id);break;case'addAllParticipants':addAllParticipants(tid);break;case'removeParticipant':removeParticipant(tid,id);break;case'unregisterFromTournament':unregisterFromTournament(tid);break;case'newMatch':matchModal(tid);break;case'editMatch':matchModal(tid,id);break;case'saveMatch':saveMatch(tid,id||null);break;case'delMatch':delMatch(id);break;case'result':resultSheet(id);break;case'addSet':addSetRow();break;case'rmSet':el.closest('.setrow').remove();resultPreview();break;case'saveResult':saveResult();break;case'clearResult':clearResult();break;case'openPlayer':openPlayer(id);break;case'backPlayers':ui.playerId=null;render();break;case'backTournaments':ui.tournamentId=null;render();break;case'sortR':ui.ratingSort='r';render();break;case'sortW':ui.ratingSort='w';render();break;case'newAward':awardModal();break;case'emo':pickEmoji(el,el.dataset.emo);break;case'saveAward':saveAward();break;case'delAward':delAward(id);break;case'saveSettings':saveSettings();break;case'exportRatingCSV':exportRatingCSV();break;case'exportRatingPDF':exportRatingPDF();break;case'exportAllData':exportAllData();break;case'copyBackup':copyBackup();break;case'shareBackup':shareBackup();break;case'importData':document.getElementById('impFile').click();break;case'demo':loadDemo();break;case'resetAll':resetAll();break;case'closeModal':closeModal();break;case'confirmYes':if(__cb)__cb();__cb=null;closeModal();break;case'createProfile':createProfileModal();break;case'saveProfile':saveProfile();break;case'editMyProfile':editMyProfileModal();break;case'saveMyProfile':saveMyProfile();break;case'registerToTournament':registerToTournament(tid);break;case'enablePush':enablePush();break;}}
 (function setupPWA(){
 try{
 var c=document.createElement('canvas');c.width=180;c.height=180;var g=c.getContext('2d');
 g.fillStyle='#0e1e34';g.fillRect(0,0,180,180);
 g.beginPath();g.arc(90,90,82,0,Math.PI*2);g.fillStyle='#0e1e34';g.fill();g.lineWidth=6;g.strokeStyle='#31507e';g.stroke();
-g.save();g.translate(82,80);g.rotate(-0.5);g.fillStyle='#e3a067';g.fillRect(-9,26,18,42);g.fillStyle='#e8452c';g.beginPath();g.ellipse(0,-4,38,42,0,0,Math.PI*2);g.fill();g.restore();
+g.save();g.translate(82,80);g.rotate(-0.5);g.fillStyle='#e3a067';g.fillRect(-9,26,18,42);g.fillStyle='#e8452c';g.beginPath();g.ellipse(0,-4,38,42,0,Math.PI*2);g.fill();g.restore();
 g.beginPath();g.arc(128,42,14,0,Math.PI*2);g.fillStyle='#ffa41b';g.fill();
 var iconUrl=c.toDataURL('image/png');
 var ai=document.getElementById('appleIcon');if(ai)ai.href=iconUrl;
-var manifest={name:'ТОП-СПИН — центр турниров',short_name:'ТОП-СПИН',start_url:'.',scope:'.',display:'standalone',background_color:'#0a1424',theme_color:'#0a1424',icons:[{src:iconUrl,sizes:'180x180',type:'image/png',purpose:'any'}]};
+var manifest={name:'ТОП-СПИН — центр турниров',short_name:'ТОП-СПИН',start_url:'./',scope:'./',display:'standalone',background_color:'#0a1424',theme_color:'#0a1424',icons:[{src:iconUrl,sizes:'180x180',type:'image/png',purpose:'any'}]};
 var blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
 var ml=document.getElementById('manifestLink');if(ml)ml.href=URL.createObjectURL(blob);
 }catch(e){}
-if('serviceWorker' in navigator){try{fetch('sw.js').then(function(r){if(r&&r.ok){navigator.serviceWorker.register('sw.js').catch(function(){});}}).catch(function(){});}catch(e){}}
 })();
 (function init(){
 try{var d=new Date();document.getElementById('todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()];}catch(e){}
@@ -832,7 +815,7 @@ try{
 if(fbOk&&authRef){authRef.onAuthStateChanged(function(u){try{firebaseUser=u;isAdminMode=!!u;if(u){currentUser={email:u.email,role:'admin'};lsSet('topspin_session',JSON.stringify(currentUser));hideLoginScreen();beat();render();updateBadge();}else{var ps=loadPlayerSession();if(ps){currentUser=ps;isAdminMode=false;hideLoginScreen();beat();render();updateBadge();}else{currentUser=null;isAdminMode=false;showLoginScreen();}}}catch(e){try{showLoginScreen();}catch(e2){}}});}
 else{var ps2=loadPlayerSession();if(ps2){currentUser=ps2;isAdminMode=false;hideLoginScreen();beat();render();updateBadge();}else{showLoginScreen();}}
 }catch(e){try{showLoginScreen();}catch(e2){}}
-try{if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();}else{booted=true;initMessages();}}catch(e){booted=true;}
+try{if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();initTrainings();}else{booted=true;initMessages();TRAIN_BOOT=true;}}catch(e){booted=true;TRAIN_BOOT=true;}
 try{initLoginBg();}catch(e){}
 try{autoCloseCheck();setInterval(autoCloseCheck,20000);}catch(e){}
 var mpb=document.getElementById('modePlayerBtn');if(mpb)mpb.addEventListener('click',showPhoneStep);
@@ -852,213 +835,6 @@ if(el)dispatch(el);
 });
 if(document.getElementById('loginScreen').style.display==='none'){render();updateBadge();}
 })();
-// === НАСТРОЙКИ AGENT ===
-// ⚠️ ОБЯЗАТЕЛЬНО замените этот текст на ваш реальный ключ от Groq!
- 
-const GROQ_MODEL = "llama-3.1-8b-instant";
-const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-async function analyzeGameStyle(playerId) {
-    const btn = document.querySelector('.ai-btn-analyze');
-    const responseBox = document.getElementById('aiResponseBox');
-    
-    // 1. ИСПОЛЬЗУЕМ let, А НЕ const (чтобы избежать ошибки Assignment to constant)
-    let rawWorkerUrl = "https://topspin-ai.styleman81.workers.dev"; // ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL, ЕСЛИ ОН ДРУГОЙ
-
-    // 2. ЖЕСТКАЯ ОЧИСТКА ОТ СЛЭША (гарантированно превращает любой URL в https://domain.com без слэша на конце)
-    let WORKER_URL = new URL(rawWorkerUrl).origin;
-    
-    console.log("Отправка запроса на чистый URL:", WORKER_URL);
-
-    if (!btn || !responseBox) {
-        console.error("Элементы интерфейса не найдены");
-        return;
-    }
-
-    const originalBtnText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="ai-loading"></span> Анализ...';
-    responseBox.style.display = 'block';
-    responseBox.innerHTML = '<span class="mut small">Обращение к ИИ...</span>';
-
-    try {
-        // Сбор данных (ваш существующий код)
-        const eng = engine();
-        const stats = playerStats(playerId, eng);
-        const history = eng.played.filter(m => m.playerAId === playerId || m.playerBId === playerId).slice(-10).reverse();
-        
-        let matchSummary = "";
-        if (history.length > 0) {
-            matchSummary = history.map(m => {
-                const isA = m.playerAId === playerId;
-                const oppId = isA ? m.playerBId : m.playerAId;
-                const oppName = pNameRaw(oppId);
-                const sc = setsCountArr(m.sets);
-                const result = matchWinner(m) === playerId ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
-                return `${result} против ${oppName} (${sc[0]}:${sc[1]})`;
-            }).join('\n');
-        } else {
-            matchSummary = "Нет истории сыгранных матчей.";
-        }
-
-        const rating = eng.R[playerId];
-        const winRate = stats.winp;
-        const streak = stats.streak;
-
-        // Формирование промптов
-        const systemPrompt = "Ты - профессиональный тренер по настольному теннису. Дай 3 конкретных совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов. Используй эмодзи.";
-        const userContent = `Рейтинг: ${rating}. Винрейт: ${winRate}%. Серия: ${streak}. Последние игры:\n${matchSummary}`;
-
-        // ИДЕАЛЬНАЯ СТРУКТУРА СООБЩЕНИЙ (без лишних полей, чтобы не было ошибки 400)
-        const messagesArray = [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userContent }
-        ];
-
-        // Отправка запроса
-        const response = await fetch(WORKER_URL, {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json" 
-            },
-            body: JSON.stringify({
-                messages: messagesArray,
-                temperature: 0.7,
-                max_tokens: 500
-            })
-        });
-
-        if (!response.ok) {
-            const errBody = await response.text();
-            throw new Error(`Ошибка API (${response.status}): ${errBody.substring(0, 200)}...`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.error) {
-            throw new Error(data.error.message || JSON.stringify(data.error));
-        }
-
-        // Вывод результата
-        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-            throw new Error("Некорректный ответ от ИИ: " + JSON.stringify(data));
-        }
-
-        const aiText = data.choices[0].message.content;
-        responseBox.innerHTML = `<div style="white-space:pre-wrap; line-height:1.6;">${esc(aiText)}</div>`;
-
-    } catch (error) {
-        console.error(error);
-        responseBox.innerHTML = `<span style="color:var(--red)">❌ Ошибка агента:<br><small>${error.message}</small></span>`;
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalBtnText;
-    }
-}
-</script>
-<div id="pushTestBox" style="margin:12px;padding:12px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(0,0,0,.18);color:#fff;">
-  <strong>Тест Push-уведомлений</strong>
-  <div style="margin-top:8px;">
-    <button id="enablePushBtn" style="padding:8px 12px;border-radius:8px;border:0;background:#22c55e;color:#052e16;font-weight:700;cursor:pointer;">
-      Включить push-тест
-    </button>
-  </div>
-  <div id="pushStatus" style="margin-top:8px;font-size:13px;opacity:.85;">
-    Статус: не проверено
-  </div>
-</div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBBfeMqpQe5D6-W3QzuX6Q5PHZdmm5FtD8",
-    projectId: "top-spin-3ef01",
-    messagingSenderId: "939869281373",
-    appId: "1:939869281373:web:5b7fe5304f7052489401b4"
-  };
-
-  const vapidKey = "BPAhmTURjIIPH1IbbQ-SsCj5Q7fefOnaft_7zk9Nly_8KsTixze5OCkKUW86s2OveyZrnRDg22ywQvjXaiR04Ug";
-
-  const btn = document.getElementById("enablePushBtn");
-  const statusEl = document.getElementById("pushStatus");
-
-  function setStatus(text) {
-    if (statusEl) statusEl.textContent = "Статус: " + text;
-  }
-
-  async function enablePush() {
-    try {
-      if (!("serviceWorker" in navigator)) {
-        setStatus("Браузер не поддерживает Service Worker");
-        return;
-      }
-
-      if (!("Notification" in window)) {
-        setStatus("Браузер не поддерживает уведомления");
-        return;
-      }
-
-      setStatus("Запрашиваю разрешение...");
-
-      const permission = await Notification.requestPermission();
-
-      if (permission !== "granted") {
-        setStatus("Разрешение на уведомления не выдано");
-        return;
-      }
-
-      setStatus("Регистрирую service worker...");
-
-      const swUrl = new URL("firebase-messaging-sw.js", window.location.href).toString();
-const swScope = new URL("./", window.location.href).toString();
-
-const registration = await navigator.serviceWorker.register(swUrl, {
-  scope: swScope
-});
-      await navigator.serviceWorker.ready;
-
-      setStatus("Получаю FCM-токен...");
-
-      const app = initializeApp(firebaseConfig, "topspinPushTestApp");
-      const messaging = getMessaging(app);
-
-      const token = await getToken(messaging, {
-        vapidKey,
-        serviceWorkerRegistration: registration
-      });
-
-      if (!token) {
-        setStatus("Токен не получен. Открой консоль браузера");
-        return;
-      }
-
-      console.log("FCM TOKEN:", token);
-
-      setStatus("Push работает. Токен получен. Полное значение токена — в консоли браузера.");
-
-      onMessage(messaging, (payload) => {
-        console.log("[firebase-messaging] Foreground message:", payload);
-
-        const title = payload.notification?.title || "TopSpin";
-        const body = payload.notification?.body || "Новое уведомление";
-
-        if (Notification.permission === "granted") {
-          new Notification(title, {
-            body,
-            data: payload.data || {}
-          });
-        }
-      });
-
-    } catch (error) {
-      console.error("Push test error:", error);
-      setStatus("Ошибка: " + (error?.message || error));
-    }
-  }
-
-  btn?.addEventListener("click", enablePush);
 </script>
 </body>
 </html>
