@@ -608,7 +608,70 @@ function initTrainings(){if(!dbRef){TRAIN_BOOT=true;return;}TRAIN_REF=firebase.d
 function trainingWrite(tr,cb){if(!TRAIN_REF){toast('Нет связи с сервером','err');return;}TRAIN_REF.child(tr.id).set(tr).then(function(){if(cb)cb();}).catch(function(e){toast('Ошибка сохранения','err');});}
 function trainingDelete(id,cb){if(!TRAIN_REF)return;TRAIN_REF.child(id).remove().then(function(){if(cb)cb();}).catch(function(){});}
 function newTraining(){var my=getPlayerByPhone(myPhone());if(!my){toast('Сначала создайте профиль','err');return;}var today=new Date().toISOString().slice(0,10);modal('<button class="modal-x" data-action="closeModal">✕</button><h3>🏓 Буду тренироваться</h3><div class="mut small">Создайте заявку. Все игроки и админ увидят её мгновенно.</div><label>Дата</label><input id="trD" type="date" value="'+today+'"><label>Время</label><input id="trT" type="time" value="18:00"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="confirmTraining">Создать</button></div>');}
-function confirmTraining(){var my=getPlayerByPhone(myPhone());if(!my){toast('Сначала создайте профиль','err');return;}var d=(document.querySelector('#trD')?document.querySelector('#trD').value:'');var tm=(document.querySelector('#trT')?document.querySelector('#trT').value:'');if(!d||!tm){toast('Укажите дату и время','err');return;}if(!TRAIN_REF){toast('Нет связи с сервером','err');return;}var tr={date:d,time:tm,creatorId:my.id,creatorPhone:myPhone(),participantIds:[my.id],createdBy:myName(),createdAt:Date.now()};var newKey=TRAIN_REF.push().key;tr.id=newKey;trainingWrite(tr,function(){closeModal();toast('Тренировка создана! Все увидят её.','ok');if(FCM_MSG){try{FCM_MSG=null;}catch(e){}}});}
+function confirmTraining(){
+  var my=getPlayerByPhone(myPhone());
+  if(!my){toast('Сначала создайте профиль','err');return;}
+  var d=(document.querySelector('#trD')?document.querySelector('#trD').value:'');
+  var tm=(document.querySelector('#trT')?document.querySelector('#trT').value:'');
+  if(!d||!tm){toast('Укажите дату и время','err');return;}
+  if(!TRAIN_REF){toast('Нет связи с сервером','err');return;}
+  
+  var tr={
+    date:d,
+    time:tm,
+    creatorId:my.id,
+    creatorPhone:myPhone(),
+    participantIds:[my.id],
+    createdBy:myName(),
+    createdAt:Date.now()
+  };
+  var newKey=TRAIN_REF.push().key;
+  tr.id=newKey;
+  
+  trainingWrite(tr,function(){
+    closeModal();
+    toast('Тренировка создана!','ok');
+    
+    // === ОТПРАВКА PUSH ЧЕРЕЗ CLOUDFLARE WORKER ===
+    sendPushNotification(
+      '🏓 Новая тренировка',
+      myName()+' · '+d+' в '+tm,
+      { type: 'training', trainingId: newKey }
+    );
+  });
+}
+
+/* Отправка push через Cloudflare Worker */
+function sendPushNotification(title, body, data){
+  if(!dbRef) return;
+  
+  // Получаем все токены из базы
+  dbRef.child('pushTokens').once('value').then(function(snap){
+    var tokensData = snap.val() || {};
+    var tokens = [];
+    
+    Object.keys(tokensData).forEach(function(k){
+      var rec = tokensData[k];
+      if(rec && rec.token && rec.token !== FCM_TOKEN){
+        // Не отправляем самому себе
+        tokens.push(rec.token);
+      }
+    });
+    
+    if(!tokens.length) return;
+    
+    // Отправляем на Cloudflare Worker
+    fetch('https://topspin-ai.styleman81.workers.dev/push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tokens: tokens, title: title, body: body, data: data })
+    }).then(function(r){
+      console.log('Push отправлен:', r.status);
+    }).catch(function(e){
+      console.error('Ошибка push:', e);
+    });
+  });
+}
 function joinTraining(id){var my=getPlayerByPhone(myPhone());if(!my){toast('Сначала создайте профиль','err');return;}var tr=(state.trainings||[]).find(function(x){return x.id===id;});if(!tr){toast('Тренировка не найдена','err');return;}if((tr.participantIds||[]).indexOf(my.id)>=0){toast('Вы уже записаны','err');return;}tr.participantIds=tr.participantIds||[];tr.participantIds.push(my.id);trainingWrite(tr,function(){toast('Вы записаны!','ok');});}
 function leaveTraining(id){var my=getPlayerByPhone(myPhone());if(!my&&!isAdminMode){toast('Профиль не найден','err');return;}var tr=(state.trainings||[]).find(function(x){return x.id===id;});if(!tr)return;var isCreator=(my&&(tr.creatorId===my.id||((tr.creatorPhone||'')!==''&&tr.creatorPhone===myPhone())));if(my){tr.participantIds=(tr.participantIds||[]).filter(function(x){return x!==my.id;});}var remove=isCreator||isAdminMode||(tr.participantIds||[]).length===0;if(remove){trainingDelete(id,function(){toast('Тренировка удалена у всех');});}else{trainingWrite(tr,function(){toast('Вы отписались');});}}
 /* ===== ЧЕЛЛЕНДЖИ ===== */
