@@ -1,8 +1,8 @@
 /* firebase-messaging-sw.js
    Service Worker для push-уведомлений ТОП-СПИН
    Лежит рядом с index.html */
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
 firebase.initializeApp({
   apiKey: "AIzaSyBBfeMqpQe5D6-W3QzuX6Q5PHZdmm5FtD8",
