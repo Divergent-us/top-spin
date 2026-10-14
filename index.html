@@ -802,6 +802,8 @@ async function enablePush(){
 /* ===== ИИ-ТРЕНЕР ===== */
 var WORKER_URL="https://topspin-ai.styleman81.workers.dev";
 function aiCacheKey(pid){return 'ai_'+pid+'_'+new Date().toISOString().slice(0,10);}
+function aiCacheKey(pid){return 'ai_v2_'+pid+'_'+new Date().toISOString().slice(0,10);}
+
 async function analyzeGameStyle(playerId){
   var btn=document.querySelector('.ai-btn-analyze');
   var box=document.getElementById('aiResponseBox');
@@ -816,36 +818,163 @@ async function analyzeGameStyle(playerId){
   btn.disabled=true;
   btn.innerHTML='<span class="ai-loading"></span> Анализ…';
   box.style.display='block';
-  box.innerHTML='<span class="mut small">Обращение к ИИ…</span>';
+  box.innerHTML='<span class="mut small">Собираю статистику матчей…</span>';
+
   try{
     var eng=engine();
     var stats=playerStats(playerId,eng);
-    var history=eng.played.filter(function(m){return m.playerAId===playerId||m.playerBId===playerId;}).slice(-10).reverse();
-    var summary='';
-    if(history.length){
-      summary=history.map(function(m){
+    var myPlayer=player(playerId);
+    var myName=myPlayer?(myPlayer.firstName+' '+myPlayer.lastName):'игрок';
+
+    // ===== Последние 5 матчей с полной детализацией =====
+    var allMyMatches=eng.played.filter(function(m){
+      return m.playerAId===playerId||m.playerBId===playerId;
+    });
+    var last5=allMyMatches.slice(-5);
+
+    var matchLines=last5.map(function(m){
+      var isA=m.playerAId===playerId;
+      var oppId=isA?m.playerBId:m.playerAId;
+      var oppPlayer=player(oppId);
+      var oppName=oppPlayer?(oppPlayer.firstName+' '+oppPlayer.lastName):'соперник';
+      var oppRating=eng.R[oppId]||1000;
+      var myRating=eng.R[playerId];
+
+      var win=matchWinner(m)===playerId;
+      var sc=setsCountArr(m.sets);
+      var mySets=isA?sc[0]:sc[1];
+      var oppSets=isA?sc[1]:sc[0];
+      var bc=ballsCountArr(m.sets);
+      var myBalls=isA?bc[0]:bc[1];
+      var oppBalls=isA?bc[1]:bc[0];
+      var delta=eng.mdelta[m.id]?(isA?eng.mdelta[m.id].A:eng.mdelta[m.id].B):0;
+
+      // Сеты по отдельности
+      var setsDetail=m.sets.map(function(s){
+        return isA?(s[0]+'-'+s[1]):(s[1]+'-'+s[0]);
+      }).join(', ');
+
+      var t=tourn(m.tournamentId);
+      var tourName=t?t.name:'тренировка';
+      var diffRating=myRating-oppRating;
+
+      return (win?'✅ ПОБЕДА':'❌ Поражение')+
+        ' | соперник: '+oppName+' (рейтинг '+oppRating+', разница '+(diffRating>0?'+':'')+diffRating+')'+
+        ' | сеты '+mySets+':'+oppSets+' ('+setsDetail+')'+
+        ' | мячи '+myBalls+':'+oppBalls+
+        ' | дельта рейтинга '+(delta>0?'+':'')+delta+
+        ' | турнир: '+tourName;
+    }).join('\n');
+
+    // ===== Расширенная статистика =====
+    var last10=allMyMatches.slice(-10);
+    var winsLast10=last10.filter(function(m){return matchWinner(m)===playerId;}).length;
+
+    // Средняя разница мячей в последних 5
+    var avgBallDiff=0;
+    if(last5.length){
+      var sumDiff=0;
+      last5.forEach(function(m){
         var isA=m.playerAId===playerId;
-        var oppId=isA?m.playerBId:m.playerAId;
-        var oppName=pNameRaw(oppId);
+        var bc=ballsCountArr(m.sets);
+        sumDiff+=isA?(bc[0]-bc[1]):(bc[1]-bc[0]);
+      });
+      avgBallDiff=Math.round(sumDiff/last5.length);
+    }
+
+    // Средняя разница сетов
+    var avgSetDiff=0;
+    if(last5.length){
+      var sumSetDiff=0;
+      last5.forEach(function(m){
+        var isA=m.playerAId===playerId;
         var sc=setsCountArr(m.sets);
-        var res=matchWinner(m)===playerId?'ПОБЕДА':'ПОРАЖЕНИЕ';
-        return res+' против '+oppName+' ('+sc[0]+':'+sc[1]+')';
-      }).join('\n');
-    }else{summary='Нет истории матчей.';}
-    var rating=eng.R[playerId];
-    var sys='Ты профессиональный тренер по настольному теннису. Дай 3 конкретных совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов. Используй эмодзи.';
-    var usr='Рейтинг: '+rating+'. Винрейт: '+stats.winp+'%. Серия: '+stats.streak+'. Последние игры:\n'+summary;
-    var body={messages:[{role:'system',content:sys},{role:'user',content:usr}],temperature:0.7,max_tokens:500};
-    var resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(!resp.ok){var eb=await resp.text();throw new Error('API '+resp.status+': '+eb.slice(0,200));}
+        sumSetDiff+=isA?(sc[0]-sc[1]):(sc[1]-sc[0]);
+      });
+      avgSetDiff=(sumSetDiff/last5.length).toFixed(1);
+    }
+
+    // Результаты против сильных/слабых соперников
+    var vsStronger={w:0,l:0};
+    var vsWeaker={w:0,l:0};
+    allMyMatches.forEach(function(m){
+      var isA=m.playerAId===playerId;
+      var oppId=isA?m.playerBId:m.playerAId;
+      var myR=eng.R[playerId],oppR=eng.R[oppId]||1000;
+      var win=matchWinner(m)===playerId;
+      if(oppR>myR){win?vsStronger.w++:vsStronger.l++;}
+      else{win?vsWeaker.w++:vsWeaker.l++;}
+    });
+
+    // Победы/поражения в 3-сетовых матчах (борьба)
+    var tightMatches={w:0,l:0};
+    allMyMatches.forEach(function(m){
+      if(m.sets.length>=3){
+        var win=matchWinner(m)===playerId;
+        win?tightMatches.w++:tightMatches.l++;
+      }
+    });
+
+    // ===== Формируем промпт =====
+    var systemPrompt='Ты — профессиональный тренер по настольному теннису. ' +
+      'Проанализируй статистику игрока и дай 4 конкретных совета, разбитых по темам: ' +
+      '🎯 ТЕХНИКА, 🧠 ТАКТИКА, 💪 ФИЗИЧЕСКАЯ ФОРМА, 🔥 ПСИХОЛОГИЯ. ' +
+      'Опирайся на конкретные цифры из статистики (соперники, счёт, разница мячей). ' +
+      'Не давай общих фраз — только конкретные рекомендации, что делать на тренировках. ' +
+      'Максимум 220 слов. Используй эмодзи.';
+
+    var userPrompt=
+      '📊 ИГРОК: '+myName+'\n'+
+      '🎾 ТЕКУЩИЙ РЕЙТИНГ: '+eng.R[playerId]+'\n'+
+      '📈 ВСЕГО МАТЧЕЙ: '+stats.m+' (побед '+stats.w+', поражений '+stats.l+', винрейт '+stats.winp+'%)\n'+
+      '🔥 ТЕКУЩАЯ СЕРИЯ: '+stats.streak+' побед подряд\n'+
+      '📉 РЕЗУЛЬТАТЫ ЗА 10 МАТЧЕЙ: '+winsLast10+' побед из '+last10.length+'\n'+
+      '⚖️ СРЕДНЯЯ РАЗНИЦА МЯЧЕЙ (за 5 матчей): '+(avgBallDiff>0?'+':'')+avgBallDiff+'\n'+
+      '⚖️ СРЕДНЯЯ РАЗНИЦА СЕТОВ (за 5 матчей): '+(avgSetDiff>0?'+':'')+avgSetDiff+'\n'+
+      '💪 ПРОТИВ СИЛЬНЫХ СОПЕРНИКОВ: '+vsStronger.w+' побед / '+vsStronger.l+' поражений\n'+
+      '🎯 ПРОТИВ СЛАБЫХ СОПЕРНИКОВ: '+vsWeaker.w+' побед / '+vsWeaker.l+' поражений\n'+
+      '⏱️ В 3-СЕТОВЫХ МАТЧАХ (упорная борьба): '+tightMatches.w+' побед / '+tightMatches.l+' поражений\n'+
+      '\n🏓 ПОСЛЕДНИЕ 5 МАТЧЕЙ (детально):\n'+matchLines;
+
+    // Если матчей нет — предупреждаем
+    if(last5.length===0){
+      userPrompt+='\n\n⚠️ ВАЖНО: у игрока ещё нет сыгранных матчей. Дай общие советы для начинающего по настольному теннису.';
+    }
+
+    var body={
+      messages:[
+        {role:'system',content:systemPrompt},
+        {role:'user',content:userPrompt}
+      ],
+      temperature:0.7,
+      max_tokens:900
+    };
+
+    var resp=await fetch(WORKER_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+
+    if(!resp.ok){
+      var eb=await resp.text();
+      throw new Error('API '+resp.status+': '+eb.slice(0,200));
+    }
+
     var data=await resp.json();
     if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
-    if(!data.choices||!data.choices[0]||!data.choices[0].message)throw new Error('Некорректный ответ: '+JSON.stringify(data).slice(0,200));
+    if(!data.choices||!data.choices[0]||!data.choices[0].message){
+      throw new Error('Некорректный ответ: '+JSON.stringify(data).slice(0,200));
+    }
+
     var aiText=data.choices[0].message.content;
     box.innerHTML='<div style="white-space:pre-wrap;line-height:1.6;">'+esc(aiText)+'</div>';
+
+    // Кэшируем на сутки
     state.aiCache=state.aiCache||{};
     state.aiCache[cacheKey]=aiText;
     try{lsSet(LS_KEY,JSON.stringify(state));}catch(e){}
+
   }catch(err){
     console.error(err);
     box.innerHTML='<span style="color:var(--red)">❌ Ошибка ИИ:<br><small>'+esc(err.message)+'</small></span>';
@@ -854,51 +983,6 @@ async function analyzeGameStyle(playerId){
     btn.innerHTML=orig;
   }
 }
-function dispatch(el){var act=el.dataset.action;var id=el.dataset.id;var tid=el.dataset.tid;switch(act){case'tab':setTab(el.dataset.tab);break;case'openMenu':menuModal();break;case'menuSettings':settingsModal();break;case'menuBell':toggleSoundBell();menuModal();break;case'openAppearance':openAppearanceModal();break;case'setTheme':setTheme(el.dataset.theme);break;case'setFontSize':setFontSize(el.dataset.size);break;case'toggleSound':toggleSound();break;case'logout':logout();break;case'managePlayerCodes':managePlayerCodes();break;case'addPlayerCodeModal':addPlayerCodeModal();break;case'savePlayerCode':savePlayerCode();break;case'removePlayerCode':removePlayerCode(el.dataset.phone);break;case'chatWith':chatModal(id);break;case'sendMsgTo':(function(){var ta=document.getElementById('chatText');sendMsg(id,ta?ta.value:'');})();break;case'inbox':inboxModal();break;case'sendBroadcast':(function(){var ta=document.getElementById('bcText');sendMsg('',ta?ta.value:'');inboxModal();})();break;case'manageMatches':manageMatches(tid);break;case'resultFromManage':__returnTo=tid;resultSheet(id);break;case'addMatchFromManage':__returnTo=tid;matchModal(tid);break;case'newTraining':newTraining();break;case'confirmTraining':confirmTraining();break;case'joinTraining':joinTraining(id);break;case'leaveTraining':leaveTraining(id);break;case'newPlayer':ui.tab='players';ui.playerId=null;render();playerModal();break;case'editPlayer':playerModal(id);break;case'savePlayer':savePlayer(id||null);break;case'delPlayer':delPlayer(id);break;case'clearAvatar':__pendingAvatar=null;refreshAvatarPreview();break;case'newTournament':tournamentModal();break;case'editTournament':tournamentModal(id);break;case'saveTournament':saveTournament(id||null);break;case'delTournament':delTournament(id);break;case'openTournament':openTournament(id);break;case'viewParticipants':viewParticipants(id,false);break;case'closeNow':closeTournamentNow(id);break;case'reopen':reopenTournament(id);break;case'addParticipant':addParticipantModal(tid);break;case'pickParticipant':pickParticipant(tid,id);break;case'addAllParticipants':addAllParticipants(tid);break;case'removeParticipant':removeParticipant(tid,id);break;case'unregisterFromTournament':unregisterFromTournament(tid);break;case'newMatch':matchModal(tid);break;case'editMatch':matchModal(tid,id);break;case'saveMatch':saveMatch(tid,id||null);break;case'delMatch':delMatch(id);break;case'result':resultSheet(id);break;case'addSet':addSetRow();break;case'rmSet':el.closest('.setrow').remove();resultPreview();break;case'saveResult':saveResult();break;case'clearResult':clearResult();break;case'openPlayer':openPlayer(id);break;case'backPlayers':ui.playerId=null;render();break;case'backTournaments':ui.tournamentId=null;render();break;case'sortR':ui.ratingSort='r';render();break;case'sortW':ui.ratingSort='w';render();break;case'newAward':awardModal();break;case'emo':pickEmoji(el,el.dataset.emo);break;case'saveAward':saveAward();break;case'delAward':delAward(id);break;case'saveSettings':saveSettings();break;case'exportRatingCSV':exportRatingCSV();break;case'exportRatingPDF':exportRatingPDF();break;case'exportAllData':exportAllData();break;case'copyBackup':copyBackup();break;case'shareBackup':shareBackup();break;case'importData':document.getElementById('impFile').click();break;case'demo':loadDemo();break;case'resetAll':resetAll();break;case'closeModal':closeModal();break;case'confirmYes':if(__cb)__cb();__cb=null;closeModal();break;case'createProfile':createProfileModal();break;case'saveProfile':saveProfile();break;case'editMyProfile':editMyProfileModal();break;case'saveMyProfile':saveMyProfile();break;case'registerToTournament':registerToTournament(tid);break;case'enablePush':enablePush();break;}}
-(function setupPWA(){
-try{
-var c=document.createElement('canvas');c.width=180;c.height=180;var g=c.getContext('2d');
-g.fillStyle='#0e1e34';g.fillRect(0,0,180,180);
-g.beginPath();g.arc(90,90,82,0,Math.PI*2);g.fillStyle='#0e1e34';g.fill();g.lineWidth=6;g.strokeStyle='#31507e';g.stroke();
-g.save();g.translate(82,80);g.rotate(-0.5);g.fillStyle='#e3a067';g.fillRect(-9,26,18,42);g.fillStyle='#e8452c';g.beginPath();g.ellipse(0,-4,38,42,0,Math.PI*2);g.fill();g.restore();
-g.beginPath();g.arc(128,42,14,0,Math.PI*2);g.fillStyle='#ffa41b';g.fill();
-var iconUrl=c.toDataURL('image/png');
-var ai=document.getElementById('appleIcon');if(ai)ai.href=iconUrl;
-var manifest={name:'ТОП-СПИН — центр турниров',short_name:'ТОП-СПИН',start_url:'./',scope:'./',display:'standalone',background_color:'#0a1424',theme_color:'#0a1424',icons:[{src:iconUrl,sizes:'180x180',type:'image/png',purpose:'any'}]};
-var blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
-var ml=document.getElementById('manifestLink');if(ml)ml.href=URL.createObjectURL(blob);
-}catch(e){}
-})();
-(function init(){
-try{var d=new Date();document.getElementById('todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()];}catch(e){}
-try{if(lsGet('theme')==='light')document.body.classList.add('light');if(lsGet('fontSize')==='big')document.body.classList.add('big-font');}catch(e){}
-try{var lb=document.getElementById('lightbox');if(lb){lb.addEventListener('click',function(){closeLightbox();});}document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeLightbox();}});}catch(e){}
-var fbOk=false;try{fbOk=initFirebase();}catch(e){fbOk=false;}
-try{if(fbOk){initPresence();}}catch(e){}
-try{
-if(fbOk&&authRef){authRef.onAuthStateChanged(function(u){try{firebaseUser=u;isAdminMode=!!u;if(u){currentUser={email:u.email,role:'admin'};lsSet('topspin_session',JSON.stringify(currentUser));hideLoginScreen();beat();render();updateBadge();}else{var ps=loadPlayerSession();if(ps){currentUser=ps;isAdminMode=false;hideLoginScreen();beat();render();updateBadge();}else{currentUser=null;isAdminMode=false;showLoginScreen();}}}catch(e){try{showLoginScreen();}catch(e2){}}});}
-else{var ps2=loadPlayerSession();if(ps2){currentUser=ps2;isAdminMode=false;hideLoginScreen();beat();render();updateBadge();}else{showLoginScreen();}}
-}catch(e){try{showLoginScreen();}catch(e2){}}
-try{if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();initTrainings();}else{booted=true;initMessages();TRAIN_BOOT=true;}}catch(e){booted=true;TRAIN_BOOT=true;}
-try{initLoginBg();}catch(e){}
-try{autoCloseCheck();setInterval(autoCloseCheck,20000);}catch(e){}
-var mpb=document.getElementById('modePlayerBtn');if(mpb)mpb.addEventListener('click',showPhoneStep);
-var mab=document.getElementById('modeAdminBtn');if(mab)mab.addEventListener('click',showAdminStep);
-var sb=document.getElementById('loginSendBtn');if(sb)sb.addEventListener('click',sendPhoneCode);
-var vb=document.getElementById('loginVerifyBtn');if(vb)vb.addEventListener('click',verifyPhoneCode);
-var bb=document.getElementById('loginBackBtn');if(bb)bb.addEventListener('click',showPhoneStep);
-var ab=document.getElementById('adminLoginBtn');if(ab)ab.addEventListener('click',adminLogin);
-var lp=document.getElementById('loginPhone');if(lp)lp.addEventListener('keydown',function(e){if(e.key==='Enter')sendPhoneCode();});
-var lc=document.getElementById('loginCode');if(lc)lc.addEventListener('keydown',function(e){if(e.key==='Enter')verifyPhoneCode();});
-var ap=document.getElementById('adminPass');if(ap)ap.addEventListener('keydown',function(e){if(e.key==='Enter')adminLogin();});
-document.addEventListener('click',function(e){
-var av=e.target&&e.target.closest?e.target.closest('[data-avatar-src]'):null;
-if(av){e.preventDefault();e.stopPropagation();openLightbox(av.getAttribute('data-avatar-src'));return;}
-var el=e.target&&e.target.closest?e.target.closest('[data-action]'):null;
-if(el)dispatch(el);
-});
-if(document.getElementById('loginScreen').style.display==='none'){render();updateBadge();}
-})();
 </script>
 </body>
 </html>
