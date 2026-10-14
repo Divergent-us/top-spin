@@ -801,7 +801,6 @@ async function enablePush(){
 }
 /* ===== ИИ-ТРЕНЕР ===== */
 var WORKER_URL="https://topspin-ai.styleman81.workers.dev";
-function aiCacheKey(pid){return 'ai_'+pid+'_'+new Date().toISOString().slice(0,10);}
 function aiCacheKey(pid){return 'ai_v2_'+pid+'_'+new Date().toISOString().slice(0,10);}
 
 async function analyzeGameStyle(playerId){
@@ -826,7 +825,6 @@ async function analyzeGameStyle(playerId){
     var myPlayer=player(playerId);
     var myName=myPlayer?(myPlayer.firstName+' '+myPlayer.lastName):'игрок';
 
-    // ===== Последние 5 матчей с полной детализацией =====
     var allMyMatches=eng.played.filter(function(m){
       return m.playerAId===playerId||m.playerBId===playerId;
     });
@@ -849,7 +847,6 @@ async function analyzeGameStyle(playerId){
       var oppBalls=isA?bc[1]:bc[0];
       var delta=eng.mdelta[m.id]?(isA?eng.mdelta[m.id].A:eng.mdelta[m.id].B):0;
 
-      // Сеты по отдельности
       var setsDetail=m.sets.map(function(s){
         return isA?(s[0]+'-'+s[1]):(s[1]+'-'+s[0]);
       }).join(', ');
@@ -866,11 +863,9 @@ async function analyzeGameStyle(playerId){
         ' | турнир: '+tourName;
     }).join('\n');
 
-    // ===== Расширенная статистика =====
     var last10=allMyMatches.slice(-10);
     var winsLast10=last10.filter(function(m){return matchWinner(m)===playerId;}).length;
 
-    // Средняя разница мячей в последних 5
     var avgBallDiff=0;
     if(last5.length){
       var sumDiff=0;
@@ -882,7 +877,6 @@ async function analyzeGameStyle(playerId){
       avgBallDiff=Math.round(sumDiff/last5.length);
     }
 
-    // Средняя разница сетов
     var avgSetDiff=0;
     if(last5.length){
       var sumSetDiff=0;
@@ -894,7 +888,6 @@ async function analyzeGameStyle(playerId){
       avgSetDiff=(sumSetDiff/last5.length).toFixed(1);
     }
 
-    // Результаты против сильных/слабых соперников
     var vsStronger={w:0,l:0};
     var vsWeaker={w:0,l:0};
     allMyMatches.forEach(function(m){
@@ -906,7 +899,6 @@ async function analyzeGameStyle(playerId){
       else{win?vsWeaker.w++:vsWeaker.l++;}
     });
 
-    // Победы/поражения в 3-сетовых матчах (борьба)
     var tightMatches={w:0,l:0};
     allMyMatches.forEach(function(m){
       if(m.sets.length>=3){
@@ -915,7 +907,6 @@ async function analyzeGameStyle(playerId){
       }
     });
 
-    // ===== Формируем промпт =====
     var systemPrompt='Ты — профессиональный тренер по настольному теннису. ' +
       'Проанализируй статистику игрока и дай 4 конкретных совета, разбитых по темам: ' +
       '🎯 ТЕХНИКА, 🧠 ТАКТИКА, 💪 ФИЗИЧЕСКАЯ ФОРМА, 🔥 ПСИХОЛОГИЯ. ' +
@@ -936,7 +927,6 @@ async function analyzeGameStyle(playerId){
       '⏱️ В 3-СЕТОВЫХ МАТЧАХ (упорная борьба): '+tightMatches.w+' побед / '+tightMatches.l+' поражений\n'+
       '\n🏓 ПОСЛЕДНИЕ 5 МАТЧЕЙ (детально):\n'+matchLines;
 
-    // Если матчей нет — предупреждаем
     if(last5.length===0){
       userPrompt+='\n\n⚠️ ВАЖНО: у игрока ещё нет сыгранных матчей. Дай общие советы для начинающего по настольному теннису.';
     }
@@ -970,7 +960,6 @@ async function analyzeGameStyle(playerId){
     var aiText=data.choices[0].message.content;
     box.innerHTML='<div style="white-space:pre-wrap;line-height:1.6;">'+esc(aiText)+'</div>';
 
-    // Кэшируем на сутки
     state.aiCache=state.aiCache||{};
     state.aiCache[cacheKey]=aiText;
     try{lsSet(LS_KEY,JSON.stringify(state));}catch(e){}
