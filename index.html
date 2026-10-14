@@ -419,13 +419,22 @@ function bellSVG(on){return on?'<svg viewBox="0 0 24 24" fill="none" stroke="cur
 function initFirebase(){
   try{
     console.log('=== initFirebase START ===');
-    console.log('firebaseConfig:', firebaseConfig);
-    firebaseApp=firebase.initializeApp(firebaseConfig);
-    console.log('firebaseApp OK:', !!firebaseApp);
-    dbRef=firebase.database().ref('topspin/data');
+    
+    // Если приложение уже было инициализировано — используем его
+    try{
+      firebaseApp = firebase.app();
+      console.log('firebaseApp already exists:', !!firebaseApp);
+    }catch(e){
+      firebaseApp = firebase.initializeApp(firebaseConfig);
+      console.log('firebaseApp initialized:', !!firebaseApp);
+    }
+    
+    dbRef = firebase.database().ref('topspin/data');
     console.log('dbRef OK:', !!dbRef);
-    authRef=firebase.auth();
+    
+    authRef = firebase.auth();
     console.log('authRef OK:', !!authRef);
+    
     return true;
   }catch(e){
     console.error('=== initFirebase ERROR ===', e);
