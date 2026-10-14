@@ -973,5 +973,16 @@ async function analyzeGameStyle(playerId){
   }
 }
 </script>
+   <script>
+setTimeout(function(){
+  console.log('=== FIREBASE DEBUG ===');
+  console.log('firebase объект:', typeof firebase);
+  console.log('firebaseApp:', typeof firebaseApp);
+  console.log('authRef:', authRef);
+  console.log('dbRef:', dbRef);
+  console.log('currentUser:', currentUser);
+  console.log('isAdminMode:', isAdminMode);
+}, 2000);
+</script>
 </body>
 </html>
