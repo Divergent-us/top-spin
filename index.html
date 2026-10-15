@@ -976,6 +976,7 @@ else{var ps2=loadPlayerSession();if(ps2){currentUser=ps2;isAdminMode=false;hideL
 try{if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();initTrainings();}else{booted=true;initMessages();TRAIN_BOOT=true;}}catch(e){booted=true;TRAIN_BOOT=true;}
 try{initLoginBg();}catch(e){}
 try{autoCloseCheck();setInterval(autoCloseCheck,20000);}catch(e){}
+ try{window.addEventListener('pagehide',function(){if(isAdminMode&&window.__st){clearTimeout(window.__st);saveToFirebase();}});document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&isAdminMode&&window.__st){clearTimeout(window.__st);saveToFirebase();}});}catch(e){}
  // Принудительное сохранение при закрытии/сворачивании
 
 var mpb=document.getElementById('modePlayerBtn');if(mpb)mpb.addEventListener('click',showPhoneStep);
