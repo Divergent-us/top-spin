@@ -434,7 +434,7 @@ var __cb=null,__emo='',__rmid=null,__pendingAvatar=null;
 var __saveTimer=null;
 var __saveTimer=null;
 var __savePending=false;
-function save(){try{if(state.players&&state.players.length){lsSet(BAK_KEY,JSON.stringify(state));}lsSet(LS_KEY,JSON.stringify(state));clearTimeout(window.__st);window.__st=setTimeout(saveToFirebase,500);}catch(e){}}
+function save(){try{if(state.players&&state.players.length){lsSet(BAK_KEY,JSON.stringify(state));}lsSet(LS_KEY,JSON.stringify(state));clearTimeout(window.__st);window.__st=setTimeout(saveToFirebase,isAdminMode?250:500);}catch(e){}}
 function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);}
 var $=function(s){return document.querySelector(s);};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
