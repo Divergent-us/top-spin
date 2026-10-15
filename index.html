@@ -600,7 +600,47 @@ function tStatus(t){if(!t)return'finished';if(t.closed)return'finished';var now=
 function statusChip(t){var s=tStatus(t);if(s==='live')return'<span class="status-dot live"></span>';if(s==='upcoming')return'<span class="status-dot upcoming"></span>';return'<span class="status-dot finished"></span>';}
 var I_CHEV='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 5 7 7-7 7"/></svg>';
 var CUP_SVG='<svg class="cup-svg" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 10h36v6c0 12-8 22-18 22S14 28 14 22v-6z" fill="#ffd166"/><path d="M14 12H8c0 10 4 16 10 18M50 12h6c0 10-4 16-10 18" stroke="#ffd166" stroke-width="3" fill="none"/><rect x="28" y="38" width="8" height="8" fill="#e0a06c"/><rect x="20" y="46" width="24" height="6" rx="2" fill="#ffd166"/><rect x="16" y="52" width="32" height="6" rx="2" fill="#e0a06c"/></svg>';
-function spark(series,w,h){w=w||92;h=h||26;if(!series||series.length<2)return'<svg width="'+w+'" height="'+h+'"><line x1="0" y1="'+(h/2)+'" x2="'+w+'" y2="'+(h/2)+'" stroke="currentColor" stroke-width="1.5"/></svg>';var min=Math.min.apply(null,series),max=Math.max.apply(null,series),rng=max-min||1;var pts=series.map(function(v,i){return((i/(series.length-1)*(w-2)+1).toFixed(1))+','+((h-2-((v-min)/rng)*(h-5)).toFixed(1));}).join(' ');return'<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><polyline points="'+pts+'" fill="none" stroke="currentColor" stroke-width="2"/></svg>';}
+function spark(series,w,h){
+  w=w||300;h=h||70;
+  if(!series||series.length<2){
+    return'<div class="mut small" style="text-align:center;padding:20px">Недостаточно данных для графика</div>';
+  }
+  var min=Math.min.apply(null,series),max=Math.max.apply(null,series);
+  var rng=(max-min)||1;
+  var pad=6;
+  var plotW=w-pad*2,plotH=h-pad*2;
+  var color='#41e08d';
+  if(series[series.length-1]<series[0])color='#ff5f6b';
+  else if(series[series.length-1]===series[0])color='#8ea6c8';
+  var pts=[];
+  var circles=[];
+  for(var i=0;i<series.length;i++){
+    var x=pad+(i/(series.length-1))*plotW;
+    var y=pad+plotH-((series[i]-min)/rng)*plotH;
+    pts.push(x.toFixed(1)+','+y.toFixed(1));
+    var last=(i===series.length-1);
+    var first=(i===0);
+    if(first||last||series.length<=10){
+      circles.push('<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(last?4:2.5)+'" fill="'+(last?color:'#eaf2ff')+'" stroke="'+color+'" stroke-width="1.5"/>');
+    }
+  }
+  var midIdx=Math.floor(series.length/2);
+  var midVal=series[midIdx];
+  var minIdx=series.indexOf(min);
+  var maxIdx=series.indexOf(max);
+  return'<svg width="100%" height="'+h+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet" style="overflow:visible">'+
+    '<defs><linearGradient id="sparkGrad'+min+'_'+max+'" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0%" stop-color="'+color+'" stop-opacity="0.35"/>'+
+    '<stop offset="100%" stop-color="'+color+'" stop-opacity="0"/>'+
+    '</linearGradient></defs>'+
+    '<polygon points="'+pad+','+(pad+plotH)+' '+pts.join(' ')+' '+(pad+plotW)+','+(pad+plotH)+'" fill="url(#sparkGrad'+min+'_'+max+')"/>'+
+    '<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+color+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'+
+    circles.join('')+
+    '<text x="'+pad+'" y="'+(pad+8)+'" fill="#8ea6c8" font-size="9" font-family="Golos Text">макс '+max+'</text>'+
+    '<text x="'+pad+'" y="'+(h-1)+'" fill="#8ea6c8" font-size="9" font-family="Golos Text">мин '+min+'</text>'+
+    '<text x="'+(w-pad)+'" y="'+(pad+8)+'" fill="'+color+'" font-size="10" font-weight="700" font-family="Golos Text" text-anchor="end">'+series[series.length-1]+'</text>'+
+    '</svg>';
+}
 function deltaChip(d){return d>0?'<span class="delta up">+'+d+'</span>':d<0?'<span class="delta down">'+d+'</span>':'<span class="delta">0</span>';}
 function registerBtnHtml(t,small){var myP=getPlayerByPhone(myPhone());var registered=myP&&(t.playerIds||[]).indexOf(myP.id)!==-1;var registrable=(tStatus(t)!=='finished');var cls=small?'btn primary sm':'btn primary';if(!registrable)return'<button class="'+cls+'" disabled>Турнир завершён</button>';if(!myP)return'<button class="'+cls+'" data-action="createProfile">Создать профиль</button>';if(registered)return'<button class="'+cls+'" disabled>Вы записаны ✓</button>';return'<button class="'+cls+'" data-action="registerToTournament" data-tid="'+t.id+'">Записаться на турнир</button>';}
 function openLightbox(src){var lb=document.getElementById('lightbox');var im=document.getElementById('lightboxImg');if(!lb||!im||!src)return;im.src=src;lb.style.display='flex';document.body.classList.add('locked');}
