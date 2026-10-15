@@ -806,7 +806,7 @@ async function analyzeGameStyle(playerId){
   var btn=document.querySelector('.ai-btn-analyze');
   var box=document.getElementById('aiResponseBox');
   if(!btn||!box)return;
-  var cacheKey=aiCacheKey(playerId);
+  var cacheKey='ai_v2_'+playerId+'_'+new Date().toISOString().slice(0,10);
   if(state.aiCache&&state.aiCache[cacheKey]){
     box.style.display='block';
     box.innerHTML='<div style="white-space:pre-wrap;line-height:1.6;">'+esc(state.aiCache[cacheKey])+'</div>';
@@ -816,31 +816,83 @@ async function analyzeGameStyle(playerId){
   btn.disabled=true;
   btn.innerHTML='<span class="ai-loading"></span> Анализ…';
   box.style.display='block';
-  box.innerHTML='<span class="mut small">Обращение к ИИ…</span>';
+  box.innerHTML='<span class="mut small">Собираю статистику матчей…</span>';
   try{
     var eng=engine();
     var stats=playerStats(playerId,eng);
-    var history=eng.played.filter(function(m){return m.playerAId===playerId||m.playerBId===playerId;}).slice(-10).reverse();
-    var summary='';
-    if(history.length){
-      summary=history.map(function(m){
+    var myPlayer=player(playerId);
+    var myName=myPlayer?(myPlayer.firstName+' '+myPlayer.lastName):'игрок';
+    var allMyMatches=eng.played.filter(function(m){return m.playerAId===playerId||m.playerBId===playerId;});
+    var last5=allMyMatches.slice(-5);
+    var matchLines=last5.map(function(m){
+      var isA=m.playerAId===playerId;
+      var oppId=isA?m.playerBId:m.playerAId;
+      var oppPlayer=player(oppId);
+      var oppName=oppPlayer?(oppPlayer.firstName+' '+oppPlayer.lastName):'соперник';
+      var oppRating=eng.R[oppId]||1000;
+      var myRating=eng.R[playerId];
+      var win=matchWinner(m)===playerId;
+      var sc=setsCountArr(m.sets);
+      var mySets=isA?sc[0]:sc[1];
+      var oppSets=isA?sc[1]:sc[0];
+      var bc=ballsCountArr(m.sets);
+      var myBalls=isA?bc[0]:bc[1];
+      var oppBalls=isA?bc[1]:bc[0];
+      var delta=eng.mdelta[m.id]?(isA?eng.mdelta[m.id].A:eng.mdelta[m.id].B):0;
+      var setsDetail=m.sets.map(function(s){return isA?(s[0]+'-'+s[1]):(s[1]+'-'+s[0]);}).join(', ');
+      var t=tourn(m.tournamentId);
+      var tourName=t?t.name:'тренировка';
+      var diffRating=myRating-oppRating;
+      return (win?'✅ ПОБЕДА':'❌ Поражение')+' | соперник: '+oppName+' (рейтинг '+oppRating+', разница '+(diffRating>0?'+':'')+diffRating+') | сеты '+mySets+':'+oppSets+' ('+setsDetail+') | мячи '+myBalls+':'+oppBalls+' | дельта '+(delta>0?'+':'')+delta+' | '+tourName;
+    }).join('\n');
+    var last10=allMyMatches.slice(-10);
+    var winsLast10=last10.filter(function(m){return matchWinner(m)===playerId;}).length;
+    var avgBallDiff=0;
+    if(last5.length){
+      var sumDiff=0;
+      last5.forEach(function(m){
         var isA=m.playerAId===playerId;
-        var oppId=isA?m.playerBId:m.playerAId;
-        var oppName=pNameRaw(oppId);
+        var bc=ballsCountArr(m.sets);
+        sumDiff+=isA?(bc[0]-bc[1]):(bc[1]-bc[0]);
+      });
+      avgBallDiff=Math.round(sumDiff/last5.length);
+    }
+    var avgSetDiff=0;
+    if(last5.length){
+      var sumSetDiff=0;
+      last5.forEach(function(m){
+        var isA=m.playerAId===playerId;
         var sc=setsCountArr(m.sets);
-        var res=matchWinner(m)===playerId?'ПОБЕДА':'ПОРАЖЕНИЕ';
-        return res+' против '+oppName+' ('+sc[0]+':'+sc[1]+')';
-      }).join('\n');
-    }else{summary='Нет истории матчей.';}
-    var rating=eng.R[playerId];
-    var sys='Ты профессиональный тренер по настольному теннису. Дай 3 конкретных совета (Техника, Тактика, Менталитет) на основе статистики. Максимум 150 слов. Используй эмодзи.';
-    var usr='Рейтинг: '+rating+'. Винрейт: '+stats.winp+'%. Серия: '+stats.streak+'. Последние игры:\n'+summary;
-    var body={messages:[{role:'system',content:sys},{role:'user',content:usr}],temperature:0.7,max_tokens:500};
+        sumSetDiff+=isA?(sc[0]-sc[1]):(sc[1]-sc[0]);
+      });
+      avgSetDiff=(sumSetDiff/last5.length).toFixed(1);
+    }
+    var vsStronger={w:0,l:0};
+    var vsWeaker={w:0,l:0};
+    allMyMatches.forEach(function(m){
+      var isA=m.playerAId===playerId;
+      var oppId=isA?m.playerBId:m.playerAId;
+      var myR=eng.R[playerId],oppR=eng.R[oppId]||1000;
+      var win=matchWinner(m)===playerId;
+      if(oppR>myR){win?vsStronger.w++:vsStronger.l++;}
+      else{win?vsWeaker.w++:vsWeaker.l++;}
+    });
+    var tightMatches={w:0,l:0};
+    allMyMatches.forEach(function(m){
+      if(m.sets.length>=3){
+        var win=matchWinner(m)===playerId;
+        win?tightMatches.w++:tightMatches.l++;
+      }
+    });
+    var sys='Ты профессиональный тренер по настольному теннису. Дай 4 конкретных совета по темам: 🎯 ТЕХНИКА, 🧠 ТАКТИКА, 💪 ФИЗИЧЕСКАЯ ФОРМА, 🔥 ПСИХОЛОГИЯ. Опирайся на конкретные цифры. Не давай общих фраз — только конкретные рекомендации для тренировок. Максимум 220 слов. Используй эмодзи.';
+    var usr='📊 ИГРОК: '+myName+'\n🎾 РЕЙТИНГ: '+eng.R[playerId]+'\n📈 МАТЧЕЙ: '+stats.m+' (побед '+stats.w+', винрейт '+stats.winp+'%)\n🔥 СЕРИЯ: '+stats.streak+'\n📉 ЗА 10 МАТЧЕЙ: '+winsLast10+' побед из '+last10.length+'\n⚖️ СРЕДНЯЯ РАЗНИЦА МЯЧЕЙ: '+(avgBallDiff>0?'+':'')+avgBallDiff+'\n⚖️ СРЕДНЯЯ РАЗНИЦА СЕТОВ: '+(avgSetDiff>0?'+':'')+avgSetDiff+'\n💪 ПРОТИВ СИЛЬНЫХ: '+vsStronger.w+' побед / '+vsStronger.l+' поражений\n🎯 ПРОТИВ СЛАБЫХ: '+vsWeaker.w+' побед / '+vsWeaker.l+' поражений\n⏱️ В 3-СЕТОВЫХ: '+tightMatches.w+' побед / '+tightMatches.l+' поражений\n\n🏓 ПОСЛЕДНИЕ 5 МАТЧЕЙ:\n'+matchLines;
+    if(last5.length===0){usr+='\n\n⚠️ У игрока ещё нет матчей. Дай общие советы для начинающего.';}
+    var body={messages:[{role:'system',content:sys},{role:'user',content:usr}],temperature:0.7,max_tokens:900};
     var resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!resp.ok){var eb=await resp.text();throw new Error('API '+resp.status+': '+eb.slice(0,200));}
     var data=await resp.json();
     if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
-    if(!data.choices||!data.choices[0]||!data.choices[0].message)throw new Error('Некорректный ответ: '+JSON.stringify(data).slice(0,200));
+    if(!data.choices||!data.choices[0]||!data.choices[0].message)throw new Error('Некорректный ответ');
     var aiText=data.choices[0].message.content;
     box.innerHTML='<div style="white-space:pre-wrap;line-height:1.6;">'+esc(aiText)+'</div>';
     state.aiCache=state.aiCache||{};
