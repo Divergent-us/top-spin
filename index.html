@@ -432,11 +432,28 @@ var state=loadState()||loadBackup()||norm({});
 var ui={tab:'arena',tournamentId:null,playerId:null,ratingSort:'r'};
 var __cb=null,__emo='',__rmid=null,__pendingAvatar=null;
 var __saveTimer=null;
+var __saveTimer=null;
+var __savePending=false;
 function save(){
+  // 1. Мгновенно сохраняем в localStorage (для офлайн-режима)
   try{
     if(state.players&&state.players.length){lsSet(BAK_KEY,JSON.stringify(state));}
     lsSet(LS_KEY,JSON.stringify(state));
   }catch(e){}
+  
+  // 2. Firebase — с задержкой 500мс (debounce)
+  __savePending=true;
+  clearTimeout(__saveTimer);
+  __saveTimer=setTimeout(function(){
+    if(!__savePending)return;
+    __savePending=false;
+    try{
+      saveToFirebase();
+    }catch(e){
+      console.error('saveToFirebase error:',e);
+    }
+  },500);
+}
   clearTimeout(__saveTimer);
   __saveTimer=setTimeout(saveToFirebase,500);
 }
@@ -981,6 +998,20 @@ else{var ps2=loadPlayerSession();if(ps2){currentUser=ps2;isAdminMode=false;hideL
 try{if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();initTrainings();}else{booted=true;initMessages();TRAIN_BOOT=true;}}catch(e){booted=true;TRAIN_BOOT=true;}
 try{initLoginBg();}catch(e){}
 try{autoCloseCheck();setInterval(autoCloseCheck,20000);}catch(e){}
+ // Принудительное сохранение при закрытии/сворачивании
+try{
+  var flushSave=function(){
+    if(!__savePending)return;
+    __savePending=false;
+    clearTimeout(__saveTimer);
+    try{saveToFirebase();}catch(e){}
+  };
+  window.addEventListener('pagehide',flushSave);
+  window.addEventListener('beforeunload',flushSave);
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='hidden')flushSave();
+  });
+}catch(e){}
 var mpb=document.getElementById('modePlayerBtn');if(mpb)mpb.addEventListener('click',showPhoneStep);
 var mab=document.getElementById('modeAdminBtn');if(mab)mab.addEventListener('click',showAdminStep);
 var sb=document.getElementById('loginSendBtn');if(sb)sb.addEventListener('click',sendPhoneCode);
