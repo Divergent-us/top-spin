@@ -831,6 +831,45 @@ function saveTournament(tid){var n=(document.querySelector('#tn')?document.query
 function delTournament(tid){confirmBox('Удалить турнир?',function(){state.tournaments=state.tournaments.filter(function(t){return t.id!==tid;});state.matches=state.matches.filter(function(m){return m.tournamentId!==tid;});state.awards=state.awards.filter(function(a){return a.tournamentId!==tid;});save();ui.tournamentId=null;render();toast('Удалено');});}
 function closeTournamentNow(tid){var t=tourn(tid);t.closed=true;save();render();toast('Завершён','ok');}
 function reopenTournament(tid){var t=tourn(tid);t.closed=false;save();render();toast('Открыт');}
+ /* ===== УПРАВЛЕНИЕ КОМАНДАМИ (только админ) ===== */
+function manageTeamsModal(tid){
+  if(!isAdminMode)return;
+  var t=tourn(tid);
+  if(!t||t.type!=='team')return;
+  t.teams=t.teams||[];
+  var teamsHtml=t.teams.length?t.teams.map(function(tm){
+    var playersList=(tm.playerIds||[]).map(function(pid){
+      var p=player(pid);
+      return p?'<span class="tc-name" style="cursor:pointer" data-action="openPlayer" data-id="'+pid+'">'+esc(p.firstName+' '+p.lastName)+'</span>':'';
+    }).join('');
+    return'<div class="train-card" style="margin-bottom:8px"><div class="tc-left"><div class="tc-time">🤝 '+esc(tm.name)+'</div><div class="tc-sub">Игроков: '+((tm.playerIds||[]).length)+'</div><div class="tc-names">'+(playersList||'<span class="dim small">Пусто</span>')+'</div></div><div class="tc-btn" style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost sm" data-action="editTeam" data-tid="'+tid+'" data-id="'+tm.id+'">✎</button><button class="btn danger sm" data-action="delTeam" data-tid="'+tid+'" data-id="'+tm.id+'">✕</button></div></div>';
+  }).join(''):'<div class="mut small" style="padding:8px">Пока нет команд. Добавьте первую.</div>';
+  modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Управление командами</h3><div class="mut small" style="margin-bottom:10px">'+esc(t.name)+' • команд: '+t.teams.length+'</div><div style="max-height:55vh;overflow-y:auto;padding-right:4px">'+teamsHtml+'</div><div class="row-actions"><button class="btn primary w100" data-action="addTeam" data-tid="'+tid+'">＋ Добавить команду</button></div><div class="row-actions"><button class="btn ghost w100" data-action="closeModal">Закрыть</button></div>');
+}
+
+function teamModal(tid,teamId){
+  if(!isAdminMode)return;
+  var t=tourn(tid);
+  if(!t)return;
+  t.teams=t.teams||[];
+  var tm=teamId?t.teams.find(function(x){return x.id===teamId;}):null;
+  // Свободные игроки турнира + игроки этой команды
+  var pool=(t.playerIds||[]).slice();
+  var inTeam=tm?(tm.playerIds||[]):[];
+  var freePlayers=pool.filter(function(pid){
+    // не заняты другой командой
+    var inOtherTeam=t.teams.some(function(x){return x.id!==(tm?tm.id:'')&&(x.playerIds||[]).indexOf(pid)>=0;});
+    return !inOtherTeam;
+  });
+  var picked=tm?(tm.playerIds||[]).slice():[];
+  var listHtml=freePlayers.length?freePlayers.map(function(pid){
+    var p=player(pid);
+    if(!p)return'';
+    var on=picked.indexOf(pid)>=0;
+    return'<div class="picker-item'+(on?' picker-picked':'')+'" data-action="toggleTeamPlayer" data-pid="'+pid+'" style="'+(on?'border-color:var(--green);background:rgba(65,224,141,.08)':'')+'">'+miniAvatar(p)+'<span class="nm">'+esc(p.firstName+' '+p.lastName)+'</span><span class="rt" style="color:'+(on?'var(--green)':'var(--dim)')+'">'+(on?'✓ выбран':'выбрать')+'</span></div>';
+  }).join(''):'<div class="mut small">Сначала запишите игроков на турнир</div>';
+  modal('<button class="modal-x" data-action="closeModal">✕</button><h3>'+(tm?'Редактировать команду':'Новая команда')+'</h3><label>Название команды</label><input id="tmName" value="'+(tm?esc(tm.name):'')+'"><label>Состав</label><div class="mut small" style="margin-bottom:6px">Отметьте игроков, которые войдут в команду</div><div class="picker-list" id="teamPicker" style="max-height:40vh">'+listHtml+'</div><input type="hidden" id="tmPicked" value="'+picked.join(',')+'"><div class="row-actions"><button class="btn ghost" data-action="manageTeams" data-tid="'+tid+'">Назад</button><button class="btn primary" data-action="saveTeam" data-tid="'+tid+'" data-id="'+(teamId||'')+'">Сохранить</button></div>');
+}
 function addParticipantModal(tid){var avail=state.players.filter(function(p){return(tourn(tid).playerIds||[]).indexOf(p.id)<0;});if(!avail.length){toast('Все добавлены','err');return;}var items=avail.map(function(p){return'<div class="picker-item" data-action="pickParticipant" data-tid="'+tid+'" data-id="'+p.id+'">'+miniAvatar(p)+'<span class="nm">'+esc(p.firstName+' '+p.lastName)+'</span></div>';}).join('');modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Добавить участника</h3><div class="picker-list">'+items+'</div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Закрыть</button></div>');}
 function pickParticipant(tid,pid){var t=tourn(tid);t.playerIds=t.playerIds||[];if(t.playerIds.indexOf(pid)<0)t.playerIds.push(pid);save();closeModal();render();toast('Добавлен','ok');}
 function addAllParticipants(tid){var t=tourn(tid);t.playerIds=t.playerIds||[];var added=0;state.players.forEach(function(p){if(t.playerIds.indexOf(p.id)<0){t.playerIds.push(p.id);added++;}});save();render();toast('Добавлено '+added,'ok');}
