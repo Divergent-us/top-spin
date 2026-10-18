@@ -997,7 +997,23 @@ function awRowHtml(a){
   var subText = a.auto ? esc(a.sub || 'автоматически') : (((a.tournamentId&&tourn(a.tournamentId))?esc(tourn(a.tournamentId).name):'вне турнира')+' • '+fmtDate(a.date));
   return'<div class="award-card '+mc+'"><div class="award-emoji">'+a.emoji+'</div><div class="award-mid">'+avatarHtml(p,'reg')+'<div class="award-info"><div class="award-title">'+esc(a.title)+autoBadge+'</div><div class="award-name">'+esc(p?p.firstName+' '+p.lastName:'—')+'</div><div class="award-sub">'+subText+'</div></div></div>'+delBtn+'</div>';
 }
-function viewAwards(){var list=[].concat(state.awards).sort(function(a,b){return String(b.date||'').localeCompare(String(a.date||''));});var cards=list.map(function(a){return awRowHtml(a);}).join('');return'<div class="sec-title">Награды <span class="cnt">'+state.awards.length+'</span></div>'+(isAdminMode?'<button class="btn primary w100" data-action="newAward" style="margin-bottom:13px">Вручить награду</button>':'')+(cards?'<div class="rise">'+cards+'</div>':'<div class="empty"><div class="big">🏆</div><b>Наград пока нет</b></div>');}
+function viewAwards(){
+  var eng = engine();
+  var autoAwards = computeAutoAwards(eng);
+  var manualAwards = [].concat(state.awards).sort(function(a,b){return String(b.date||'').localeCompare(String(a.date||''));});
+  var autoHtml = autoAwards.length
+    ? autoAwards.map(function(a){return awRowHtml(a);}).join('')
+    : '<div class="mut small" style="padding:8px">Пока нет автоматических наград. Они появятся после достаточного количества матчей.</div>';
+  var manualHtml = manualAwards.length ? manualAwards.map(function(a){return awRowHtml(a);}).join('') : '';
+  var html = '<div class="sec-title">🏆 Автоматические награды <span class="cnt">'+autoAwards.length+'</span></div><div class="mut small" style="margin:-4px 2px 10px">Выдаются системой автоматически по критериям. От админа не зависят.</div><div class="rise">'+autoHtml+'</div>';
+  if(manualAwards.length){
+    html += '<div class="sec-title">🎖 Награды от админа <span class="cnt">'+manualAwards.length+'</span></div><div class="rise">'+manualHtml+'</div>';
+  }
+  if(isAdminMode){
+    html += '<div class="row-actions"><button class="btn ghost w100" data-action="newAward" style="margin-top:14px">＋ Вручить ручную награду</button></div>';
+  }
+  return html;
+}
 function pushCardHtml(){try{if(!('Notification' in window))return'';if(!('serviceWorker' in navigator))return'';if(Notification.permission==='granted'&&FCM_TOKEN){return'';}return'<div class="push-enable-card"><div class="pe-ico">🔔</div><div class="pe-body"><div class="pe-title">Включить уведомления</div><div class="pe-sub">Получайте push о новых тренировках, сообщениях и старте турниров</div></div><div class="pe-btn"><button class="btn primary sm" data-action="enablePush">Включить</button></div></div>';}catch(e){return'';}}
 function viewProfile(){var eng=engine();var myPlayer=getPlayerByPhone(myPhone());var un=unreadCount();if(!myPlayer){return'<div class="sec-title">Мой кабинет</div><div class="empty rise"><div class="big">👤</div><b>Профиль не найден</b><div class="row-actions"><button class="btn primary" data-action="createProfile">Создать профиль</button></div></div>';}var st=playerStats(myPlayer.id,eng);var myTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)!==-1;});var myUpcoming=myTournaments.filter(function(t){return tStatus(t)!=='finished';});var myPast=myTournaments.filter(function(t){return tStatus(t)==='finished';});var availableTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)===-1&&tStatus(t)!=='finished';});var myTrainings=(state.trainings||[]).filter(function(tr){return (tr.participantIds||[]).indexOf(myPlayer.id)>=0&&trainingMs(tr)>=Date.now()-3600000;});var aw=playerAwards(myPlayer.id);var html='<div class="sec-title">Мой кабинет</div><div class="profile-card rise">'+avatarHtml(myPlayer,'xl')+'<div class="profile-info"><div class="profile-name">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div><div class="profile-phone">'+(currentUser?currentUser.phone:'')+'</div><div class="profile-rating-num">'+eng.R[myPlayer.id]+'</div>'+(aw.length?'<div style="font-size:18px;margin-top:4px">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'')+'</div><button class="iconbtn" data-action="editMyProfile">✎</button></div>';
 html+=pushCardHtml();
