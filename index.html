@@ -443,6 +443,25 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 <div id="modal-root"></div>
 <div id="toast-root"></div>
 <div id="lightbox"><img id="lightboxImg" alt=""></div>
+ <div class="chat-screen" id="chatScreen">
+  <div class="chat-header">
+    <button class="chat-back" data-action="closeChat" aria-label="Назад">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <div class="chat-header-av" id="chatHeaderAv">?</div>
+    <div class="chat-header-info">
+      <div class="chat-header-name" id="chatHeaderName">—</div>
+      <div class="chat-header-status" id="chatHeaderStatus">не в сети</div>
+    </div>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-input-area">
+    <textarea class="chat-textarea" id="chatInput" rows="1" placeholder="Сообщение…" oninput="autoGrowChatInput()" onkeydown="chatInputKeyDown(event)"></textarea>
+    <button class="chat-send" data-action="sendChatMsg" aria-label="Отправить">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
 <script>
 /* ============================================================
    ТОП-СПИН v4 — с отдельной веткой trainings и push-уведомлениями
