@@ -682,7 +682,170 @@ function updateBadge(){var n=unreadCount();var tab=document.querySelector('.tabb
 function appendChatBubble(m){var box=document.getElementById('chatBox');if(!box)return;var mine=m.from===myPhone();var div=document.createElement('div');div.style.cssText='text-align:'+(mine?'right':'left')+';margin:6px 0';div.innerHTML='<div style="display:inline-block;max-width:85%;padding:8px 12px;border-radius:12px;background:'+(mine?'rgba(255,139,31,.2)':'rgba(58,169,255,.15)')+';border:1px solid var(--line)">'+esc(m.text)+'<div style="font-size:10px;color:var(--dim);margin-top:2px">'+(mine?'':esc(m.fromName)+' · ')+new Date(m.ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+'</div></div>';box.appendChild(div);box.scrollTop=box.scrollHeight;}
 function initMessages(){try{if(!dbRef){try{MSGS=JSON.parse(lsGet('topspin_msgs_local'))||[];}catch(e){MSGS=[];}return;}msgRef=firebase.database().ref('topspin/messages');msgRef.on('child_added',function(snap){var m=snap.val();if(!m)return;m.id=snap.key;if(MSGS.some(function(x){return x.id===m.id;}))return;MSGS.push(m);MSGS.sort(function(a,b){return a.ts-b.ts;});var involvesMe=currentUser&&m.from!==myPhone()&&(m.to===myPhone()||m.to==='');if(involvesMe&&m.ts>BOOT_TS){notifyMessage(m);}if(currentUser&&__openChatPhone&&((m.from===myPhone()&&m.to===__openChatPhone)||(m.from===__openChatPhone&&m.to===myPhone()))){appendChatBubble(m);}updateBadge();if(currentUser&&ui.tab==='profile'){render();}});}catch(e){}}
 function sendMsg(toPhone,text){if(!currentUser)return;text=String(text||'').trim();if(!text){toast('Введите текст','err');return;}var m={from:myPhone(),fromName:myName(),to:toPhone,text:text,ts:Date.now()};if(msgRef){msgRef.push(m);}else{m.id=uid();MSGS.push(m);lsSet('topspin_msgs_local',JSON.stringify(MSGS));updateBadge();if(__openChatPhone===toPhone){appendChatBubble(m);}}toast('Отправлено','ok');}
-function chatModal(x){var phone=resolvePhone(x);__openChatPhone=phone;var p=state.players.find(function(q){return q.phone===phone;});var title=p?(p.firstName+' '+p.lastName):phone;markRead();updateBadge();var th=threadWith(phone);var html='<button class="modal-x" data-action="closeModal">✕</button><h3>💬 '+esc(title)+'</h3><div id="chatBox" style="max-height:40vh;overflow-y:auto;margin:10px 0">'+(th.length?th.map(function(m){var mine=m.from===myPhone();return'<div style="text-align:'+(mine?'right':'left')+';margin:6px 0"><div style="display:inline-block;max-width:85%;padding:8px 12px;border-radius:12px;background:'+(mine?'rgba(255,139,31,.2)':'rgba(58,169,255,.15)')+';border:1px solid var(--line)">'+esc(m.text)+'<div style="font-size:10px;color:var(--dim);margin-top:2px">'+(mine?'':esc(m.fromName)+' · ')+new Date(m.ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+'</div></div></div>';}).join(''):'<div class="mut small">Сообщений пока нет</div>')+'</div><textarea id="chatText" style="width:100%;height:70px" placeholder="Текст сообщения…"></textarea><div class="row-actions"><button class="btn primary" data-action="sendMsgTo" data-id="'+phone+'">Отправить</button></div>';modal(html);var box=document.getElementById('chatBox');if(box)box.scrollTop=box.scrollHeight;}
+var READS={},__chatFrom=null,readsRef=null;
+
+function presKeyP(x){return presKeyFor(x);}
+
+function initReads(){
+  if(!dbRef)return;
+  readsRef=dbRef.child('reads');
+  readsRef.on('value',function(snap){
+    READS=snap.val()||{};
+    if(__openChatPhone){
+      var body=document.getElementById('chatBody');
+      if(body){
+        var wasAtBottom=(body.scrollHeight-body.scrollTop-body.clientHeight)<150;
+        renderChatMessages(wasAtBottom);
+      }
+    }
+  });
+}
+
+function markChatRead(partnerPhone){
+  if(!dbRef||!currentUser)return;
+  var myP=myPhone();if(!myP||!partnerPhone)return;
+  dbRef.child('reads').child(presKeyP(myP)).child(presKeyP(partnerPhone)).set(Date.now()).catch(function(){});
+}
+
+function isMyMsgRead(m){
+  if(m.from!==myPhone())return false;
+  var partner=m.to;if(!partner)return false;
+  var myKey=presKeyP(myPhone());
+  var partKey=presKeyP(partner);
+  var readTs=(READS[partKey]&&READS[partKey][myKey])||0;
+  return readTs>m.ts;
+}
+
+function formatChatDate(ts){
+  var d=new Date(ts);
+  var now=new Date();
+  var today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  var md=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  var diff=Math.round((today-md)/86400000);
+  if(diff===0)return'Сегодня';
+  if(diff===1)return'Вчера';
+  if(diff<7)return d.toLocaleDateString('ru-RU',{weekday:'long'});
+  return d.getDate()+' '+MONF[d.getMonth()]+(d.getFullYear()!==now.getFullYear()?' '+d.getFullYear():'');
+}
+
+function chatMsgHtml(m){
+  var mine=m.from===myPhone();
+  var time=new Date(m.ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  var check='';
+  if(mine){
+    var read=isMyMsgRead(m);
+    check=read?'<span class="check read">✓✓</span>':'<span class="check">✓</span>';
+  }
+  return'<div class="chat-msg '+(mine?'mine':'')+'"><div class="msg-bubble">'+esc(m.text)+'<div class="msg-meta">'+time+' '+check+'</div></div></div>';
+}
+
+function renderChatMessages(scrollToBottom){
+  if(scrollToBottom===undefined)scrollToBottom=true;
+  var body=document.getElementById('chatBody');
+  if(!body||!__openChatPhone)return;
+  var th=threadWith(__openChatPhone);
+  if(!th.length){
+    body.innerHTML='<div class="chat-empty"><div class="big">💬</div><div>Сообщений пока нет</div><div class="mut small" style="margin-top:4px">Напишите первым!</div></div>';
+    return;
+  }
+  var html='';
+  var lastDate=null;
+  for(var i=0;i<th.length;i++){
+    var m=th[i];
+    var dateStr=formatChatDate(m.ts);
+    if(dateStr!==lastDate){
+      html+='<div class="chat-date-divider"><span>'+dateStr+'</span></div>';
+      lastDate=dateStr;
+    }
+    html+=chatMsgHtml(m);
+  }
+  body.innerHTML=html;
+  if(scrollToBottom)body.scrollTop=body.scrollHeight;
+}
+
+function openChat(x,from){
+  var phone=resolvePhone(x);
+  __openChatPhone=phone;
+  __chatFrom=from||null;
+  closeModal();
+  var screen=document.getElementById('chatScreen');
+  if(!screen)return;
+  var p=state.players.find(function(q){return q.phone===phone;});
+  var title=p?(p.firstName+' '+p.lastName):phone;
+  var nameEl=document.getElementById('chatHeaderName');
+  if(nameEl)nameEl.textContent=title;
+  var avEl=document.getElementById('chatHeaderAv');
+  if(avEl){
+    if(p&&p.avatar){avEl.innerHTML='<img src="'+p.avatar+'" alt="">';}
+    else{
+      avEl.style.background=avColor(p?p.id:'x');
+      avEl.style.color='#0a1424';
+      avEl.textContent=p?initials(p):'?';
+      avEl.innerHTML=p?initials(p):'?';
+    }
+  }
+  var statusEl=document.getElementById('chatHeaderStatus');
+  if(statusEl){
+    if(p&&p.phone&&isOnline(presKeyFor(p.phone))){
+      statusEl.textContent='в сети';
+      statusEl.classList.add('online');
+    }else{
+      statusEl.textContent='не в сети';
+      statusEl.classList.remove('online');
+    }
+  }
+  markRead();
+  updateBadge();
+  markChatRead(phone);
+  screen.classList.add('active');
+  document.body.classList.add('locked');
+  renderChatMessages(true);
+  var input=document.getElementById('chatInput');
+  if(input){
+    input.value='';
+    setTimeout(function(){input.style.height='auto';},50);
+    if(window.innerWidth>700)setTimeout(function(){input.focus();},150);
+  }
+}
+
+function closeChat(){
+  var screen=document.getElementById('chatScreen');
+  if(!screen)return;
+  screen.classList.remove('active');
+  document.body.classList.remove('locked');
+  __openChatPhone=null;
+  if(__chatFrom==='inbox'){
+    __chatFrom=null;
+    inboxModal();
+  }
+}
+
+function autoGrowChatInput(){
+  var ta=document.getElementById('chatInput');
+  if(!ta)return;
+  ta.style.height='auto';
+  ta.style.height=Math.min(ta.scrollHeight,120)+'px';
+}
+
+function chatInputKeyDown(e){
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    sendChatMessage();
+  }
+}
+
+function sendChatMessage(){
+  var input=document.getElementById('chatInput');
+  if(!input||!__openChatPhone)return;
+  var text=input.value.trim();
+  if(!text)return;
+  input.value='';
+  input.style.height='auto';
+  sendMsg(__openChatPhone,text);
+  renderChatMessages(true);
+}
+
+function appendChatBubble(m){renderChatMessages(true);}
 function inboxModal(){markRead();updateBadge();var list=inboxList();var html='<button class="modal-x" data-action="closeModal">✕</button><h3>💬 Сообщения</h3><div class="picker-list" style="margin:10px 0">'+(list.length?list.map(function(c){return'<div class="picker-item" data-action="chatWith" data-id="'+c.from+'"><span class="sms-ico" style="width:32px;height:32px;font-size:15px">💬</span><span class="nm">'+esc(c.name)+(c.unread?' <span class="delta down">'+c.unread+'</span>':'')+'</span><span class="rt">'+esc(String(c.last).slice(0,18))+'</span></div>';}).join(''):'<div class="mut small">Нет входящих</div>')+'</div>'+(isAdminMode?'<label>Объявление всем</label><textarea id="bcText" style="width:100%;height:60px" placeholder="Текст объявления…"></textarea><div class="row-actions"><button class="btn primary w100" data-action="sendBroadcast">Отправить всем</button></div>':'');modal(html);}
 function menuModal(){var on=lsGet('soundEnabled')!=='false';var adminRow=isAdminMode?'<div class="menu-row" data-action="forceSave" style="border-color:rgba(65,224,141,.5)"><span style="font-size:20px;text-align:center;width:20px">💾</span><span>Сохранить сейчас</span></div>':'';modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Меню</h3>'+adminRow+'<div class="menu-row" data-action="menuSettings">'+SVG_GEAR+'<span>Настройки</span></div><div class="menu-row" data-action="menuBell">'+bellSVG(on)+'<span>Звук: '+(on?'включён':'выключен')+'</span></div>');}
 function manageMatches(tid){var t=tourn(tid);if(!t)return;var ms=state.matches.filter(function(m){return m.tournamentId===tid;}).sort(function(a,b){return(a.time||'99:99').localeCompare(b.time||'99:99');});var items=ms.map(function(m){var played=m.sets&&m.sets.length;var sc=played?setsCountArr(m.sets):null;var setsStr=played?m.sets.map(function(s){return s[0]+':'+s[1];}).join(' '):'';return'<div class="mm-item"><button class="mrow" data-action="resultFromManage" data-id="'+m.id+'" data-tid="'+tid+'"><span class="pl"><span>'+pName(m.playerAId)+'</span><span>'+pName(m.playerBId)+'</span></span>'+(played?'<span class="sc">'+sc[0]+':'+sc[1]+'</span>':'<span class="st">счёт</span>')+'</button>'+(setsStr?'<div class="sets-line">сеты: '+setsStr+'</div>':'')+'</div>';}).join('');modal('<button class="modal-x" data-action="closeModal">✕</button><h3>'+esc(t.name)+'</h3><div class="mut small">Страница турнира • ведение счёта по сетам</div><div class="mm-list">'+(items||'<div class="mut small">Пар пока нет — добавьте пару</div>')+'</div><div class="row-actions"><button class="btn primary w100" data-action="addMatchFromManage" data-tid="'+tid+'">＋ Добавить пару</button></div>');}
