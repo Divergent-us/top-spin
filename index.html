@@ -465,6 +465,123 @@ return'<div class="'+cls+ring+'"'+pk+' style="background:'+avColor(p?p.id:'x')+'
 function miniAvatar(p){if(p&&p.avatar)return'<span class="pmini"><img src="'+p.avatar+'" alt="" data-avatar-src="'+p.avatar+'"></span>';return'<span class="pmini" style="background:'+avColor(p?p.id:'x')+'">'+(p?initials(p):'?')+'</span>';}
 function winPhoto(p){if(!p)return'';var key=presKeyFor(p.phone||'');var ring='',pk='';if(key){ring=' pring '+(isOnline(key)?'on':'off');pk=' data-pkey="'+esc(key)+'"';}return'<span class="winphoto'+ring+'"'+pk+' title="Победитель">'+(p.avatar?'<img src="'+p.avatar+'" alt="" data-avatar-src="'+p.avatar+'">':'<span class="ini" style="background:'+avColor(p.id)+'">'+initials(p)+'</span>')+'</span>';}
 function podPhoto(p){var key=p?presKeyFor(p.phone||''):'';var ring='',pk='';if(key){ring=' pring '+(isOnline(key)?'on':'off');pk=' data-pkey="'+esc(key)+'"';}return'<div class="pod-photo'+ring+'"'+pk+'>'+(p&&p.avatar?'<img src="'+p.avatar+'" alt="" data-avatar-src="'+p.avatar+'">':'<span class="ini" style="background:'+avColor(p?p.id:'x')+'">'+(p?initials(p):'?')+'</span>')+'</div>';}
+ function computeAutoAwards(eng){
+  eng = eng || engine();
+  var awards = [];
+  var players = state.players || [];
+  if(!players.length) return awards;
+
+  var baseR = +state.settings.startRating || 1000;
+
+  // 1-3: Топ рейтинга
+  var sorted = players.slice().sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});
+  if(sorted.length >= 3){
+    var medals = ['🏆','🥈','🥉'];
+    var titles = ['Император рейтинга','Серебро рейтинга','Бронза рейтинга'];
+    for(var i=0;i<3;i++){
+      awards.push({id:'auto_top'+(i+1)+'_'+sorted[i].id,playerId:sorted[i].id,title:titles[i],emoji:medals[i],auto:true,sub:'Топ-'+(i+1)+' по рейтингу'});
+    }
+  }
+
+  // 4: Серия побед (у каждого, у кого >=3)
+  players.forEach(function(p){
+    var st = playerStats(p.id, eng);
+    if(st.streak >= 3){
+      awards.push({id:'auto_streak_'+p.id,playerId:p.id,title:'Серия побед',emoji:'🔥',auto:true,sub:st.streak+' побед подряд'});
+    }
+  });
+
+  // 5: Снайпер
+  var bestWR = null;
+  players.forEach(function(p){
+    var st = playerStats(p.id, eng);
+    if(st.m >= 5 && st.winp >= 60){
+      if(!bestWR || st.winp > bestWR.winp || (st.winp === bestWR.winp && st.m > bestWR.m)){
+        bestWR = {pid:p.id, winp:st.winp, m:st.m};
+      }
+    }
+  });
+  if(bestWR){
+    awards.push({id:'auto_sniper_'+bestWR.pid,playerId:bestWR.pid,title:'Снайпер',emoji:'🎯',auto:true,sub:'Винрейт '+bestWR.winp+'% за '+bestWR.m+' матчей'});
+  }
+
+  // 6: Марафонец
+  var marathon = null;
+  players.forEach(function(p){
+    var st = playerStats(p.id, eng);
+    if(st.m >= 10 && (!marathon || st.m > marathon.m)){
+      marathon = {pid:p.id, m:st.m};
+    }
+  });
+  if(marathon){
+    awards.push({id:'auto_marathon_'+marathon.pid,playerId:marathon.pid,title:'Марафонец',emoji:'💪',auto:true,sub:marathon.m+' матчей'});
+  }
+
+  // 7: Восходящая звезда
+  var rising = null;
+  players.forEach(function(p){
+    var st = playerStats(p.id, eng);
+    if(st.m >= 5){
+      var growth = eng.R[p.id] - baseR;
+      if(!rising || growth > rising.growth){
+        rising = {pid:p.id, growth:growth};
+      }
+    }
+  });
+  if(rising && rising.growth > 0){
+    awards.push({id:'auto_rising_'+rising.pid,playerId:rising.pid,title:'Восходящая звезда',emoji:'📈',auto:true,sub:'+'+rising.growth+' к рейтингу'});
+  }
+
+  // 8: Гроза авторитетов
+  var giantKiller = null;
+  players.forEach(function(p){
+    var myR = eng.R[p.id];
+    var wins = 0;
+    eng.played.forEach(function(m){
+      if(m.playerAId !== p.id && m.playerBId !== p.id) return;
+      var oppId = m.playerAId === p.id ? m.playerBId : m.playerAId;
+      var oppR = eng.R[oppId];
+      if(oppR > myR && matchWinner(m) === p.id) wins++;
+    });
+    if(wins >= 3 && (!giantKiller || wins > giantKiller.wins)){
+      giantKiller = {pid:p.id, wins:wins};
+    }
+  });
+  if(giantKiller){
+    awards.push({id:'auto_giant_'+giantKiller.pid,playerId:giantKiller.pid,title:'Гроза авторитетов',emoji:'👑',auto:true,sub:giantKiller.wins+' побед над сильнейшими'});
+  }
+
+  // 9: Тренировочный маньяк
+  var trainingCounts = {};
+  (state.trainings || []).forEach(function(tr){
+    (tr.participantIds || []).forEach(function(pid){
+      trainingCounts[pid] = (trainingCounts[pid] || 0) + 1;
+    });
+  });
+  var trainingFan = null;
+  players.forEach(function(p){
+    var cnt = trainingCounts[p.id] || 0;
+    if(cnt >= 5 && (!trainingFan || cnt > trainingFan.cnt)){
+      trainingFan = {pid:p.id, cnt:cnt};
+    }
+  });
+  if(trainingFan){
+    awards.push({id:'auto_training_'+trainingFan.pid,playerId:trainingFan.pid,title:'Тренировочный маньяк',emoji:'🏓',auto:true,sub:trainingFan.cnt+' тренировок'});
+  }
+
+  // 10: Лучший новичок
+  var newcomers = players.filter(function(p){
+    return toursPlayedCount(p.id) <= 5 && playerStats(p.id, eng).m >= 3;
+  });
+  if(newcomers.length >= 2){
+    newcomers.sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});
+    var newb = newcomers[0];
+    awards.push({id:'auto_newcomer_'+newb.id,playerId:newb.id,title:'Лучший новичок',emoji:'🎓',auto:true,sub:'Рейтинг '+eng.R[newb.id]+' за ≤5 турниров'});
+  }
+
+  return awards;
+}
+
 function playerAwards(pid){return state.awards.filter(function(a){return a.playerId===pid;});}
 function countMatches(id){return state.matches.filter(function(m){return m.playerAId===id||m.playerBId===id;}).length;}
 function normalizeName(s){return String(s==null?'':s).replace(/\s+$/,'').replace(/\.+$/,'').trim();}
