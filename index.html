@@ -677,6 +677,12 @@ if(stnd.length){html+='<div class="sec-title">Таблица турнира</div
 function initTrainings(){if(!dbRef){TRAIN_BOOT=true;return;}TRAIN_REF=firebase.database().ref('topspin/trainings');TRAIN_REF.on('value',function(snap){var data=snap.val()||{};var arr=[];Object.keys(data).forEach(function(k){var tr=data[k];if(!tr)return;tr.id=k;arr.push(tr);});arr=arr.filter(function(tr){return !trainingIsPast(tr);});state.trainings=arr;lsSet(LS_KEY,JSON.stringify(state));TRAIN_BOOT=true;if(currentUser&&(ui.tab==='arena'||ui.tab==='profile')){render();}});}
 function trainingWrite(tr,cb){if(!TRAIN_REF){toast('Нет связи с сервером','err');return;}TRAIN_REF.child(tr.id).set(tr).then(function(){if(cb)cb();}).catch(function(e){toast('Ошибка сохранения','err');});}
 function trainingDelete(id,cb){if(!TRAIN_REF)return;TRAIN_REF.child(id).remove().then(function(){if(cb)cb();}).catch(function(){});}
+function adminDelTraining(id){
+  if(!isAdminMode){toast('Только для админа','err');return;}
+  confirmBox('Удалить тренировку у всех игроков?',function(){
+    trainingDelete(id,function(){toast('Тренировка удалена');});
+  });
+} 
 function newTraining(){var my=getPlayerByPhone(myPhone());if(!my){toast('Сначала создайте профиль','err');return;}var today=new Date().toISOString().slice(0,10);modal('<button class="modal-x" data-action="closeModal">✕</button><h3>🏓 Буду тренироваться</h3><div class="mut small">Создайте заявку. Все игроки и админ увидят её мгновенно.</div><label>Дата</label><input id="trD" type="date" value="'+today+'"><label>Время</label><input id="trT" type="time" value="18:00"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="confirmTraining">Создать</button></div>');}
 function confirmTraining(){
   var my=getPlayerByPhone(myPhone());
