@@ -718,7 +718,21 @@ if(t.type==='team'){
 }else{
   html+='<div class="sec-title">Записаны на турнир <span class="cnt">'+ids.length+'</span></div><div class="card rise"><div class="ptags">'+(ptags||'<span class="mut small">Пока никто не записан</span>')+'</div></div>';
 }
-if(stnd.length){html+='<div class="sec-title">Таблица турнира</div><div class="card rise" style="overflow-x:auto"><table class="tbl"><tr><th>#</th><th>Игрок</th><th>В-П</th><th>Сеты</th><th>Мячи</th></tr>';stnd.forEach(function(r,i){var p=player(r.pid);html+='<tr><td class="rk">'+(i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+r.pid+'">'+esc(p?p.firstName+' '+p.lastName:'—')+'</td><td>'+r.w+'В-'+r.l+'П</td><td>'+r.sw+':'+r.sl+'</td><td>'+r.bw+':'+r.bl+'</td></tr>';});html+='</table></div>';}return html;}
+if(t.type==='team'){
+  var stndT=standingsTeam(t.id);
+  if(stndT.length){
+    html+='<div class="sec-title">🤝 Таблица команд</div><div class="card rise" style="overflow-x:auto"><table class="tbl"><tr><th>#</th><th>Команда</th><th>В-П</th><th>Сеты</th><th>Мячи</th></tr>';
+    stndT.forEach(function(r,i){
+      var medal=i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'';
+      html+='<tr><td class="rk">'+(i+1)+'</td><td class="nm" style="cursor:pointer" data-action="manageTeams" data-tid="'+t.id+'">'+medal+esc(r.name)+'</td><td>'+r.w+'В-'+r.l+'П</td><td>'+r.sw+':'+r.sl+'</td><td>'+r.bw+':'+r.bl+'</td></tr>';
+    });
+    html+='</table></div>';
+  }
+}else if(stnd.length){
+  html+='<div class="sec-title">Таблица турнира</div><div class="card rise" style="overflow-x:auto"><table class="tbl"><tr><th>#</th><th>Игрок</th><th>В-П</th><th>Сеты</th><th>Мячи</th></tr>';
+  stnd.forEach(function(r,i){var p=player(r.pid);html+='<tr><td class="rk">'+(i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+r.pid+'">'+esc(p?p.firstName+' '+p.lastName:'—')+'</td><td>'+r.w+'В-'+r.l+'П</td><td>'+r.sw+':'+r.sl+'</td><td>'+r.bw+':'+r.bl+'</td></tr>';});
+  html+='</table></div>';
+}return html;}
 /* ===== ТРЕНИРОВКИ: работа через отдельный Firebase-ref ===== */
 function initTrainings(){if(!dbRef){TRAIN_BOOT=true;return;}TRAIN_REF=firebase.database().ref('topspin/trainings');TRAIN_REF.on('value',function(snap){var data=snap.val()||{};var arr=[];Object.keys(data).forEach(function(k){var tr=data[k];if(!tr)return;tr.id=k;arr.push(tr);});arr=arr.filter(function(tr){return !trainingIsPast(tr);});state.trainings=arr;lsSet(LS_KEY,JSON.stringify(state));TRAIN_BOOT=true;if(currentUser&&(ui.tab==='arena'||ui.tab==='profile')){render();}});}
 function trainingWrite(tr,cb){if(!TRAIN_REF){toast('Нет связи с сервером','err');return;}TRAIN_REF.child(tr.id).set(tr).then(function(){if(cb)cb();}).catch(function(e){toast('Ошибка сохранения','err');});}
