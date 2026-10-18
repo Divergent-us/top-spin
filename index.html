@@ -605,6 +605,39 @@ return{R:R,hist:hist,last:last,played:played,mdelta:mdelta};}
 function playerStats(id,eng){var ms=eng.played.filter(function(m){return m.playerAId===id||m.playerBId===id;});var w=0,sw=0,sl=0,bw=0,bl=0,streak=0,tset={};for(var i=0;i<ms.length;i++){var m=ms[i];tset[m.tournamentId]=1;var isA=m.playerAId===id,wn=matchWinner(m);var sc=setsCountArr(m.sets),bc=ballsCountArr(m.sets);sw+=isA?sc[0]:sc[1];sl+=isA?sc[1]:sc[0];bw+=isA?bc[0]:bc[1];bl+=isA?bc[1]:bc[0];if(wn===id)w++;}for(var i=ms.length-1;i>=0;i--){if(matchWinner(ms[i])===id)streak++;else break;}var t=0;for(var k in tset)t++;return{m:ms.length,w:w,l:ms.length-w,sw:sw,sl:sl,bw:bw,bl:bl,streak:streak,t:t,winp:ms.length?Math.round(w/ms.length*100):0};}
 var ratio=function(x,y){return y===0?x:x/y;};
 function standings(tid){var ms=state.matches.filter(function(m){return m.tournamentId===tid&&matchWinner(m);});var rows={};ms.forEach(function(m){[m.playerAId,m.playerBId].forEach(function(pid){if(!rows[pid])rows[pid]={pid:pid,w:0,l:0,sw:0,sl:0,bw:0,bl:0};});var A=rows[m.playerAId],B=rows[m.playerBId],w=matchWinner(m);var sc=setsCountArr(m.sets),bc=ballsCountArr(m.sets);A.sw+=sc[0];A.sl+=sc[1];A.bw+=bc[0];A.bl+=bc[1];B.sw+=sc[1];B.sl+=sc[0];B.bw+=bc[1];B.bl+=bc[0];if(w===m.playerAId){A.w++;B.l++;}else{B.w++;A.l++;}});return Object.values(rows).sort(function(a,b){return b.w-a.w||ratio(b.sw,b.sl)-ratio(a.sw,a.sl)||ratio(b.bw,b.bl)-ratio(a.bw,a.bl)||pNameRaw(a.pid).localeCompare(pNameRaw(b.pid),'ru');});}
+ function standingsTeam(tid){
+  var t=tourn(tid);
+  if(!t||t.type!=='team')return [];
+  var teams=t.teams||[];
+  if(!teams.length)return [];
+  var ms=state.matches.filter(function(m){return m.tournamentId===tid&&matchWinner(m);});
+  var rows={};
+  teams.forEach(function(tm){
+    rows[tm.id]={teamId:tm.id,name:tm.name,playerIds:(tm.playerIds||[]).slice(),w:0,l:0,sw:0,sl:0,bw:0,bl:0};
+  });
+  function teamOfPlayer(pid){
+    for(var i=0;i<teams.length;i++){if((teams[i].playerIds||[]).indexOf(pid)>=0)return teams[i];}
+    return null;
+  }
+  ms.forEach(function(m){
+    var tA=teamOfPlayer(m.playerAId);
+    var tB=teamOfPlayer(m.playerBId);
+    if(!tA||!tB)return;
+    if(tA.id===tB.id)return;
+    if(!rows[tA.id])rows[tA.id]={teamId:tA.id,name:tA.name,playerIds:(tA.playerIds||[]).slice(),w:0,l:0,sw:0,sl:0,bw:0,bl:0};
+    if(!rows[tB.id])rows[tB.id]={teamId:tB.id,name:tB.name,playerIds:(tB.playerIds||[]).slice(),w:0,l:0,sw:0,sl:0,bw:0,bl:0};
+    var A=rows[tA.id],B=rows[tB.id];
+    var w=matchWinner(m);
+    var sc=setsCountArr(m.sets),bc=ballsCountArr(m.sets);
+    A.sw+=sc[0];A.sl+=sc[1];A.bw+=bc[0];A.bl+=bc[1];
+    B.sw+=sc[1];B.sl+=sc[0];B.bw+=bc[1];B.bl+=bc[0];
+    if(w===m.playerAId){A.w++;B.l++;}else{B.w++;A.l++;}
+  });
+  return Object.values(rows).sort(function(a,b){
+    return b.w-a.w||ratio(b.sw,b.sl)-ratio(a.sw,a.sl)||ratio(b.bw,b.bl)-ratio(a.bw,a.bl)||a.name.localeCompare(b.name,'ru');
+  });
+}
+
 function tStatus(t){if(!t)return'finished';if(t.closed)return'finished';var now=Date.now();var s=startMs(t);var e=effEndMs(t);if(now<s)return'upcoming';if(now<=e)return'live';return'finished';}
 function statusChip(t){var s=tStatus(t);if(s==='live')return'<span class="status-dot live"></span>';if(s==='upcoming')return'<span class="status-dot upcoming"></span>';return'<span class="status-dot finished"></span>';}
 var I_CHEV='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 5 7 7-7 7"/></svg>';
@@ -655,7 +688,20 @@ function registerBtnHtml(t,small){var myP=getPlayerByPhone(myPhone());var regist
 function openLightbox(src){var lb=document.getElementById('lightbox');var im=document.getElementById('lightboxImg');if(!lb||!im||!src)return;im.src=src;lb.style.display='flex';document.body.classList.add('locked');}
 function closeLightbox(){var lb=document.getElementById('lightbox');if(lb)lb.style.display='none';document.body.classList.remove('locked');}
 function viewParticipants(tid,withDetail){var t=tourn(tid);if(!t)return;var eng=engine();var ids=(t.playerIds||[]).slice();state.matches.forEach(function(m){if(m.tournamentId===tid){if(ids.indexOf(m.playerAId)<0)ids.push(m.playerAId);if(ids.indexOf(m.playerBId)<0)ids.push(m.playerBId);}});var list=ids.map(function(pid){var p=player(pid);if(!p)return'';return'<div class="picker-item" style="cursor:default">'+avatarHtml(p,'reg')+'<span class="nm">'+esc(p.firstName+' '+p.lastName)+'</span><span class="rt">'+eng.R[pid]+'</span></div>';}).join('');modal('<button class="modal-x" data-action="closeModal">✕</button><h3>'+esc(t.name)+'</h3><div class="mut small">'+fmtDateFull(t.date)+' • записано: '+ids.length+'</div><div style="margin:12px 0 6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)">Записаны на турнир</div><div class="picker-list" style="max-height:50vh;margin:0">'+(list||'<div class="mut small">Пока никто не записан</div>')+'</div>'+(withDetail?'<div class="row-actions"><button class="btn primary w100" data-action="manageMatches" data-tid="'+tid+'">Страница турнира</button></div>':''));}
-function viewTournamentDetail(tid){var t=tourn(tid);if(!t){ui.tournamentId=null;return viewTournaments();}var eng=engine();var st=tStatus(t);var ids=(t.playerIds||[]).slice();state.matches.forEach(function(m){if(m.tournamentId===tid){if(ids.indexOf(m.playerAId)<0)ids.push(m.playerAId);if(ids.indexOf(m.playerBId)<0)ids.push(m.playerBId);}});var mAll=state.matches.filter(function(m){return m.tournamentId===tid;});var mDone=mAll.filter(function(m){return matchWinner(m);}).length;var stnd=standings(tid);var html='<button class="backlink" data-action="backTournaments">← Все турниры</button>';html+='<div class="card hero rise"><div class="kick">'+statusChip(t)+'<span class="small">'+fmtDate(t.date)+'</span></div><h2>'+esc(t.name)+'</h2><div class="meta"><span>🕑 '+(t.startTime||'—')+' – '+(t.endTime||'—')+'</span><span>👥 '+ids.length+' уч.</span><span>🏓 '+mDone+'/'+mAll.length+'</span></div><div class="hero-body"><div class="hb-left">';if(st==='live'){html+='<div class="count-lbl">осталось играть до '+(t.endTime||'—')+'</div><div class="count cd" data-end="'+t.date+'T'+(t.endTime||'23:59')+':00">--:--:--</div>';}else if(st==='upcoming'){html+='<div class="count-lbl" style="color:var(--lime)">до старта турнира</div><div class="count cd" data-end="'+t.date+'T'+(t.startTime||'10:00')+':00">--:--:--</div>';}else{var stnd0=standings(t.id);if(stnd0.length){var wp=player(stnd0[0].pid);html+='<button class="winner-card" data-action="openPlayer" data-id="'+stnd0[0].pid+'">'+avatarHtml(wp,'reg')+'<span>Победил: '+esc(pNameRaw(stnd0[0].pid))+'</span></button>';}}html+='</div><div class="cup-wrap"><img class="cup-img" src="cup.png" alt="">'+CUP_SVG+'</div></div><div class="row-actions">'+registerBtnHtml(t,false);if(isAdminMode){html+='<button class="btn ghost" data-action="manageMatches" data-tid="'+t.id+'">Управление</button><button class="btn danger" data-action="delTournament" data-id="'+t.id+'">🗑 Удалить</button>';}html+='</div></div>';
+function viewTournamentDetail(tid){var t=tourn(tid);if(!t){ui.tournamentId=null;return viewTournaments();}var eng=engine();var st=tStatus(t);var ids=(t.playerIds||[]).slice();state.matches.forEach(function(m){if(m.tournamentId===tid){if(ids.indexOf(m.playerAId)<0)ids.push(m.playerAId);if(ids.indexOf(m.playerBId)<0)ids.push(m.playerBId);}});var mAll=state.matches.filter(function(m){return m.tournamentId===tid;});var mDone=mAll.filter(function(m){return matchWinner(m);}).length;var stnd=standings(tid);var html='<button class="backlink" data-action="backTournaments">← Все турниры</button>';html+='<div class="card hero rise"><div class="kick">'+statusChip(t)+'<span class="small">'+fmtDate(t.date)+'</span></div><h2>'+esc(t.name)+'</h2><div class="meta"><span>🕑 '+(t.startTime||'—')+' – '+(t.endTime||'—')+'</span><span>👥 '+ids.length+' уч.</span><span>🏓 '+mDone+'/'+mAll.length+'</span></div><div class="hero-body"><div class="hb-left">';if(st==='live'){html+='<div class="count-lbl">осталось играть до '+(t.endTime||'—')+'</div><div class="count cd" data-end="'+t.date+'T'+(t.endTime||'23:59')+':00">--:--:--</div>';}else if(st==='upcoming'){html+='<div class="count-lbl" style="color:var(--lime)">до старта турнира</div><div class="count cd" data-end="'+t.date+'T'+(t.startTime||'10:00')+':00">--:--:--</div>';}else{
+  if(t.type==='team'){
+    var stndT0=standingsTeam(t.id);
+    if(stndT0.length){
+      var wt=stndT0[0];
+      var firstPid=(wt.playerIds&&wt.playerIds.length)?wt.playerIds[0]:null;
+      var wp=firstPid?player(firstPid):null;
+      html+='<button class="winner-card" data-action="manageTeams" data-tid="'+t.id+'">'+(wp?avatarHtml(wp,'reg'):'<div class="avatar" style="background:var(--gold);color:#0a1424;display:grid;place-items:center;font-size:20px">🏆</div>')+'<span>Победила команда: '+esc(wt.name)+'</span></button>';
+    }
+  }else{
+    var stnd0=standings(t.id);
+    if(stnd0.length){var wp=player(stnd0[0].pid);html+='<button class="winner-card" data-action="openPlayer" data-id="'+stnd0[0].pid+'">'+avatarHtml(wp,'reg')+'<span>Победил: '+esc(pNameRaw(stnd0[0].pid))+'</span></button>';}
+  }
+}html+='</div><div class="cup-wrap"><img class="cup-img" src="cup.png" alt="">'+CUP_SVG+'</div></div><div class="row-actions">'+registerBtnHtml(t,false);if(isAdminMode){html+='<button class="btn ghost" data-action="manageMatches" data-tid="'+t.id+'">Управление</button><button class="btn danger" data-action="delTournament" data-id="'+t.id+'">🗑 Удалить</button>';}html+='</div></div>';
 var ptags=ids.map(function(pid){var p=player(pid);return p?'<span class="ptag">'+miniAvatar(p)+'<span>'+esc(p.firstName+' '+p.lastName)+'</span></span>':'';}).join('');
 if(t.type==='team'){
   var teams=t.teams||[];
