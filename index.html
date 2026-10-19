@@ -369,6 +369,24 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 .chat-send svg{width:20px;height:20px}
 .chat-empty{text-align:center;padding:40px 20px;color:var(--mut);font-size:13px}
 .chat-empty .big{font-size:36px;margin-bottom:8px}
+ .chat-header-status.typing{color:var(--blue);animation:typingPulse 1.4s ease-in-out infinite}
+@keyframes typingPulse{0%,100%{opacity:1}50%{opacity:.55}}
+.chat-msg .msg-bubble{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.chat-msg.mine .msg-bubble{cursor:pointer}
+.chat-dialogs{display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow-y:auto;margin:10px -8px;padding:0 8px}
+.chat-dialog{display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:12px;cursor:pointer;transition:background .1s}
+.chat-dialog:active{background:rgba(255,255,255,.06)}
+.chat-dialog-av{width:48px;height:48px;flex:none;border-radius:50%;display:grid;place-items:center;font-family:var(--fd);font-size:16px;overflow:hidden;background:var(--panel2);position:relative}
+.chat-dialog-av img{width:100%;height:100%;object-fit:cover}
+.chat-dialog-av.online::after{content:'';position:absolute;bottom:1px;right:1px;width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--bg)}
+.chat-dialog-body{flex:1;min-width:0}
+.chat-dialog-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.chat-dialog-name{font-weight:800;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-dialog-time{font-size:11px;color:var(--dim);flex:none}
+.chat-dialog-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px}
+.chat-dialog-last{font-size:12.5px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.chat-dialog-last.unread{color:var(--txt);font-weight:600}
+.chat-unread{background:var(--orange);color:#241203;font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 7px;min-width:20px;text-align:center;flex:none}
 .push-enable-card{background:linear-gradient(135deg,rgba(65,224,141,.12),rgba(58,169,255,.08));border:1px solid rgba(65,224,141,.4);border-radius:var(--rad);padding:14px;margin-top:14px;display:flex;align-items:center;gap:12px}
 .push-enable-card .pe-ico{flex:none;width:42px;height:42px;border-radius:50%;background:rgba(65,224,141,.18);border:1px solid rgba(65,224,141,.5);display:flex;align-items:center;justify-content:center;font-size:20px}
 .push-enable-card .pe-body{flex:1;min-width:0}
