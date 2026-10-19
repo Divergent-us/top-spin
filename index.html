@@ -909,7 +909,7 @@ function closeChat(){
 }
 
 function autoGrowChatInput(){
-  var ta=document.getElementById('chatInput');
+  var ta=sendTyping();document.getElementById('chatInput');
   if(!ta)return;
   ta.style.height='auto';
   ta.style.height=Math.min(ta.scrollHeight,120)+'px';
