@@ -479,7 +479,7 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 <div id="toast-root"></div>
 <div id="lightbox"><img id="lightboxImg" alt=""></div>
  <div class="chat-screen" id="chatScreen">
-  <div class="chat-header">
+ <div class="chat-header">
     <button class="chat-back" data-action="closeChat" aria-label="Назад">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
     </button>
@@ -488,12 +488,8 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
       <div class="chat-header-name" id="chatHeaderName">—</div>
       <div class="chat-header-status" id="chatHeaderStatus">не в сети</div>
     </div>
-  </div>
-  <div class="chat-body" id="chatBody"></div>
-  <div class="chat-input-area">
-    <textarea class="chat-textarea" id="chatInput" rows="1" placeholder="Сообщение…" oninput="autoGrowChatInput()" onkeydown="chatInputKeyDown(event)"></textarea>
-    <button class="chat-send" data-action="sendChatMsg" aria-label="Отправить">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    <button class="call-chat-btn" id="chatCallBtn" title="Позвонить" onclick="startCall()">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
     </button>
   </div>
 </div>
