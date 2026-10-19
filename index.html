@@ -883,6 +883,8 @@ function openChat(x,from){
   updateBadge();
   markChatRead(phone);
   screen.classList.add('active');
+ window.__chatPartnerOnline=!!(p&&p.phone&&isOnline(presKeyFor(p.phone)));
+listenTyping(phone);
   document.body.classList.add('locked');
   renderChatMessages(true);
   var input=document.getElementById('chatInput');
