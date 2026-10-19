@@ -786,6 +786,68 @@ function renderChatMessages(scrollToBottom){
   if(scrollToBottom)body.scrollTop=body.scrollHeight;
 }
 
+var TYPING_REF=null,TYPING_LISTENER=null,TYPING_TIMER=null,__lastTypingSent=0,__typingLocalTimer=null;
+
+function initTyping(){
+  if(!dbRef)return;
+  TYPING_REF=dbRef.child('typing');
+}
+
+function sendTyping(){
+  if(!TYPING_REF||!__openChatPhone||!myPhone())return;
+  var now=Date.now();
+  clearTimeout(TYPING_TIMER);
+  TYPING_TIMER=setTimeout(clearTyping,4000);
+  if(now-__lastTypingSent<2000)return;
+  __lastTypingSent=now;
+  try{
+    TYPING_REF.child(presKeyP(__openChatPhone)).child(presKeyP(myPhone())).set(now).catch(function(){});
+  }catch(e){}
+}
+
+function clearTyping(){
+  if(!TYPING_REF||!__openChatPhone||!myPhone())return;
+  try{
+    TYPING_REF.child(presKeyP(__openChatPhone)).child(presKeyP(myPhone())).remove().catch(function(){});
+  }catch(e){}
+}
+
+function listenTyping(partnerPhone){
+  stopTypingListener();
+  if(!TYPING_REF||!partnerPhone||!myPhone())return;
+  try{
+    TYPING_LISTENER=TYPING_REF.child(presKeyP(partnerPhone)).child(presKeyP(myPhone()));
+    TYPING_LISTENER.on('value',function(snap){
+      var ts=snap.val();
+      var isTyping=ts&&(Date.now()-ts)<5000;
+      updateTypingUI(isTyping);
+    });
+  }catch(e){}
+}
+
+function stopTypingListener(){
+  try{if(TYPING_LISTENER){TYPING_LISTENER.off();TYPING_LISTENER=null;}}catch(e){}
+  clearTimeout(TYPING_TIMER);
+  clearTimeout(__typingLocalTimer);
+  clearTyping();
+}
+
+function updateTypingUI(isTyping){
+  var el=document.getElementById('chatHeaderStatus');
+  if(!el)return;
+  clearTimeout(__typingLocalTimer);
+  if(isTyping){
+    el.textContent='печатает…';
+    el.classList.add('typing');
+    el.classList.remove('online');
+    __typingLocalTimer=setTimeout(function(){updateTypingUI(false);},5500);
+  }else{
+    var on=!!window.__chatPartnerOnline;
+    el.textContent=on?'в сети':'не в сети';
+    el.classList.toggle('online',on);
+    el.classList.remove('typing');
+  }
+}
 function openChat(x,from){
   var phone=resolvePhone(x);
   __openChatPhone=phone;
