@@ -935,6 +935,36 @@ function sendChatMessage(){
 }
 
 function appendChatBubble(m){renderChatMessages(true);}
+ function attachMsgLongPress(){
+  var body=document.getElementById('chatBody');
+  if(!body)return;
+  body.querySelectorAll('.msg-bubble[data-msg-id]').forEach(function(el){
+    if(el.dataset.lpAttached)return;
+    el.dataset.lpAttached='1';
+    var timer=null;
+    var start=function(){timer=setTimeout(function(){var id=el.getAttribute('data-msg-id');if(id)confirmDeleteMsg(id);},650);};
+    var cancel=function(){if(timer){clearTimeout(timer);timer=null;}};
+    el.addEventListener('touchstart',start,{passive:true});
+    el.addEventListener('touchend',cancel);
+    el.addEventListener('touchmove',cancel);
+    el.addEventListener('touchcancel',cancel);
+    el.addEventListener('mousedown',start);
+    el.addEventListener('mouseup',cancel);
+    el.addEventListener('mouseleave',cancel);
+  });
+}
+
+function confirmDeleteMsg(id){
+  if(!msgRef){toast('Нет связи с сервером','err');return;}
+  if(!confirm('Удалить сообщение?'))return;
+  msgRef.child(id).remove().then(function(){
+    toast('Сообщение удалено');
+    MSGS=MSGS.filter(function(m){return m.id!==id;});
+    if(__openChatPhone)renderChatMessages(false);
+  }).catch(function(e){
+    toast('Ошибка: '+e.message,'err');
+  });
+}
 function inboxModal(){markRead();updateBadge();var list=inboxList();var html='<button class="modal-x" data-action="closeModal">✕</button><h3>💬 Сообщения</h3><div class="picker-list" style="margin:10px 0">'+(list.length?list.map(function(c){return'<div class="picker-item" data-action="inboxChat" data-id="'+c.from+'"><span class="sms-ico" style="width:32px;height:32px;font-size:15px">💬</span><span class="nm">'+esc(c.name)+(c.unread?' <span class="delta down">'+c.unread+'</span>':'')+'</span><span class="rt">'+esc(String(c.last).slice(0,18))+'</span></div>';}).join(''):'<div class="mut small">Нет входящих</div>')+'</div>'+(isAdminMode?'<label>Объявление всем</label><textarea id="bcText" style="width:100%;height:60px" placeholder="Текст объявления…"></textarea><div class="row-actions"><button class="btn primary w100" data-action="sendBroadcast">Отправить всем</button></div>':'');modal(html);}
 function menuModal(){var on=lsGet('soundEnabled')!=='false';var adminRow=isAdminMode?'<div class="menu-row" data-action="forceSave" style="border-color:rgba(65,224,141,.5)"><span style="font-size:20px;text-align:center;width:20px">💾</span><span>Сохранить сейчас</span></div>':'';modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Меню</h3>'+adminRow+'<div class="menu-row" data-action="menuSettings">'+SVG_GEAR+'<span>Настройки</span></div><div class="menu-row" data-action="menuBell">'+bellSVG(on)+'<span>Звук: '+(on?'включён':'выключен')+'</span></div>');}
 function manageMatches(tid){var t=tourn(tid);if(!t)return;var ms=state.matches.filter(function(m){return m.tournamentId===tid;}).sort(function(a,b){return(a.time||'99:99').localeCompare(b.time||'99:99');});var items=ms.map(function(m){var played=m.sets&&m.sets.length;var sc=played?setsCountArr(m.sets):null;var setsStr=played?m.sets.map(function(s){return s[0]+':'+s[1];}).join(' '):'';return'<div class="mm-item"><button class="mrow" data-action="resultFromManage" data-id="'+m.id+'" data-tid="'+tid+'"><span class="pl"><span>'+pName(m.playerAId)+'</span><span>'+pName(m.playerBId)+'</span></span>'+(played?'<span class="sc">'+sc[0]+':'+sc[1]+'</span>':'<span class="st">счёт</span>')+'</button>'+(setsStr?'<div class="sets-line">сеты: '+setsStr+'</div>':'')+'</div>';}).join('');modal('<button class="modal-x" data-action="closeModal">✕</button><h3>'+esc(t.name)+'</h3><div class="mut small">Страница турнира • ведение счёта по сетам</div><div class="mm-list">'+(items||'<div class="mut small">Пар пока нет — добавьте пару</div>')+'</div><div class="row-actions"><button class="btn primary w100" data-action="addMatchFromManage" data-tid="'+tid+'">＋ Добавить пару</button></div>');}
