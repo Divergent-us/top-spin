@@ -759,7 +759,8 @@ function chatMsgHtml(m){
     var read=isMyMsgRead(m);
     check=read?'<span class="check read">✓✓</span>':'<span class="check">✓</span>';
   }
-  return'<div class="chat-msg '+(mine?'mine':'')+'"><div class="msg-bubble">'+esc(m.text)+'<div class="msg-meta">'+time+' '+check+'</div></div></div>';
+  var msgAttr=mine?' data-msg-id="'+esc(m.id||'')+'"':'';
+  return'<div class="chat-msg '+(mine?'mine':'')+'"><div class="msg-bubble"'+msgAttr+'>'+esc(m.text)+'<div class="msg-meta">'+time+' '+check+'</div></div></div>';
 }
 
 function renderChatMessages(scrollToBottom){
