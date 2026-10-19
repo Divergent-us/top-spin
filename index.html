@@ -901,6 +901,7 @@ function closeChat(){
   screen.classList.remove('active');
   document.body.classList.remove('locked');
   __openChatPhone=null;
+ stopTypingListener();
   if(__chatFrom==='inbox'){
     __chatFrom=null;
     inboxModal();
