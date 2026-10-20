@@ -501,6 +501,14 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
       <div class="chat-header-name" id="chatHeaderName">—</div>
       <div class="chat-header-status" id="chatHeaderStatus">не в сети</div>
     </div>
+  <div class="chat-header-actions">
+  <button class="chat-action-btn" title="Аудиозвонок" onclick="startCall('audio')">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+  </button>
+  <button class="chat-action-btn" title="Видеозвонок" onclick="startCall('video')">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+  </button>
+</div>
     <button class="call-chat-btn" id="chatCallBtn" title="Позвонить" onclick="startCall()">
       <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
     </button>
