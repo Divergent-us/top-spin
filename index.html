@@ -1692,6 +1692,188 @@ async function analyzeGameStyle(playerId){
     btn.innerHTML=orig;
   }
 }
+ /* ===== ЗВОНКИ LIVeKIT + ГУДКИ ===== */
+var LIVEKIT_URL = "wss://topspin-club-lmgx3s0y.livekit.cloud";
+var callRoom = null;
+var isMuted = false;
+var audioCtx = null;
+var ringbackTimer = null;
+var ringbackOsc = null;
+var ringbackGain = null;
+var ringbackRunning = false;
+
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume().catch(function(){}); }
+  return audioCtx;
+}
+
+function playRingback() {
+  var ctx = ensureAudioCtx();
+  if (!ctx) return;
+  stopRingback();
+  ringbackRunning = true;
+  try {
+    ringbackOsc = ctx.createOscillator();
+    ringbackGain = ctx.createGain();
+    ringbackOsc.type = 'sine';
+    ringbackOsc.frequency.value = 425;
+    ringbackGain.gain.value = 0;
+    ringbackOsc.connect(ringbackGain);
+    ringbackGain.connect(ctx.destination);
+    ringbackOsc.start();
+    var cycle = function() {
+      if (!ringbackRunning || !ringbackGain) return;
+      var now = ctx.currentTime;
+      ringbackGain.gain.cancelScheduledValues(now);
+      ringbackGain.gain.setValueAtTime(0, now);
+      ringbackGain.gain.linearRampToValueAtTime(0.08, now + 0.05);
+      ringbackGain.gain.setValueAtTime(0.08, now + 0.95);
+      ringbackGain.gain.linearRampToValueAtTime(0, now + 1.0);
+      ringbackTimer = setTimeout(cycle, 4000);
+    };
+    cycle();
+  } catch (e) {}
+}
+
+function stopRingback() {
+  ringbackRunning = false;
+  if (ringbackTimer) { clearTimeout(ringbackTimer); ringbackTimer = null; }
+  try {
+    if (ringbackOsc) { ringbackOsc.stop(); ringbackOsc.disconnect(); ringbackOsc = null; }
+    if (ringbackGain) { ringbackGain.disconnect(); ringbackGain = null; }
+  } catch (e) {}
+}
+
+function unlockAudio() {
+  ensureAudioCtx();
+  if (callRoom) { try { callRoom.startAudio(); } catch (e) {} }
+  var btn = document.getElementById('callAudioUnlockBtn');
+  if (btn) btn.style.display = 'none';
+  toast('Звук включён', 'ok');
+}
+
+function attachAudioEl(track) {
+  if (!track) return;
+  if (track.kind !== LivekitClient.Track.Kind.Audio) return;
+  if (document.querySelector('audio[data-lk-track="' + track.sid + '"]')) return;
+  var audioEl = track.attach();
+  audioEl.autoplay = true;
+  audioEl.playsInline = true;
+  audioEl.setAttribute('data-lk-track', track.sid);
+  audioEl.style.display = 'none';
+  document.body.appendChild(audioEl);
+  audioEl.play().catch(function() {
+    var btn = document.getElementById('callAudioUnlockBtn');
+    if (btn) btn.style.display = 'inline-flex';
+  });
+}
+
+async function startCall(type) {
+  if (!__openChatPhone) { toast('Откройте чат с игроком', 'err'); return; }
+  var myP = getPlayerByPhone(myPhone());
+  var partnerP = state.players.find(function(p){ return p.phone === __openChatPhone; });
+  if (!myP || !partnerP) { toast('Ошибка: игрок не найден', 'err'); return; }
+
+  ensureAudioCtx();
+
+  var roomName = 'call_' + [myP.id, partnerP.id].sort().join('_');
+  var participantName = myP.id;
+  var isVideo = type === 'video';
+
+  var callScreen = document.getElementById('callScreen');
+  if (callScreen) callScreen.classList.add('active');
+  var nameEl = document.getElementById('callName');
+  if (nameEl) nameEl.textContent = partnerP.firstName + ' ' + partnerP.lastName;
+  var statusEl = document.getElementById('callStatus');
+  if (statusEl) statusEl.textContent = 'Звоним...';
+
+  var avEl = document.getElementById('callAvatar');
+  if (avEl) {
+    if (partnerP.avatar) avEl.innerHTML = '<img src="' + partnerP.avatar + '">';
+    else { avEl.textContent = initials(partnerP); avEl.style.background = avColor(partnerP.id); }
+  }
+
+  var unlockBtn = document.getElementById('callAudioUnlockBtn');
+  if (unlockBtn) unlockBtn.style.display = 'none';
+
+  playRingback();
+
+  try {
+    if (typeof LivekitClient === 'undefined') throw new Error('LiveKit не загружен');
+    var resp = await fetch('https://topspin-ai.styleman81.workers.dev/livekit-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomName: roomName, participantName: participantName })
+    });
+    var data = await resp.json();
+    if (!data.token) throw new Error('Токен не получен');
+
+    callRoom = new LivekitClient.Room();
+    callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) { attachAudioEl(track); });
+    callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
+      if (statusEl) statusEl.textContent = 'Собеседник в сети';
+      stopRingback();
+    });
+    callRoom.on(LivekitClient.RoomEvent.Disconnected, function() { endCall(); });
+
+    await callRoom.connect(LIVEKIT_URL, data.token);
+    try { await callRoom.startAudio(); } catch (e) {}
+    await callRoom.localParticipant.setMicrophoneEnabled(true);
+    if (isVideo) { try { await callRoom.localParticipant.setCameraEnabled(true); } catch (e) {} }
+
+    if (statusEl) statusEl.textContent = 'В сети';
+
+    setTimeout(function() {
+      if (callRoom && callRoom.remoteParticipants.size > 0) {
+        stopRingback();
+        callRoom.remoteParticipants.forEach(function(p) {
+          p.trackPublications.forEach(function(pub) { if (pub.track) attachAudioEl(pub.track); });
+        });
+      } else {
+        var btn = document.getElementById('callAudioUnlockBtn');
+        if (btn) btn.style.display = 'inline-flex';
+      }
+    }, 3000);
+
+  } catch (e) {
+    console.error('Call error:', e);
+    stopRingback();
+    toast('Ошибка звонка: ' + e.message, 'err');
+    endCall();
+  }
+}
+
+function toggleMute() {
+  if (!callRoom) return;
+  isMuted = !isMuted;
+  callRoom.localParticipant.setMicrophoneEnabled(!isMuted);
+  var btn = document.getElementById('callMuteBtn');
+  if (btn) btn.classList.toggle('muted', isMuted);
+  var icon = document.getElementById('muteIcon');
+  if (icon) {
+    icon.innerHTML = isMuted ?
+      '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>' :
+      '<path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z"/>';
+  }
+}
+
+function endCall() {
+  stopRingback();
+  if (callRoom) { try { callRoom.disconnect(); } catch(e){} callRoom = null; }
+  var callScreen = document.getElementById('callScreen');
+  if (callScreen) callScreen.classList.remove('active');
+  isMuted = false;
+  var btn = document.getElementById('callMuteBtn');
+  if (btn) btn.classList.remove('muted');
+  document.querySelectorAll('audio[data-lk-track]').forEach(function(a){
+    try { a.srcObject = null; a.remove(); } catch(e){}
+  });
+  var unlockBtn = document.getElementById('callAudioUnlockBtn');
+  if (unlockBtn) unlockBtn.style.display = 'none';
+}
 function dispatch(el){var act=el.dataset.action;var id=el.dataset.id;var tid=el.dataset.tid;switch(act){case'tab':setTab(el.dataset.tab);break;case'openMenu':menuModal();break;case'menuSettings':settingsModal();break;case'menuBell':toggleSoundBell();menuModal();break;case'openAppearance':openAppearanceModal();break;case'setTheme':setTheme(el.dataset.theme);break;case'setFontSize':setFontSize(el.dataset.size);break;case'toggleSound':toggleSound();break;case'logout':logout();break;case'managePlayerCodes':managePlayerCodes();break;case'addPlayerCodeModal':addPlayerCodeModal();break;case'savePlayerCode':savePlayerCode();break;case'removePlayerCode':removePlayerCode(el.dataset.phone);break;case'chatWith':openChat(id);break;case'closeChat':closeChat();break;case'sendChatMsg':sendChatMessage();break;case'inboxChat':openChat(id,'inbox');break;;case'sendMsgTo':(function(){var ta=document.getElementById('chatText');sendMsg(id,ta?ta.value:'');})();break;case'inbox':inboxModal();break;case'sendBroadcast':(function(){var ta=document.getElementById('bcText');sendMsg('',ta?ta.value:'');inboxModal();})();break;case'manageMatches':manageMatches(tid);break;case'resultFromManage':__returnTo=tid;resultSheet(id);break;case'addMatchFromManage':__returnTo=tid;matchModal(tid);break;case'newTraining':newTraining();break;case'confirmTraining':confirmTraining();break;case'joinTraining':joinTraining(id);break;case'leaveTraining':leaveTraining(id);break;case'adminDelTraining':adminDelTraining(id);break;case'newPlayer':ui.tab='players';ui.playerId=null;render();playerModal();break;case'editPlayer':playerModal(id);break;case'savePlayer':savePlayer(id||null);break;case'delPlayer':delPlayer(id);break;case'clearAvatar':__pendingAvatar=null;refreshAvatarPreview();break;case'newTournament':tournamentModal();break;case'editTournament':tournamentModal(id);break;case'saveTournament':saveTournament(id||null);break;case'delTournament':delTournament(id);break;case'openTournament':openTournament(id);break;case'viewParticipants':viewParticipants(id,false);break;case'closeNow':closeTournamentNow(id);break;case'reopen':reopenTournament(id);break;case'addParticipant':addParticipantModal(tid);break;case'pickParticipant':pickParticipant(tid,id);break;case'addAllParticipants':addAllParticipants(tid);break;case'removeParticipant':removeParticipant(tid,id);break;case'unregisterFromTournament':unregisterFromTournament(tid);break;case'newMatch':matchModal(tid);break;case'editMatch':matchModal(tid,id);break;case'saveMatch':saveMatch(tid,id||null);break;case'delMatch':delMatch(id);break;case'result':resultSheet(id);break;case'addSet':addSetRow();break;case'rmSet':el.closest('.setrow').remove();resultPreview();break;case'saveResult':saveResult();break;case'clearResult':clearResult();break;case'openPlayer':openPlayer(id);break;case'backPlayers':ui.playerId=null;render();break;case'backTournaments':ui.tournamentId=null;render();break;case'sortR':ui.ratingSort='r';render();break;case'sortW':ui.ratingSort='w';render();break;case'newAward':awardModal();break;case'emo':pickEmoji(el,el.dataset.emo);break;case'saveAward':saveAward();break;case'delAward':delAward(id);break;case'saveSettings':saveSettings();break;case'exportRatingCSV':exportRatingCSV();break;case'exportRatingPDF':exportRatingPDF();break;case'exportAllData':exportAllData();break;case'copyBackup':copyBackup();break;case'shareBackup':shareBackup();break;case'importData':document.getElementById('impFile').click();break;case'demo':loadDemo();break;case'resetAll':resetAll();break;case'closeModal':closeModal();break;case'confirmYes':if(__cb)__cb();__cb=null;closeModal();break;case'createProfile':createProfileModal();break;case'saveProfile':saveProfile();break;case'editMyProfile':editMyProfileModal();break;case'saveMyProfile':saveMyProfile();break;case'registerToTournament':registerToTournament(tid);break;case'enablePush':enablePush();break;case'forceSave':forceSave();closeModal();break;case'openHistory':openHistoryModal();break;
 case'pickTourType':(function(){var btn=el;var type=el.dataset.type;var ind=document.getElementById('typeInd');var tm=document.getElementById('typeTeam');var hint=document.getElementById('typeHint');var hidden=document.getElementById('tType');if(hidden)hidden.value=type;if(ind)ind.className='btn '+(type==='individual'?'primary':'ghost');if(tm)tm.className='btn '+(type==='team'?'primary':'ghost');if(hint)hint.textContent=type==='team'?'Турнир команд. Составы задаёт админ.':'Обычный турнир. Каждый играет сам за себя.';})();break;
 case'manageTeams':manageTeamsModal(tid);break;
