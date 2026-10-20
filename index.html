@@ -1741,10 +1741,24 @@ function playRingback() {
 function stopRingback() {
   ringbackRunning = false;
   if (ringbackTimer) { clearTimeout(ringbackTimer); ringbackTimer = null; }
-  try {
-    if (ringbackOsc) { ringbackOsc.stop(); ringbackOsc.disconnect(); ringbackOsc = null; }
-    if (ringbackGain) { ringbackGain.disconnect(); ringbackGain = null; }
-  } catch (e) {}
+  if (ringbackOsc) {
+    try { ringbackOsc.stop(); } catch (e) {}
+    try { ringbackOsc.disconnect(); } catch (e) {}
+    ringbackOsc = null;
+  }
+  if (ringbackGain) {
+    try { ringbackGain.disconnect(); } catch (e) {}
+    ringbackGain = null;
+  }
+  // ГАРАНТИРОВАННО глушим весь AudioContext
+  if (audioCtx) {
+    try {
+      if (audioCtx.state !== 'closed') {
+        audioCtx.close();
+      }
+    } catch (e) {}
+    audioCtx = null;
+  }
 }
 
 function unlockAudio() {
