@@ -1750,13 +1750,11 @@ function stopRingback() {
     try { ringbackGain.disconnect(); } catch (e) {}
     ringbackGain = null;
   }
-  // ГАРАНТИРОВАННО глушим весь AudioContext
+  // ЖЕСТКО ЗАКРЫВАЕМ АУДИОКОНТЕКСТ, чтобы звук 100% прекратился
   if (audioCtx) {
     try {
-      if (audioCtx.state !== 'closed') {
-        audioCtx.close();
-      }
-    } catch (e) {}
+      if (audioCtx.state !== 'closed') audioCtx.close();
+    } catch(e){}
     audioCtx = null;
   }
 }
