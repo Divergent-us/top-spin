@@ -1781,24 +1781,31 @@ function attachAudioEl(track) {
   });
 }
 
-async function startCall(type) {
-  if (!__openChatPhone) { toast('Откройте чат с игроком', 'err'); return; }
+async function startCall(type, targetId, isIncoming, existingRoom) {
   var myP = getPlayerByPhone(myPhone());
-  var partnerP = state.players.find(function(p){ return p.phone === __openChatPhone; });
+  var partnerP;
+
+  if (isIncoming && targetId) {
+    partnerP = player(targetId);
+  } else {
+    if (!__openChatPhone) { toast('Откройте чат с игроком', 'err'); return; }
+    partnerP = state.players.find(function(p){ return p.phone === __openChatPhone; });
+  }
   if (!myP || !partnerP) { toast('Ошибка: игрок не найден', 'err'); return; }
 
   ensureAudioCtx();
 
-  var roomName = 'call_' + [myP.id, partnerP.id].sort().join('_');
+  var roomName = existingRoom || ('call_' + [myP.id, partnerP.id].sort().join('_'));
   var participantName = myP.id;
   var isVideo = type === 'video';
 
+  // Настройка UI
   var callScreen = document.getElementById('callScreen');
   if (callScreen) callScreen.classList.add('active');
   var nameEl = document.getElementById('callName');
   if (nameEl) nameEl.textContent = partnerP.firstName + ' ' + partnerP.lastName;
   var statusEl = document.getElementById('callStatus');
-  if (statusEl) statusEl.textContent = 'Звоним...';
+  if (statusEl) statusEl.textContent = isIncoming ? 'Соединение...' : 'Звоним...';
 
   var avEl = document.getElementById('callAvatar');
   if (avEl) {
@@ -1806,13 +1813,40 @@ async function startCall(type) {
     else { avEl.textContent = initials(partnerP); avEl.style.background = avColor(partnerP.id); }
   }
 
+  // Показываем контейнер для видео, если это видеозвонок
+  var videoWrap = document.getElementById('callVideoWrap');
+  if (isVideo && videoWrap) {
+    videoWrap.style.display = 'block';
+    if (avEl) avEl.style.display = 'none';
+  } else if (videoWrap) {
+    videoWrap.style.display = 'none';
+    if (avEl) avEl.style.display = '';
+  }
+
   var unlockBtn = document.getElementById('callAudioUnlockBtn');
   if (unlockBtn) unlockBtn.style.display = 'none';
 
-  playRingback();
+  if (!isIncoming) playRingback();
 
   try {
     if (typeof LivekitClient === 'undefined') throw new Error('LiveKit не загружен');
+
+    // Отправляем сигнал в Firebase (если это исходящий звонок)
+    if (!isIncoming && dbRef) {
+      dbRef.child('calls/' + roomName).set({
+        from: myP.id, to: partnerP.id, type: type, status: 'calling', ts: Date.now()
+      });
+      // Слушаем ответ
+      dbRef.child('calls/' + roomName).on('value', function(snap) {
+        var c = snap.val();
+        if (c && c.status === 'rejected') {
+          toast('Собеседник отклонил', 'err');
+          endCall();
+        }
+      });
+    }
+
+    // Получаем токен
     var resp = await fetch('https://topspin-ai.styleman81.workers.dev/livekit-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1821,26 +1855,61 @@ async function startCall(type) {
     var data = await resp.json();
     if (!data.token) throw new Error('Токен не получен');
 
+    // Подключаемся
     callRoom = new LivekitClient.Room();
-    callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) { attachAudioEl(track); });
-    callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
-      if (statusEl) statusEl.textContent = 'Собеседник в сети';
-      stopRingback();
+    
+    // 1. Обработка входящих треков (АУДИО и ВИДЕО)
+    callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) {
+      if (track.kind === LivekitClient.Track.Kind.Audio) {
+        attachAudioEl(track);
+      } else if (track.kind === LivekitClient.Track.Kind.Video) {
+        var remoteVideoEl = document.getElementById('remoteVideo');
+        if (remoteVideoEl) {
+          track.attach(remoteVideoEl);
+          remoteVideoEl.play().catch(function(){});
+        }
+      }
     });
+
+    // 2. Обработка подключения собеседника
+    callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
+      if (statusEl) statusEl.textContent = 'В сети';
+      stopRingback(); // Отключаем гудки, собеседник в комнате
+      if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
+    });
+
     callRoom.on(LivekitClient.RoomEvent.Disconnected, function() { endCall(); });
 
     await callRoom.connect(LIVEKIT_URL, data.token);
     try { await callRoom.startAudio(); } catch (e) {}
+
+    // 3. Включаем микрофон и камеру (если видео)
     await callRoom.localParticipant.setMicrophoneEnabled(true);
-    if (isVideo) { try { await callRoom.localParticipant.setCameraEnabled(true); } catch (e) {} }
+    if (isVideo) {
+      var localPub = await callRoom.localParticipant.setCameraEnabled(true);
+      if (localPub && localPub.videoTrack) {
+        var localVideoEl = document.getElementById('localVideo');
+        if (localVideoEl) localPub.videoTrack.attach(localVideoEl);
+      }
+    }
 
     if (statusEl) statusEl.textContent = 'В сети';
 
+    // 4. Проверка: если собеседник уже в комнате
     setTimeout(function() {
       if (callRoom && callRoom.remoteParticipants.size > 0) {
         stopRingback();
+        if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
         callRoom.remoteParticipants.forEach(function(p) {
-          p.trackPublications.forEach(function(pub) { if (pub.track) attachAudioEl(pub.track); });
+          p.trackPublications.forEach(function(pub) {
+            if (pub.track) {
+              if (pub.track.kind === 'audio') attachAudioEl(pub.track);
+              if (pub.track.kind === 'video') {
+                var remoteVideoEl = document.getElementById('remoteVideo');
+                if (remoteVideoEl) pub.track.attach(remoteVideoEl);
+              }
+            }
+          });
         });
       } else {
         var btn = document.getElementById('callAudioUnlockBtn');
