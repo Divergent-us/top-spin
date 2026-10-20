@@ -1717,7 +1717,12 @@ function ensureAudioCtx() {
 function playRingback() {
   var ctx = ensureAudioCtx();
   if (!ctx) return;
-  stopRingback();
+  
+  // Очищаем старые гудки, НЕ закрывая контекст
+  if (ringbackTimer) { clearTimeout(ringbackTimer); ringbackTimer = null; }
+  if (ringbackOsc) { try { ringbackOsc.stop(); ringbackOsc.disconnect(); } catch(e){} ringbackOsc = null; }
+  if (ringbackGain) { try { ringbackGain.disconnect(); } catch(e){} ringbackGain = null; }
+  
   ringbackRunning = true;
   try {
     ringbackOsc = ctx.createOscillator();
@@ -1728,6 +1733,7 @@ function playRingback() {
     ringbackOsc.connect(ringbackGain);
     ringbackGain.connect(ctx.destination);
     ringbackOsc.start();
+    
     var cycle = function() {
       if (!ringbackRunning || !ringbackGain) return;
       var now = ctx.currentTime;
@@ -1739,7 +1745,7 @@ function playRingback() {
       ringbackTimer = setTimeout(cycle, 4000);
     };
     cycle();
-  } catch (e) {}
+  } catch (e) { console.warn('Ringback error:', e); }
 }
 
 function stopRingback() {
