@@ -1751,22 +1751,8 @@ function playRingback() {
 function stopRingback() {
   ringbackRunning = false;
   if (ringbackTimer) { clearTimeout(ringbackTimer); ringbackTimer = null; }
-  if (ringbackOsc) {
-    try { ringbackOsc.stop(); } catch (e) {}
-    try { ringbackOsc.disconnect(); } catch (e) {}
-    ringbackOsc = null;
-  }
-  if (ringbackGain) {
-    try { ringbackGain.disconnect(); } catch (e) {}
-    ringbackGain = null;
-  }
-  // ЖЕСТКО ЗАКРЫВАЕМ АУДИОКОНТЕКСТ, чтобы звук 100% прекратился
-  if (audioCtx) {
-    try {
-      if (audioCtx.state !== 'closed') audioCtx.close();
-    } catch(e){}
-    audioCtx = null;
-  }
+  if (ringbackOsc) { try { ringbackOsc.stop(); ringbackOsc.disconnect(); } catch (e) {} ringbackOsc = null; }
+  if (ringbackGain) { try { ringbackGain.disconnect(); } catch (e) {} ringbackGain = null; }
 }
 
 function unlockAudio() {
