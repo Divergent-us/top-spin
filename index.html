@@ -1942,7 +1942,7 @@ function toggleMute() {
 function endCall() {
   console.log('>>> endCall START');
   
-  // 1. СНАЧАЛА останавливаем гудки и закрываем звук (не зависит от Firebase)
+  // 1. Останавливаем гудки
   ringbackRunning = false;
   if (ringbackTimer) { clearTimeout(ringbackTimer); ringbackTimer = null; }
   if (ringbackOsc) { try { ringbackOsc.stop(); ringbackOsc.disconnect(); } catch (e) {} ringbackOsc = null; }
@@ -1979,7 +1979,7 @@ function endCall() {
   
   console.log('>>> endCall UI CLEANED');
 
-  // 4. Только ТЕПЕРЬ чистим Firebase (обёрнуто в try/catch, чтобы не сломать звонок)
+  // 4. Очистка Firebase (безопасная)
   try {
     var myP = getPlayerByPhone(myPhone());
     if (dbRef && myP) {
@@ -1994,7 +1994,6 @@ function endCall() {
     console.warn('Firebase cleanup failed (ignored):', e);
   }
 }
-
   // Прячем UI
   var callScreen = document.getElementById('callScreen');
   if (callScreen) callScreen.classList.remove('active');
