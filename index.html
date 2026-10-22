@@ -1942,7 +1942,7 @@ function toggleMute() {
 function endCall() {
   console.log('>>> endCall START');
   
-  // Убиваем гудки
+  // 1. СНАЧАЛА останавливаем гудки и закрываем звук (не зависит от Firebase)
   ringbackRunning = false;
   if (ringbackTimer) { clearTimeout(ringbackTimer); ringbackTimer = null; }
   if (ringbackOsc) { try { ringbackOsc.stop(); ringbackOsc.disconnect(); } catch (e) {} ringbackOsc = null; }
@@ -1953,19 +1953,47 @@ function endCall() {
     audioCtx = null;
   }
 
-  // Отключаем LiveKit
+  // 2. Отключаем LiveKit
   if (callRoom) { try { callRoom.disconnect(); } catch(e){} callRoom = null; }
   
-  // Очищаем Firebase сигнал
-  var myP = getPlayerByPhone(myPhone());
-  if (dbRef && myP) {
-    dbRef.child('calls').once('value', function(snap){
-      var calls = snap.val() || {};
-      Object.keys(calls).forEach(function(r){
-        if (r.includes(myP.id)) dbRef.child('calls/' + r).remove();
+  // 3. Прячем интерфейс
+  var callScreen = document.getElementById('callScreen');
+  if (callScreen) callScreen.classList.remove('active');
+  
+  isMuted = false;
+  var btn = document.getElementById('callMuteBtn');
+  if (btn) btn.classList.remove('muted');
+  
+  document.querySelectorAll('audio, video').forEach(function(el){
+    if (el.hasAttribute('data-lk-track') || el.id === 'localVideo' || el.id === 'remoteVideo') {
+      try { el.srcObject = null; if(el.tagName === 'AUDIO') el.remove(); } catch(e){}
+    }
+  });
+  
+  var videoWrap = document.getElementById('callVideoWrap');
+  if (videoWrap) videoWrap.style.display = 'none';
+  var avEl = document.getElementById('callAvatar');
+  if (avEl) avEl.style.display = '';
+  var unlockBtn = document.getElementById('callAudioUnlockBtn');
+  if (unlockBtn) unlockBtn.style.display = 'none';
+  
+  console.log('>>> endCall UI CLEANED');
+
+  // 4. Только ТЕПЕРЬ чистим Firebase (обёрнуто в try/catch, чтобы не сломать звонок)
+  try {
+    var myP = getPlayerByPhone(myPhone());
+    if (dbRef && myP) {
+      dbRef.child('calls').once('value', function(snap){
+        var calls = snap.val() || {};
+        Object.keys(calls).forEach(function(r){
+          if (r.includes(myP.id)) dbRef.child('calls/' + r).remove();
+        });
       });
-    });
+    }
+  } catch (e) {
+    console.warn('Firebase cleanup failed (ignored):', e);
   }
+}
 
   // Прячем UI
   var callScreen = document.getElementById('callScreen');
