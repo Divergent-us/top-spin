@@ -2142,23 +2142,7 @@ if(document.getElementById('loginScreen').style.display==='none'){render();updat
 var LIVEKIT_URL = "wss://topspin-club-lmgx3s0y.livekit.cloud"; // ← ЗАМЕНИТЕ на ваш WebSocket URL из LiveKit Cloud!
 var callRoom = null;
 var isMuted = false;
-
-
-
-
-function endCall() {
-  if (callRoom) {
-    try { callRoom.disconnect(); } catch(e){}
-    callRoom = null;
-  }
-  var callScreen = document.getElementById('callScreen');
-  if (callScreen) callScreen.classList.remove('active');
-  isMuted = false;
-  var btn = document.getElementById('callMuteBtn');
-  if (btn) btn.classList.remove('muted');
-  document.querySelectorAll('audio').forEach(function(a){
-    if (a.srcObject) a.srcObject = null;
-  });
+ 
 }</script>
 </body>
 </html>
