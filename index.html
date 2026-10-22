@@ -2113,7 +2113,7 @@ try{
 if(fbOk&&authRef){authRef.onAuthStateChanged(function(u){try{firebaseUser=u;isAdminMode=!!u;if(u){currentUser={email:u.email,role:'admin'};lsSet('topspin_session',JSON.stringify(currentUser));hideLoginScreen();beat();render();updateBadge();}else{var ps=loadPlayerSession();if(ps){currentUser=ps;isAdminMode=false;hideLoginScreen();beat();render();updateBadge();}else{currentUser=null;isAdminMode=false;showLoginScreen();}}}catch(e){try{showLoginScreen();}catch(e2){}}});}
 else{var ps2=loadPlayerSession();if(ps2){currentUser=ps2;isAdminMode=false;hideLoginScreen();beat();render();updateBadge();}else{showLoginScreen();}}
 }catch(e){try{showLoginScreen();}catch(e2){}}
-try{if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();initTrainings();}else{booted=true;initMessages();TRAIN_BOOT=true;}}catch(e){booted=true;TRAIN_BOOT=true;}
+try{if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();initTrainings();try { listenIncomingCalls(); } catch(e) { console.error('listenIncomingCalls error:', e); }}else{booted=true;initMessages();TRAIN_BOOT=true;}}catch(e){booted=true;TRAIN_BOOT=true;}
  try { listenIncomingCalls(); } catch(e) { console.error('listenIncomingCalls error:', e); }
 try{initLoginBg();}catch(e){}
 try{autoCloseCheck();setInterval(autoCloseCheck,20000);}catch(e){}
