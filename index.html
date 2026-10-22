@@ -1992,30 +1992,7 @@ function endCall() {
     }
   } catch (e) {
     console.warn('Firebase cleanup failed (ignored):', e);
-  }
-}
-  // Прячем UI
-  var callScreen = document.getElementById('callScreen');
-  if (callScreen) callScreen.classList.remove('active');
-  
-  isMuted = false;
-  var btn = document.getElementById('callMuteBtn');
-  if (btn) btn.classList.remove('muted');
-  
-  // Удаляем аудио/видео элементы
-  document.querySelectorAll('audio, video').forEach(function(el){
-    if (el.hasAttribute('data-lk-track') || el.id === 'localVideo' || el.id === 'remoteVideo') {
-      try { el.srcObject = null; if(el.tagName === 'AUDIO') el.remove(); } catch(e){}
-    }
-  });
-  
-  var videoWrap = document.getElementById('callVideoWrap');
-  if (videoWrap) videoWrap.style.display = 'none';
-  var avEl = document.getElementById('callAvatar');
-  if (avEl) avEl.style.display = '';
-  var unlockBtn = document.getElementById('callAudioUnlockBtn');
-  if (unlockBtn) unlockBtn.style.display = 'none';
-}
+
  function listenIncomingCalls() {
   if (!dbRef || !currentUser) return;
   var myPlayer = getPlayerByPhone(myPhone());
@@ -2134,10 +2111,7 @@ var av=e.target&&e.target.closest?e.target.closest('[data-avatar-src]'):null;
 if(av){e.preventDefault();e.stopPropagation();openLightbox(av.getAttribute('data-avatar-src'));return;}
 var el=e.target&&e.target.closest?e.target.closest('[data-action]'):null;
 if(el)dispatch(el);
-});
-if(document.getElementById('loginScreen').style.display==='none'){render();updateBadge();}
-})();
-/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
+});/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
 var LIVEKIT_URL = "wss://topspin-club-lmgx3s0y.livekit.cloud";
 var callRoom = null;
 var isMuted = false;
@@ -2289,6 +2263,7 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
       stopRingback();
       if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
     });
+    
     callRoom.on(LivekitClient.RoomEvent.Disconnected, function() { endCall(); });
 
     await callRoom.connect(LIVEKIT_URL, data.token);
@@ -2344,11 +2319,13 @@ function toggleMute() {
 
 function endCall() {
   console.log('>>> endCall START');
-  stopRingback();
+  if (typeof stopRingback === 'function') stopRingback();
+  
   if (callRoom) { try { callRoom.disconnect(); } catch(e){} callRoom = null; }
   
   var callScreen = document.getElementById('callScreen');
   if (callScreen) callScreen.classList.remove('active');
+  
   isMuted = false;
   var btn = document.getElementById('callMuteBtn');
   if (btn) btn.classList.remove('muted');
@@ -2376,7 +2353,9 @@ function endCall() {
         });
       });
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('Firebase cleanup failed (ignored):', e);
+  }
   console.log('>>> endCall END');
 }
 
@@ -2436,5 +2415,5 @@ function rejectIncoming() {
 </script>
 </body>
 </html>
-</body>
-</html>
+if(document.getElementById('loginScreen').style.display==='none'){render();updateBadge();}
+})();
