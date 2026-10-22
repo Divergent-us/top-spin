@@ -1781,24 +1781,6 @@ function attachAudioEl(track) {
   });
 }
 
-async function startCall(type, targetId, isIncoming, existingRoom) {
-  var myP = getPlayerByPhone(myPhone());
-  var partnerP;
-
-  if (isIncoming && targetId) {
-    partnerP = player(targetId);
-  } else {
-    if (!__openChatPhone) { toast('Откройте чат с игроком', 'err'); return; }
-    partnerP = state.players.find(function(p){ return p.phone === __openChatPhone; });
-  }
-  if (!myP || !partnerP) { toast('Ошибка: игрок не найден', 'err'); return; }
-
-  ensureAudioCtx();
-
-  var roomName = existingRoom || ('call_' + [myP.id, partnerP.id].sort().join('_'));
-  var participantName = myP.id;
-  var isVideo = type === 'video';
-
   // Настройка UI
   var callScreen = document.getElementById('callScreen');
   if (callScreen) callScreen.classList.add('active');
@@ -2415,4 +2397,3 @@ function rejectIncoming() {
 </script>
 </body>
 </html>
-
