@@ -2138,10 +2138,303 @@ if(el)dispatch(el);
 if(document.getElementById('loginScreen').style.display==='none'){render();updateBadge();}
 })();
 /* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
-var LIVEKIT_URL = "wss://topspin-club-lmgx3s0y.livekit.cloud"; // ← ЗАМЕНИТЕ на ваш WebSocket URL из LiveKit Cloud!
+var LIVEKIT_URL = "wss://topspin-club-lmgx3s0y.livekit.cloud";
 var callRoom = null;
 var isMuted = false;
- 
-}</script>
+var audioCtx = null;
+var ringbackTimer = null;
+var ringbackOsc = null;
+var ringbackGain = null;
+var ringbackRunning = false;
+
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume().catch(function(){}); }
+  return audioCtx;
+}
+
+function playRingback() {
+  var ctx = ensureAudioCtx();
+  if (!ctx) return;
+  if (ringbackTimer) { clearTimeout(ringbackTimer); ringbackTimer = null; }
+  if (ringbackOsc) { try { ringbackOsc.stop(); ringbackOsc.disconnect(); } catch(e){} ringbackOsc = null; }
+  if (ringbackGain) { try { ringbackGain.disconnect(); } catch(e){} ringbackGain = null; }
+  
+  ringbackRunning = true;
+  try {
+    ringbackOsc = ctx.createOscillator();
+    ringbackGain = ctx.createGain();
+    ringbackOsc.type = 'sine';
+    ringbackOsc.frequency.value = 425;
+    ringbackGain.gain.value = 0;
+    ringbackOsc.connect(ringbackGain);
+    ringbackGain.connect(ctx.destination);
+    ringbackOsc.start();
+    
+    var cycle = function() {
+      if (!ringbackRunning || !ringbackGain) return;
+      var now = ctx.currentTime;
+      ringbackGain.gain.cancelScheduledValues(now);
+      ringbackGain.gain.setValueAtTime(0, now);
+      ringbackGain.gain.linearRampToValueAtTime(0.08, now + 0.05);
+      ringbackGain.gain.setValueAtTime(0.08, now + 0.95);
+      ringbackGain.gain.linearRampToValueAtTime(0, now + 1.0);
+      ringbackTimer = setTimeout(cycle, 4000);
+    };
+    cycle();
+  } catch (e) { console.warn('Ringback error:', e); }
+}
+
+function stopRingback() {
+  ringbackRunning = false;
+  if (ringbackTimer) { clearTimeout(ringbackTimer); ringbackTimer = null; }
+  if (ringbackOsc) { try { ringbackOsc.stop(); ringbackOsc.disconnect(); } catch (e) {} ringbackOsc = null; }
+  if (ringbackGain) { try { ringbackGain.disconnect(); } catch (e) {} ringbackGain = null; }
+}
+
+function unlockAudio() {
+  ensureAudioCtx();
+  if (callRoom) { try { callRoom.startAudio(); } catch (e) {} }
+  var btn = document.getElementById('callAudioUnlockBtn');
+  if (btn) btn.style.display = 'none';
+  toast('Звук включён', 'ok');
+}
+
+function attachAudioEl(track) {
+  if (!track) return;
+  if (track.kind !== LivekitClient.Track.Kind.Audio) return;
+  if (document.querySelector('audio[data-lk-track="' + track.sid + '"]')) return;
+  var audioEl = track.attach();
+  audioEl.autoplay = true;
+  audioEl.playsInline = true;
+  audioEl.setAttribute('data-lk-track', track.sid);
+  audioEl.style.display = 'none';
+  document.body.appendChild(audioEl);
+  audioEl.play().catch(function() {
+    var btn = document.getElementById('callAudioUnlockBtn');
+    if (btn) btn.style.display = 'inline-flex';
+  });
+}
+
+async function startCall(type, targetId, isIncoming, existingRoom) {
+  var myP = getPlayerByPhone(myPhone());
+  var partnerP;
+
+  if (isIncoming && targetId) {
+    partnerP = player(targetId);
+  } else {
+    if (!__openChatPhone) { toast('Откройте чат с игроком', 'err'); return; }
+    partnerP = state.players.find(function(p){ return p.phone === __openChatPhone; });
+  }
+  if (!myP || !partnerP) { toast('Ошибка: игрок не найден', 'err'); return; }
+
+  ensureAudioCtx();
+  var roomName = existingRoom || ('call_' + [myP.id, partnerP.id].sort().join('_'));
+  var participantName = myP.id;
+  var isVideo = type === 'video';
+
+  var callScreen = document.getElementById('callScreen');
+  if (callScreen) callScreen.classList.add('active');
+  var nameEl = document.getElementById('callName');
+  if (nameEl) nameEl.textContent = partnerP.firstName + ' ' + partnerP.lastName;
+  var statusEl = document.getElementById('callStatus');
+  if (statusEl) statusEl.textContent = isIncoming ? 'Соединение...' : 'Звоним...';
+
+  var avEl = document.getElementById('callAvatar');
+  if (avEl) {
+    if (partnerP.avatar) avEl.innerHTML = '<img src="' + partnerP.avatar + '">';
+    else { avEl.textContent = initials(partnerP); avEl.style.background = avColor(partnerP.id); }
+  }
+
+  var videoWrap = document.getElementById('callVideoWrap');
+  if (isVideo && videoWrap) { videoWrap.style.display = 'block'; if (avEl) avEl.style.display = 'none'; }
+  else if (videoWrap) { videoWrap.style.display = 'none'; if (avEl) avEl.style.display = ''; }
+
+  var unlockBtn = document.getElementById('callAudioUnlockBtn');
+  if (unlockBtn) unlockBtn.style.display = 'none';
+
+  if (!isIncoming) playRingback();
+
+  try {
+    if (typeof LivekitClient === 'undefined') throw new Error('LiveKit не загружен');
+    if (!isIncoming && dbRef) {
+      dbRef.child('calls/' + roomName).set({ from: myP.id, to: partnerP.id, type: type, status: 'calling', ts: Date.now() });
+      dbRef.child('calls/' + roomName).on('value', function(snap) {
+        var c = snap.val();
+        if (c && c.status === 'rejected') { toast('Собеседник отклонил', 'err'); endCall(); }
+      });
+    }
+
+    var resp = await fetch('https://topspin-ai.styleman81.workers.dev/livekit-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomName: roomName, participantName: participantName })
+    });
+    var data = await resp.json();
+    if (!data.token) throw new Error('Токен не получен');
+
+    callRoom = new LivekitClient.Room();
+    callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) {
+      if (track.kind === LivekitClient.Track.Kind.Audio) attachAudioEl(track);
+      else if (track.kind === LivekitClient.Track.Kind.Video) {
+        var remoteVideoEl = document.getElementById('remoteVideo');
+        if (remoteVideoEl) { track.attach(remoteVideoEl); remoteVideoEl.play().catch(function(){}); }
+      }
+    });
+
+    callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
+      if (statusEl) statusEl.textContent = 'В сети';
+      stopRingback();
+      if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
+    });
+    callRoom.on(LivekitClient.RoomEvent.Disconnected, function() { endCall(); });
+
+    await callRoom.connect(LIVEKIT_URL, data.token);
+    try { await callRoom.startAudio(); } catch (e) {}
+    await callRoom.localParticipant.setMicrophoneEnabled(true);
+    
+    if (isVideo) {
+      var localPub = await callRoom.localParticipant.setCameraEnabled(true);
+      if (localPub && localPub.videoTrack) {
+        var localVideoEl = document.getElementById('localVideo');
+        if (localVideoEl) localPub.videoTrack.attach(localVideoEl);
+      }
+    }
+
+    if (statusEl) statusEl.textContent = 'В сети';
+
+    setTimeout(function() {
+      if (callRoom && callRoom.remoteParticipants.size > 0) {
+        stopRingback();
+        if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
+        callRoom.remoteParticipants.forEach(function(p) {
+          p.trackPublications.forEach(function(pub) {
+            if (pub.track) {
+              if (pub.track.kind === 'audio') attachAudioEl(pub.track);
+              if (pub.track.kind === 'video') {
+                var remoteVideoEl = document.getElementById('remoteVideo');
+                if (remoteVideoEl) pub.track.attach(remoteVideoEl);
+              }
+            }
+          });
+        });
+      } else {
+        var btn = document.getElementById('callAudioUnlockBtn');
+        if (btn) btn.style.display = 'inline-flex';
+      }
+    }, 3000);
+
+  } catch (e) {
+    console.error('Call error:', e);
+    stopRingback();
+    toast('Ошибка звонка: ' + e.message, 'err');
+    endCall();
+  }
+}
+
+function toggleMute() {
+  if (!callRoom) return;
+  isMuted = !isMuted;
+  callRoom.localParticipant.setMicrophoneEnabled(!isMuted);
+  var btn = document.getElementById('callMuteBtn');
+  if (btn) btn.classList.toggle('muted', isMuted);
+}
+
+function endCall() {
+  console.log('>>> endCall START');
+  stopRingback();
+  if (callRoom) { try { callRoom.disconnect(); } catch(e){} callRoom = null; }
+  
+  var callScreen = document.getElementById('callScreen');
+  if (callScreen) callScreen.classList.remove('active');
+  isMuted = false;
+  var btn = document.getElementById('callMuteBtn');
+  if (btn) btn.classList.remove('muted');
+  
+  document.querySelectorAll('audio, video').forEach(function(el){
+    if (el.hasAttribute('data-lk-track') || el.id === 'localVideo' || el.id === 'remoteVideo') {
+      try { el.srcObject = null; if(el.tagName === 'AUDIO') el.remove(); } catch(e){}
+    }
+  });
+  
+  var videoWrap = document.getElementById('callVideoWrap');
+  if (videoWrap) videoWrap.style.display = 'none';
+  var avEl = document.getElementById('callAvatar');
+  if (avEl) avEl.style.display = '';
+  var unlockBtn = document.getElementById('callAudioUnlockBtn');
+  if (unlockBtn) unlockBtn.style.display = 'none';
+  
+  try {
+    var myP = getPlayerByPhone(myPhone());
+    if (dbRef && myP) {
+      dbRef.child('calls').once('value', function(snap){
+        var calls = snap.val() || {};
+        Object.keys(calls).forEach(function(r){
+          if (r.includes(myP.id)) dbRef.child('calls/' + r).remove();
+        });
+      });
+    }
+  } catch (e) {}
+  console.log('>>> endCall END');
+}
+
+function listenIncomingCalls() {
+  if (!dbRef || !currentUser) return;
+  var myPlayer = getPlayerByPhone(myPhone());
+  if (!myPlayer) return;
+  
+  dbRef.child('calls').on('value', function(snap) {
+    var calls = snap.val() || {};
+    Object.keys(calls).forEach(function(roomName) {
+      var c = calls[roomName];
+      if (c.to === myPlayer.id && c.status === 'calling' && (Date.now() - c.ts < 30000)) {
+        showIncomingCall(roomName, c);
+      }
+    });
+  });
+}
+
+var incomingCallRoom = null;
+function showIncomingCall(roomName, callData) {
+  if (document.getElementById('callScreen').classList.contains('active')) return; 
+  if (window.__incomingShown === roomName) return;
+  window.__incomingShown = roomName;
+  incomingCallRoom = roomName;
+
+  var html = '<div id="incomingCallModal" style="position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.8);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff">';
+  html += '<h2 style="font-family:var(--fd);font-size:24px;margin-bottom:8px;">Входящий ' + (callData.type === 'video' ? 'видеозвонок' : 'звонок') + '</h2>';
+  html += '<p style="color:var(--mut);margin-bottom:24px">Звонит игрок...</p>';
+  html += '<div style="display:flex;gap:20px">';
+  html += '<button class="btn danger" onclick="rejectIncoming()" style="border-radius:50%;width:64px;height:64px;font-size:24px;">✕</button>';
+  html += '<button class="btn primary" onclick="acceptIncoming(\'' + roomName + '\', \'' + callData.type + '\')" style="border-radius:50%;width:64px;height:64px;font-size:24px;">✓</button>';
+  html += '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function acceptIncoming(roomName, type) {
+  var modal = document.getElementById('incomingCallModal');
+  if (modal) modal.remove();
+  window.__incomingShown = null;
+  if (dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
+  var myP = getPlayerByPhone(myPhone());
+  var parts = roomName.replace('call_', '').split('_');
+  var callerId = parts[0] === myP.id ? parts[1] : parts[0];
+  startCall(type, callerId, true, roomName);
+}
+
+function rejectIncoming() {
+  var modal = document.getElementById('incomingCallModal');
+  if (modal) modal.remove();
+  window.__incomingShown = null;
+  if (incomingCallRoom && dbRef) {
+    dbRef.child('calls/' + incomingCallRoom).update({ status: 'rejected' });
+    setTimeout(function(){ dbRef.child('calls/' + incomingCallRoom).remove(); }, 1000);
+  }
+}
+</script>
+</body>
+</html>
 </body>
 </html>
