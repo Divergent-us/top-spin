@@ -2051,7 +2051,7 @@ var av=e.target&&e.target.closest?e.target.closest('[data-avatar-src]'):null;
 if(av){e.preventDefault();e.stopPropagation();openLightbox(av.getAttribute('data-avatar-src'));return;}
 var el=e.target&&e.target.closest?e.target.closest('[data-action]'):null;
 if(el)dispatch(el);
-});/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
+});})();/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
 var LIVEKIT_URL = "wss://topspin-club-lmgx3s0y.livekit.cloud";
 var callRoom = null;
 var isMuted = false;
