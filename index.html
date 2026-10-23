@@ -1060,7 +1060,22 @@ function verifyPhoneCode(){var codeInput=document.getElementById('loginCode');va
 sha256(code).then(function(hash){var stored=state.playerCodes?state.playerCodes[phone]:null;var ok=false;if(stored){if(stored===hash||stored===code){ok=true;}}if(ok){resetFail(phone);completeLoginPlayer(phone);}
 else{registerFail(phone);var left=failInfo(phone);errorEl.textContent=left.locked?('Слишком много попыток. Подождите '+left.left+' сек.'):'Неверный персональный код';btn.disabled=false;btn.textContent='Войти';}}).catch(function(){errorEl.textContent='Ошибка проверки кода';btn.disabled=false;btn.textContent='Войти';});}catch(e){}}
 function completeLoginPlayer(phone){currentUser={phone:phone,role:'player'};lsSet('topspin_session',JSON.stringify(currentUser));hideLoginScreen();toast('Вход выполнен','ok');try{beat();}catch(e){}render();updateBadge();
-try { listenIncomingCalls(); } catch(e) { console.error(e); }
+function listenIncomingCalls() {
+  if (!dbRef || !currentUser) return;
+  var myPlayer = getPlayerByPhone(myPhone());
+  if (!myPlayer) return;
+  
+  var callsRef = dbRef.child('calls');
+  callsRef.off('value'); // Очищаем старые слушатели перед созданием нового
+  callsRef.on('value', function(snap) {
+    var calls = snap.val() || {};
+    Object.keys(calls).forEach(function(roomName) {
+      var c = calls[roomName];
+      if (c.to === myPlayer.id && c.status === 'calling' && (Date.now() - c.ts < 30000)) {
+        showIncomingCall(roomName, c);
+      }
+    });
+  });
 }
 function adminLogin(){var email=(document.getElementById('adminEmail')?document.getElementById('adminEmail').value:'').trim();var pass=(document.getElementById('adminPass')?document.getElementById('adminPass').value:'');var err=document.getElementById('loginError3');err.textContent='';if(!email||!pass){err.textContent='Введите email и пароль';return;}if(!authRef){err.textContent='Firebase не подключён';return;}authRef.signInWithEmailAndPassword(email,pass).then(function(){}).catch(function(e){err.textContent='Неверный email или пароль';});}
 function hideLoginScreen(){document.getElementById('loginScreen').style.display='none';document.getElementById('mainHeader').style.display='flex';document.getElementById('view').style.display='block';document.getElementById('mainTabbar').style.display='flex';}
