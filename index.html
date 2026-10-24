@@ -1070,14 +1070,20 @@ function loadPlayerSession(){try{var s=JSON.parse(lsGet('topspin_session'));if(s
 function updateSyncIndicator(status){var ind=document.getElementById('syncIndicator');if(!ind)return;ind.className='sync-indicator '+status;if(status==='synced'){ind.innerHTML='<span class="sync-dot"></span>синхр';}else if(status==='error'){ind.innerHTML='<span class="sync-dot"></span>ошибка';}}
  function forceSave(){
   try{
-    if(state.players&&state.players.length){lsSet(BAK_KEY,JSON.stringify(state));}
-    lsSet(LS_KEY,JSON.stringify(state));
-    if(window.__st){clearTimeout(window.__st);window.__st=null;}
+    // 1. Сначала пишем в локальную память
+    if(state.players && state.players.length){ lsSet(BAK_KEY, JSON.stringify(state)); }
+    lsSet(LS_KEY, JSON.stringify(state));
+    
+    // 2. Отменяем все отложенные таймеры сохранения (если они были)
+    if(window.__st){ clearTimeout(window.__st); window.__st = null; }
+    
+    // 3. Жестко пишем в Firebase прямо сейчас
     saveToFirebase();
-    toast('Сохранено в облако ✓','ok');
+    
+    toast('Сохранено в облако ✓', 'ok');
   }catch(e){
-    toast('Ошибка сохранения: '+e.message,'err');
-    console.error('forceSave error:',e);
+    toast('Ошибка сохранения: ' + e.message, 'err');
+    console.error('forceSave error:', e);
   }
 }
 function saveToFirebase(){if(!dbRef)return;try{
