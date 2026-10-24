@@ -2410,6 +2410,77 @@ function rejectIncoming() {
     setTimeout(function(){ dbRef.child('calls/' + incomingCallRoom).remove(); }, 1000);
   }
 }
+/* ===== ВХОДЯЩИЕ ЗВОНКИ (БЕЗОПАСНЫЙ ПРИЕМНИК) ===== */
+var incomingCallRoom = null;
+var __callsListenerActive = false;
+
+function listenIncomingCalls() {
+  if (!dbRef || !currentUser) return;
+  var myPlayer = getPlayerByPhone(myPhone());
+  if (!myPlayer) return;
+  
+  if (__callsListenerActive) dbRef.child('calls').off('value');
+  __callsListenerActive = true;
+
+  dbRef.child('calls').on('value', function(snap) {
+    var calls = snap.val() || {};
+    Object.keys(calls).forEach(function(roomName) {
+      var c = calls[roomName];
+      // Если звонок мне, он в статусе "calling" и ему не больше 30 секунд
+      if (c.to === myPlayer.id && c.status === 'calling' && (Date.now() - c.ts < 30000)) {
+        showIncomingCall(roomName, c);
+      }
+    });
+  });
+}
+
+function showIncomingCall(roomName, callData) {
+  if (document.getElementById('callScreen') && document.getElementById('callScreen').classList.contains('active')) return; 
+  if (window.__incomingShown === roomName) return;
+  window.__incomingShown = roomName;
+  incomingCallRoom = roomName;
+
+  var html = '<div id="incomingCallModal" style="position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.8);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff">';
+  html += '<h2 style="font-family:var(--fd);font-size:24px;margin-bottom:8px;">Входящий ' + (callData.type === 'video' ? 'видеозвонок' : 'звонок') + '</h2>';
+  html += '<p style="color:var(--mut);margin-bottom:24px">Звонит игрок...</p>';
+  html += '<div style="display:flex;gap:20px">';
+  html += '<button class="btn danger" onclick="rejectIncoming()" style="border-radius:50%;width:64px;height:64px;font-size:24px;">✕</button>';
+  html += '<button class="btn primary" onclick="acceptIncoming(\'' + roomName + '\', \'' + callData.type + '\')" style="border-radius:50%;width:64px;height:64px;font-size:24px;">✓</button>';
+  html += '</div></div>';
+  
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function acceptIncoming(roomName, type) {
+  var modal = document.getElementById('incomingCallModal');
+  if (modal) modal.remove();
+  window.__incomingShown = null;
+  if (dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
+  
+  var myP = getPlayerByPhone(myPhone());
+  var parts = roomName.replace('call_', '').split('_');
+  var callerId = parts[0] === myP.id ? parts[1] : parts[0];
+  
+  // Запускаем звонок в режиме "входящего"
+  startCall(type, callerId, true, roomName);
+}
+
+function rejectIncoming() {
+  var modal = document.getElementById('incomingCallModal');
+  if (modal) modal.remove();
+  window.__incomingShown = null;
+  if (incomingCallRoom && dbRef) {
+    dbRef.child('calls/' + incomingCallRoom).update({ status: 'rejected' });
+    setTimeout(function(){ dbRef.child('calls/' + incomingCallRoom).remove(); }, 1000);
+  }
+}
+
+// Автоматический запуск приемника каждые 3 секунды
+setInterval(function() {
+  if (currentUser && !__callsListenerActive) {
+    try { listenIncomingCalls(); } catch(e) { console.error('Call listener error:', e); }
+  }
+}, 3000);
 </script>
 </body>
 </html>
