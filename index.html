@@ -1048,8 +1048,27 @@ function inboxModal(){
   modal(html);
 }
 function menuModal(){var on=lsGet('soundEnabled')!=='false';var adminRow=isAdminMode?'<div class="menu-row" data-action="forceSave" style="border-color:rgba(65,224,141,.5)"><span style="font-size:20px;text-align:center;width:20px">💾</span><span>Сохранить сейчас</span></div>':'';modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Меню</h3>'+adminRow+'<div class="menu-row" data-action="menuSettings">'+SVG_GEAR+'<span>Настройки</span></div><div class="menu-row" data-action="menuBell">'+bellSVG(on)+'<span>Звук: '+(on?'включён':'выключен')+'</span></div>');}
-function manageMatches(tid){var t=tourn(tid);if(!t)return;var ms=state.matches.filter(function(m){return m.tournamentId===tid;}).sort(function(a,b){return(a.time||'99:99').localeCompare(b.time||'99:99');});var items=ms.map(function(m){var played=m.sets&&m.sets.length;var sc=played?setsCountArr(m.sets):null;var setsStr=played?m.sets.map(function(s){return s[0]+':'+s[1];}).join(' '):'';return'<div class="mm-item"><button class="mrow" data-action="resultFromManage" data-id="'+m.id+'" data-tid="'+tid+'"><span class="pl"><span>'+pName(m.playerAId)+'</span><span>'+pName(m.playerBId)+'</span></span>'+(played?'<span class="sc">'+sc[0]+':'+sc[1]+'</span>':'<span class="st">счёт</span>')+'</button>'+(setsStr?'<div class="sets-line">сеты: '+setsStr+'</div>':'')+'</div>';}).join('');modal('<button class="modal-x" data-action="closeModal">✕</button><h3>'+esc(t.name)+'</h3><div class="mut small">Страница турнира • ведение счёта по сетам</div><div class="mm-list">'+(items||'<div class="mut small">Пар пока нет — добавьте пару</div>')+'</div><<div class="row-actions" style="margin-bottom:8px"><button class="btn ghost w100" data-action="addParticipant" data-tid="'+tid+'">👤 Добавить участника</button></div>
-<div class="row-actions"><button class="btn primary w100" data-action="addMatchFromManage" data-tid="'+tid+'">🏓 Добавить пару</button></div>');}
+function manageMatches(tid){
+  var t=tourn(tid);
+  if(!t)return;
+  var ms=state.matches.filter(function(m){return m.tournamentId===tid;}).sort(function(a,b){return(a.time||'99:99').localeCompare(b.time||'99:99');});
+  
+  var items=ms.map(function(m){
+    var played=m.sets&&m.sets.length;
+    var sc=played?setsCountArr(m.sets):null;
+    var setsStr=played?m.sets.map(function(s){return s[0]+':'+s[1];}).join(' '):'';
+    return'<div class="mm-item"><button class="mrow" data-action="resultFromManage" data-id="'+m.id+'" data-tid="'+tid+'"><span class="pl"><span>'+pName(m.playerAId)+'</span><span>'+pName(m.playerBId)+'</span></span>'+(played?'<span class="sc">'+sc[0]+':'+sc[1]+'</span>':'<span class="st">счёт</span>')+'</button>'+(setsStr?'<div class="sets-line">сеты: '+setsStr+'</div>':'')+'</div>';
+  }).join('');
+  
+  var html = '<button class="modal-x" data-action="closeModal">✕</button><h3>'+esc(t.name)+'</h3><div class="mut small">Страница турнира • ведение счёта по сетям</div><div class="mm-list">'+(items||'<div class="mut small">Пар пока нет — добавьте пару</div>')+'</div>';
+  
+  // Кнопка добавления участника
+  html += '<div class="row-actions" style="margin-bottom:8px"><button class="btn ghost w100" data-action="addParticipant" data-tid="'+tid+'">👤 Добавить участника</button></div>';
+  // Кнопка добавления пары
+  html += '<div class="row-actions"><button class="btn primary w100" data-action="addMatchFromManage" data-tid="'+tid+'">🏓 Добавить пару</button></div>';
+  
+  modal(html);
+}
 function compressImage(file,cb){var r=new FileReader();r.onload=function(e){var img=new Image();img.onload=function(){var mW=200,mH=200,w=img.width,h=img.height;if(w>mW){h=h*mW/w;w=mW;}if(h>mH){w=w*mH/h;h=mH;}var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);cb(c.toDataURL('image/jpeg',0.85));};img.onerror=function(){};img.src=e.target.result;};r.readAsDataURL(file);}
 function playSound(type){if(lsGet('soundEnabled')==='false')return;try{var a=new(window.AudioContext||window.webkitAudioContext)();var o=a.createOscillator();var g=a.createGain();o.connect(g);g.connect(a.destination);if(type==='setEnd'){o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(0.3,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.3);o.start(a.currentTime);o.stop(a.currentTime+0.3);}else if(type==='matchEnd'){o.frequency.setValueAtTime(523,a.currentTime);o.frequency.setValueAtTime(659,a.currentTime+0.15);o.frequency.setValueAtTime(784,a.currentTime+0.3);o.type='sine';g.gain.setValueAtTime(0.35,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.6);o.start(a.currentTime);o.stop(a.currentTime+0.6);}else if(type==='msg'){o.frequency.setValueAtTime(988,a.currentTime);o.frequency.setValueAtTime(1319,a.currentTime+0.12);o.type='sine';g.gain.setValueAtTime(0.3,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.35);o.start(a.currentTime);o.stop(a.currentTime+0.35);}else if(type==='click'){o.frequency.value=600;o.type='square';g.gain.setValueAtTime(0.08,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.05);o.start(a.currentTime);o.stop(a.currentTime+0.05);}}catch(e){}}
 function formatPhone(phone){if(!phone)return'';phone=String(phone).replace(/[^\d+]/g,'');if(phone.charAt(0)==='8'&&phone.length===11){phone='+7'+phone.substring(1);}if(phone&&phone.charAt(0)!=='+'){phone='+'+phone;}return phone;}
