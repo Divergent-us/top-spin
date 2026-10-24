@@ -1496,7 +1496,13 @@ function tournamentModal(tid){
 }
 function saveTournament(tid){var n=(document.querySelector('#tn')?document.querySelector('#tn').value:'').trim(),d=(document.querySelector('#td')?document.querySelector('#td').value:''),s=(document.querySelector('#ts')?document.querySelector('#ts').value:''),e=(document.querySelector('#te')?document.querySelector('#te').value:'');if(!n||!d){toast('Укажите название и дату','err');return;}if(tid){var t=tourn(tid);t.name=n;t.date=d;t.startTime=s;t.endTime=e;toast('Обновлено','ok');}else{state.tournaments.push({id:uid(),name:n,date:d,startTime:s,endTime:e,playerIds:[],closed:false});toast('Турнир создан','ok');}save();closeModal();render();}
 function delTournament(tid){confirmBox('Удалить турнир?',function(){state.tournaments=state.tournaments.filter(function(t){return t.id!==tid;});state.matches=state.matches.filter(function(m){return m.tournamentId!==tid;});state.awards=state.awards.filter(function(a){return a.tournamentId!==tid;});save();ui.tournamentId=null;render();toast('Удалено');});}
-function closeTournamentNow(tid){var t=tourn(tid);t.closed=true;save();render();toast('Завершён','ok');}
+function closeTournamentNow(tid){
+  var t = tourn(tid);
+  t.closed = true;
+  forceSave(); // Принудительное мгновенное сохранение
+  render();
+  toast('Турнир завершён и сохранён', 'ok');
+}
 function reopenTournament(tid){var t=tourn(tid);t.closed=false;save();render();toast('Открыт');}
  /* ===== УПРАВЛЕНИЕ КОМАНДАМИ (только админ) ===== */
 function manageTeamsModal(tid){
