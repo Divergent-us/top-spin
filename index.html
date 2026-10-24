@@ -1646,7 +1646,7 @@ async function analyzeGameStyle(playerId){
   var btn=document.querySelector('.ai-btn-analyze');
   var box=document.getElementById('aiResponseBox');
   if(!btn||!box)return;
-  var cacheKey='ai_v2_'+playerId+'_'+new Date().toISOString().slice(0,10);
+  var cacheKey='ai_v3_'+playerId+'_'+new Date().toISOString().slice(0,10);
   if(state.aiCache&&state.aiCache[cacheKey]){
     box.style.display='block';
     box.innerHTML='<div style="white-space:pre-wrap;line-height:1.6;">'+esc(state.aiCache[cacheKey])+'</div>';
@@ -1656,88 +1656,98 @@ async function analyzeGameStyle(playerId){
   btn.disabled=true;
   btn.innerHTML='<span class="ai-loading"></span> Анализ…';
   box.style.display='block';
-  box.innerHTML='<span class="mut small">Собираю статистику матчей…</span>';
+  box.innerHTML='<span class="mut small">Собираю статистику и историю встреч…</span>';
+
   try{
     var eng=engine();
     var stats=playerStats(playerId,eng);
     var myPlayer=player(playerId);
     var myName=myPlayer?(myPlayer.firstName+' '+myPlayer.lastName):'игрок';
+
+    // ===== 1. Сбор статистики по соперникам (Head-to-Head) =====
     var allMyMatches=eng.played.filter(function(m){return m.playerAId===playerId||m.playerBId===playerId;});
+    var h2h={}; 
+    allMyMatches.forEach(function(m){
+      var isA=m.playerAId===playerId;
+      var oppId=isA?m.playerBId:m.playerAId;
+      if(!h2h[oppId]) h2h[oppId]={w:0, l:0, lastResult:''};
+      
+      var win=matchWinner(m)===playerId;
+      if(win) h2h[oppId].w++;
+      else h2h[oppId].l++;
+      
+      var sc=setsCountArr(m.sets);
+      var myS=isA?sc[0]:sc[1];
+      var oppS=isA?sc[1]:sc[0];
+      h2h[oppId].lastResult = (win?'победа':'поражение') + ' ' + myS + ':' + oppS;
+    });
+
+    var h2hText = "";
+    // Берем только тех, с кем было больше 1 матча или кто доставил проблемы
+    Object.keys(h2h).forEach(function(oppId){
+      var opp = player(oppId);
+      if(!opp) return;
+      var rec = h2h[oppId];
+      h2hText += 'С ' + opp.firstName + ' ' + opp.lastName + ' (рейтинг ' + eng.R[oppId] + '): ' + rec.w + ' побед, ' + rec.l + ' поражений. Последний раз: ' + rec.lastResult + '.\n';
+    });
+
+    // ===== 2. Общая статистика и последние матчи =====
     var last5=allMyMatches.slice(-5);
     var matchLines=last5.map(function(m){
       var isA=m.playerAId===playerId;
       var oppId=isA?m.playerBId:m.playerAId;
-      var oppPlayer=player(oppId);
-      var oppName=oppPlayer?(oppPlayer.firstName+' '+oppPlayer.lastName):'соперник';
-      var oppRating=eng.R[oppId]||1000;
-      var myRating=eng.R[playerId];
+      var oppName=pNameRaw(oppId);
       var win=matchWinner(m)===playerId;
       var sc=setsCountArr(m.sets);
       var mySets=isA?sc[0]:sc[1];
       var oppSets=isA?sc[1]:sc[0];
-      var bc=ballsCountArr(m.sets);
-      var myBalls=isA?bc[0]:bc[1];
-      var oppBalls=isA?bc[1]:bc[0];
       var delta=eng.mdelta[m.id]?(isA?eng.mdelta[m.id].A:eng.mdelta[m.id].B):0;
-      var setsDetail=m.sets.map(function(s){return isA?(s[0]+'-'+s[1]):(s[1]+'-'+s[0]);}).join(', ');
-      var t=tourn(m.tournamentId);
-      var tourName=t?t.name:'тренировка';
-      var diffRating=myRating-oppRating;
-      return (win?'✅ ПОБЕДА':'❌ Поражение')+' | соперник: '+oppName+' (рейтинг '+oppRating+', разница '+(diffRating>0?'+':'')+diffRating+') | сеты '+mySets+':'+oppSets+' ('+setsDetail+') | мячи '+myBalls+':'+oppBalls+' | дельта '+(delta>0?'+':'')+delta+' | '+tourName;
+      return (win?'✅ Победа':'❌ Поражение')+' против '+oppName+' (сеты '+mySets+':'+oppSets+', рейтинг '+(delta>0?'+':'')+delta+')';
     }).join('\n');
-    var last10=allMyMatches.slice(-10);
-    var winsLast10=last10.filter(function(m){return matchWinner(m)===playerId;}).length;
-    var avgBallDiff=0;
-    if(last5.length){
-      var sumDiff=0;
-      last5.forEach(function(m){
-        var isA=m.playerAId===playerId;
-        var bc=ballsCountArr(m.sets);
-        sumDiff+=isA?(bc[0]-bc[1]):(bc[1]-bc[0]);
-      });
-      avgBallDiff=Math.round(sumDiff/last5.length);
+
+    // ===== 3. Формирование промпта =====
+    var systemPrompt='Ты — профессиональный тренер по настольному теннису. ' +
+      'Проанализируй общую статистику игрока и его историю встреч с соперниками. ' +
+      'Твой ответ должен состоять из двух частей:\n' +
+      '1. ОБЩИЙ АНАЛИЗ (кратко): сильные и слабые стороны на основе последних игр.\n' +
+      '2. ТАКТИКА ПРОТИВ СОПЕРНИКОВ: выбери 2-3 ключевых соперника (с кем больше всего играл или кому чаще проигрывал) и дай КОНКРЕТНЫЙ совет, как играть против них, опираясь на счёт последних встреч. ' +
+      'Опирайся на цифры. Максимум 220 слов. Используй эмодзи.';
+
+    var userPrompt=
+      '📊 ИГРОК: '+myName+'\n'+
+      '🎾 РЕЙТИНГ: '+eng.R[playerId]+' | ВИНРЕЙТ: '+stats.winp+'%\n'+
+      '🔥 ТЕКУЩАЯ СЕРИЯ: '+stats.streak+' побед подряд\n'+
+      '\n🏓 ПОСЛЕДНИЕ 5 МАТЧЕЙ:\n'+matchLines+'\n'+
+      '\n⚔️ ИСТОРИЯ ВСТРЕЧ С СОПЕРНИКАМИ:\n'+h2hText;
+
+    if(!h2hText){
+       userPrompt += '\nУ игрока пока нет истории встреч с другими игроками.';
     }
-    var avgSetDiff=0;
-    if(last5.length){
-      var sumSetDiff=0;
-      last5.forEach(function(m){
-        var isA=m.playerAId===playerId;
-        var sc=setsCountArr(m.sets);
-        sumSetDiff+=isA?(sc[0]-sc[1]):(sc[1]-sc[0]);
-      });
-      avgSetDiff=(sumSetDiff/last5.length).toFixed(1);
-    }
-    var vsStronger={w:0,l:0};
-    var vsWeaker={w:0,l:0};
-    allMyMatches.forEach(function(m){
-      var isA=m.playerAId===playerId;
-      var oppId=isA?m.playerBId:m.playerAId;
-      var myR=eng.R[playerId],oppR=eng.R[oppId]||1000;
-      var win=matchWinner(m)===playerId;
-      if(oppR>myR){win?vsStronger.w++:vsStronger.l++;}
-      else{win?vsWeaker.w++:vsWeaker.l++;}
+
+    var body={
+      messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}],
+      temperature:0.7,
+      max_tokens:900
+    };
+
+    var resp=await fetch(WORKER_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
     });
-    var tightMatches={w:0,l:0};
-    allMyMatches.forEach(function(m){
-      if(m.sets.length>=3){
-        var win=matchWinner(m)===playerId;
-        win?tightMatches.w++:tightMatches.l++;
-      }
-    });
-    var sys='Ты профессиональный тренер по настольному теннису. Дай 4 конкретных совета по темам: 🎯 ТЕХНИКА, 🧠 ТАКТИКА, 💪 ФИЗИЧЕСКАЯ ФОРМА, 🔥 ПСИХОЛОГИЯ. Опирайся на конкретные цифры. Не давай общих фраз — только конкретные рекомендации для тренировок. Максимум 220 слов. Используй эмодзи.';
-    var usr='📊 ИГРОК: '+myName+'\n🎾 РЕЙТИНГ: '+eng.R[playerId]+'\n📈 МАТЧЕЙ: '+stats.m+' (побед '+stats.w+', винрейт '+stats.winp+'%)\n🔥 СЕРИЯ: '+stats.streak+'\n📉 ЗА 10 МАТЧЕЙ: '+winsLast10+' побед из '+last10.length+'\n⚖️ СРЕДНЯЯ РАЗНИЦА МЯЧЕЙ: '+(avgBallDiff>0?'+':'')+avgBallDiff+'\n⚖️ СРЕДНЯЯ РАЗНИЦА СЕТОВ: '+(avgSetDiff>0?'+':'')+avgSetDiff+'\n💪 ПРОТИВ СИЛЬНЫХ: '+vsStronger.w+' побед / '+vsStronger.l+' поражений\n🎯 ПРОТИВ СЛАБЫХ: '+vsWeaker.w+' побед / '+vsWeaker.l+' поражений\n⏱️ В 3-СЕТОВЫХ: '+tightMatches.w+' побед / '+tightMatches.l+' поражений\n\n🏓 ПОСЛЕДНИЕ 5 МАТЧЕЙ:\n'+matchLines;
-    if(last5.length===0){usr+='\n\n⚠️ У игрока ещё нет матчей. Дай общие советы для начинающего.';}
-    var body={messages:[{role:'system',content:sys},{role:'user',content:usr}],temperature:0.7,max_tokens:900};
-    var resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+
     if(!resp.ok){var eb=await resp.text();throw new Error('API '+resp.status+': '+eb.slice(0,200));}
     var data=await resp.json();
     if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
     if(!data.choices||!data.choices[0]||!data.choices[0].message)throw new Error('Некорректный ответ');
+    
     var aiText=data.choices[0].message.content;
     box.innerHTML='<div style="white-space:pre-wrap;line-height:1.6;">'+esc(aiText)+'</div>';
+
     state.aiCache=state.aiCache||{};
     state.aiCache[cacheKey]=aiText;
     try{lsSet(LS_KEY,JSON.stringify(state));}catch(e){}
+
   }catch(err){
     console.error(err);
     box.innerHTML='<span style="color:var(--red)">❌ Ошибка ИИ:<br><small>'+esc(err.message)+'</small></span>';
