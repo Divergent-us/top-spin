@@ -1758,6 +1758,65 @@ function exportRatingPDF(){
     console.error(e);
   }
 }
+ function exportTournamentPDF(tid){
+  try{
+    var t=tourn(tid);
+    if(!t) return;
+    var stnd=standings(tid);
+    if(!stnd.length) return;
+    
+    var doc = new jspdf.jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(16);
+    doc.text(t.name, 14, 15);
+    
+    var body = stnd.map(function(r, i) {
+      return [i+1, pNameRaw(r.pid), (r.w+r.l), r.w, r.l, r.sw+':'+r.sl, r.bw+':'+r.bl, (r.w*2+r.l)];
+    });
+    
+    doc.autoTable({
+      head: [['#', 'Игрок', 'И', 'В', 'П', 'Сеты', 'Мячи', 'Очки']],
+      body: body,
+      startY: 20,
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [58, 169, 255] }
+    });
+    
+    doc.save('tournament.pdf');
+    toast('PDF готов','ok');
+  }catch(e){
+    toast('Не удалось создать PDF','err');
+    console.error(e);
+  }
+}
+
+function exportTournamentCSV(tid){
+  try{
+    var t=tourn(tid);
+    if(!t)return;
+    var rows=[['Место','Игрок','И','В','П','Сеты','Мячи','Очки']];
+    standings(tid).forEach(function(r,i){
+      rows.push([i+1,pNameRaw(r.pid),r.w+r.l,r.w,r.l,r.sw+':'+r.sl,r.bw+':'+r.bl,r.w*2+r.l]);
+    });
+    var ws=XLSX.utils.aoa_to_sheet(rows);
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Результаты');
+    
+    var wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    var blob = new Blob([wbout], {type:"application/octet-stream"});
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "tournament.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
+    
+    toast('Excel готов','ok');
+  }catch(e){
+    toast('Не удалось экспортировать','err');
+    console.error(e);
+  }
+}
 function exportAllData(){var json=JSON.stringify(state,null,2);modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Резервная копия</h3><p class="mut small">Нажмите «Копировать» и сохраните текст в файл .json, либо «Поделиться».</p><textarea id="bakText" readonly style="width:100%;height:200px;font-size:11px;font-family:monospace">'+esc(json)+'</textarea><div class="row-actions"><button class="btn primary" data-action="copyBackup">Копировать</button>'+(typeof navigator!=='undefined'&&navigator.share?'<button class="btn ghost" data-action="shareBackup">Поделиться</button>':'')+'<button class="btn ghost" data-action="closeModal">Закрыть</button></div>');}
 function shareBackup(){var json=JSON.stringify(state,null,2);if(navigator.share){navigator.share({title:'ТОП-СПИН бэкап',text:json}).then(function(){toast('Отправлено','ok');}).catch(function(){});}else{toast('Поделиться недоступно','err');}}
 function copyBackup(){var ta=document.getElementById('bakText');if(!ta)return;ta.focus();ta.select();try{document.execCommand('copy');toast('Скопировано в буфер','ok');}catch(e){toast('Выделите текст и скопируйте вручную','err');}}
