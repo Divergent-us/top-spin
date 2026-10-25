@@ -1641,6 +1641,37 @@ function teamModal(tid,teamId){
   }).join(''):'<div class="mut small">Сначала запишите игроков на турнир</div>';
   modal('<button class="modal-x" data-action="closeModal">✕</button><h3>'+(tm?'Редактировать команду':'Новая команда')+'</h3><label>Название команды</label><input id="tmName" value="'+(tm?esc(tm.name):'')+'"><label>Состав</label><div class="mut small" style="margin-bottom:6px">Отметьте игроков, которые войдут в команду</div><div class="picker-list" id="teamPicker" style="max-height:40vh">'+listHtml+'</div><input type="hidden" id="tmPicked" value="'+picked.join(',')+'"><div class="row-actions"><button class="btn ghost" data-action="manageTeams" data-tid="'+tid+'">Назад</button><button class="btn primary" data-action="saveTeam" data-tid="'+tid+'" data-id="'+(teamId||'')+'">Сохранить</button></div>');
 }
+ function showClubRules(){
+  var html = '<button class="modal-x" data-action="closeModal">✕</button><h3 style="color:var(--gold)">📖 Правила клуба</h3><div style="font-size:13.5px; line-height:1.6; max-height:70vh; overflow-y:auto; padding-right:5px; margin-top:10px">';
+  
+  html += '<div class="settings-info" style="background:rgba(58,169,255,.1); border-color:rgba(58,169,255,.3); color:var(--blue)">Мы используем систему рейтинга <b>RTTF</b>. Победа над сильным соперником дает больше очков, чем над слабым. Чем крупнее счет по сетам (например 3:0), тем больше очков вы получите.</div>';
+  
+  html += '<h4 style="margin-top:15px; color:var(--orange2)">🏆 Автоматические награды (Выдает система)</h4>';
+  html += '<ul style="padding-left:18px; margin-top:5px; color:var(--mut)">';
+  html += '<li><b>🏆 Император рейтинга</b> — 1-е место в общем рейтинге.</li>';
+  html += '<li><b>🥈 Серебро и 🥉 Бронза</b> — 2-е и 3-е место в рейтинге.</li>';
+  html += '<li><b>🔥 Серия побед</b> — выиграть 3 и более матчей подряд.</li>';
+  html += '<li><b>🎯 Снайпер</b> — самый высокий процент побед (от 60%), но не менее 5 сыгранных матчей.</li>';
+  html += '<li><b>💪 Марафонец</b> — сыграть 10 и более матчей.</li>';
+  html += '<li><b>📈 Восходящая звезда</b> — самый большой прирост рейтинга за карьеру (от 5 матчей).</li>';
+  html += '<li><b>👑 Гроза авторитетов</b> — 3 и более победы над игроками, чей рейтинг выше вашего.</li>';
+  html += '<li><b>🏓 Тренировочный маньяк</b> — посетить 5 и более тренировок.</li>';
+  html += '<li><b>🎓 Лучший новичок</b> — самый высокий рейтинг среди тех, кто провел 5 и менее турниров.</li>';
+  html += '</ul>';
+
+  html += '<h4 style="margin-top:15px; color:var(--orange2)">🏛 Зал Славы и Подиум (На Арене)</h4>';
+  html += '<div style="background:rgba(255,95,107,.1); border:1px solid rgba(255,95,107,.3); border-radius:8px; padding:10px; margin-top:5px">';
+  html += '<b>Почему меня нет на подиуме или в Зале Славы?</b><br>';
+  html += 'Чтобы попасть на пьедестал почета (и получать награды в Зал Славы), нужно сыграть как минимум <b>1 матч</b> и принять участие минимум в <b>3 турнирах</b>. Это защита от того, чтобы новички с нулевой статистикой не занимали места ветеранов.';
+  html += '</div>';
+
+  html += '<h4 style="margin-top:15px; color:var(--orange2)">🎖 Ручные награды</h4>';
+  html += '<p style="color:var(--mut); margin-top:5px">Администратор клуба может вручать особые награды (например, «За волю к победе» или «Лучший привет»). Они отображаются с бейджем <span class="auto-badge">АВТО</span> (если автоматические) или без него (если ручные).</p>';
+  
+  html += '<div class="row-actions"><button class="btn primary w100" data-action="closeModal" style="margin-top:15px">Понятно</button></div>';
+  html += '</div>';
+  modal(html);
+}
 function addParticipantModal(tid){var avail=state.players.filter(function(p){return(tourn(tid).playerIds||[]).indexOf(p.id)<0;});if(!avail.length){toast('Все добавлены','err');return;}var items=avail.map(function(p){return'<div class="picker-item" data-action="pickParticipant" data-tid="'+tid+'" data-id="'+p.id+'">'+miniAvatar(p)+'<span class="nm">'+esc(p.firstName+' '+p.lastName)+'</span></div>';}).join('');modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Добавить участника</h3><div class="picker-list">'+items+'</div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Закрыть</button></div>');}
 function pickParticipant(tid,pid){var t=tourn(tid);t.playerIds=t.playerIds||[];if(t.playerIds.indexOf(pid)<0)t.playerIds.push(pid);save();closeModal();render();toast('Добавлен','ok');}
 function addAllParticipants(tid){var t=tourn(tid);t.playerIds=t.playerIds||[];var added=0;state.players.forEach(function(p){if(t.playerIds.indexOf(p.id)<0){t.playerIds.push(p.id);added++;}});save();render();toast('Добавлено '+added,'ok');}
