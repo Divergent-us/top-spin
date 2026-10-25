@@ -1444,8 +1444,14 @@ function awRowHtml(a){
   var mc=a.emoji==='🥇'?'g':a.emoji==='🥈'?'s':a.emoji==='🥉'?'b':a.emoji==='💎'?'d':'';
   var autoBadge = a.auto ? '<span class="auto-badge">АВТО</span>' : '';
   var delBtn = (!a.auto && isAdminMode) ? '<button class="iconbtn del" data-action="delAward" data-id="'+a.id+'">✕</button>' : '';
-  var subText = a.auto ? esc(a.sub || 'автоматически') : (((a.tournamentId&&tourn(a.tournamentId))?esc(tourn(a.tournamentId).name):'вне турнира')+' • '+fmtDate(a.date));
-  return'<div class="award-card '+mc+'"><div class="award-emoji">'+a.emoji+'</div><div class="award-mid">'+avatarHtml(p,'reg')+'<div class="award-info"><div class="award-title">'+esc(a.title)+autoBadge+'</div><div class="award-name">'+esc(p?p.firstName+' '+p.lastName:'—')+'</div><div class="award-sub">'+subText+'</div></div></div>'+delBtn+'</div>';
+  
+  // Форматируем дату (если её нет, ставим сегодняшнюю)
+  var dateStr = a.date ? fmtDate(a.date) : fmtDate(new Date().toISOString().slice(0,10));
+  var dateHtml = '<div style="font-size:11px;color:var(--dim);margin-top:4px;display:flex;align-items:center;gap:4px">📅 ' + dateStr + '</div>';
+  
+  var subText = a.auto ? esc(a.sub || 'автоматически') : (((a.tournamentId&&tourn(a.tournamentId))?esc(tourn(a.tournamentId).name):'вне турнира'));
+  
+  return'<div class="award-card '+mc+'"><div class="award-emoji">'+a.emoji+'</div><div class="award-mid">'+avatarHtml(p,'reg')+'<div class="award-info"><div class="award-title">'+esc(a.title)+autoBadge+'</div><div class="award-name">'+esc(p?p.firstName+' '+p.lastName:'—')+'</div><div class="award-sub">'+subText+'</div>'+dateHtml+'</div></div>'+delBtn+'</div>';
 }
 function viewAwards(){
   var eng = engine();
