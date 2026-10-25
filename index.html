@@ -1457,17 +1457,45 @@ function viewAwards(){
   var eng = engine();
   var autoAwards = computeAutoAwards(eng);
   var manualAwards = [].concat(state.awards).sort(function(a,b){return String(b.date||'').localeCompare(String(a.date||''));});
-  var autoHtml = autoAwards.length
-    ? autoAwards.map(function(a){return awRowHtml(a);}).join('')
-    : '<div class="mut small" style="padding:8px">Пока нет автоматических наград. Они появятся после достаточного количества матчей.</div>';
-  var manualHtml = manualAwards.length ? manualAwards.map(function(a){return awRowHtml(a);}).join('') : '';
-  var html = '<div class="sec-title">🏆 Автоматические награды <span class="cnt">'+autoAwards.length+'</span></div><div class="mut small" style="margin:-4px 2px 10px">Выдаются системой автоматически по критериям. От админа не зависят.</div><div class="rise">'+autoHtml+'</div>';
-  if(manualAwards.length){
-    html += '<div class="sec-title">🎖 Награды от админа <span class="cnt">'+manualAwards.length+'</span></div><div class="rise">'+manualHtml+'</div>';
+  
+  // Автонаградам тоже ставим текущую дату для красоты
+  autoAwards.forEach(function(a){ if(!a.date) a.date = new Date().toISOString().slice(0,10); });
+
+  var allAwards = autoAwards.concat(manualAwards);
+  if(!ui.awardFilter) ui.awardFilter = 'all';
+  
+  var filtered = allAwards;
+  if(ui.awardFilter === 'manual') filtered = manualAwards;
+  if(ui.awardFilter === 'auto') filtered = autoAwards;
+  
+  // Считаем статистику
+  var playersWithAwards = {};
+  allAwards.forEach(function(a){ playersWithAwards[a.playerId] = (playersWithAwards[a.playerId]||0) + 1; });
+  var topPlayerId = Object.keys(playersWithAwards).sort(function(a,b){return playersWithAwards[b]-playersWithAwards[a];})[0];
+  
+  var html = '<div class="sec-title">🏆 Зал славы <span class="cnt">'+allAwards.length+'</span></div>';
+  
+  // Красивая карточка со статистикой
+  html += '<div class="card rise" style="margin-bottom:12px; display:flex; gap:10px; text-align:center">';
+  html += '<div style="flex:1"><div style="font-size:22px;font-family:var(--fd);color:var(--gold)">'+allAwards.length+'</div><div class="mut small">Всего наград</div></div>';
+  html += '<div style="width:1px;background:var(--line)"></div>';
+  html += '<div style="flex:1"><div style="font-size:22px;font-family:var(--fd);color:var(--gold)">'+(topPlayerId ? playersWithAwards[topPlayerId] : 0)+'</div><div class="mut small">Рекорд у 1 игрока</div></div>';
+  html += '</div>';
+  
+  // Кнопки фильтрации
+  html += '<div class="seg" style="width:100%; display:flex; margin-bottom:12px">';
+  html += '<button class="'+(ui.awardFilter==='all'?'on':'')+'" style="flex:1" data-action="filterAwards" data-type="all">Все</button>';
+  html += '<button class="'+(ui.awardFilter==='manual'?'on':'')+'" style="flex:1" data-action="filterAwards" data-type="manual">🎖 Ручные</button>';
+  html += '<button class="'+(ui.awardFilter==='auto'?'on':'')+'" style="flex:1" data-action="filterAwards" data-type="auto">⭐ Авто</button>';
+  html += '</div>';
+  
+  if(isAdminMode && ui.awardFilter !== 'auto'){
+    html += '<button class="btn primary w100" data-action="newAward" style="margin-bottom:13px">＋ Вручить награду</button>';
   }
-  if(isAdminMode){
-    html += '<div class="row-actions"><button class="btn ghost w100" data-action="newAward" style="margin-top:14px">＋ Вручить ручную награду</button></div>';
-  }
+  
+  var cardsHtml = filtered.map(function(a){ return awRowHtml(a); }).join('');
+  html += (cardsHtml ? '<div class="rise">' + cardsHtml + '</div>' : '<div class="empty"><div class="big">🏆</div><b>Наград пока нет</b></div>');
+  
   return html;
 }
 function pushCardHtml(){try{if(!('Notification' in window))return'';if(!('serviceWorker' in navigator))return'';if(Notification.permission==='granted'&&FCM_TOKEN){return'';}return'<div class="push-enable-card"><div class="pe-ico">🔔</div><div class="pe-body"><div class="pe-title">Включить уведомления</div><div class="pe-sub">Получайте push о новых тренировках, сообщениях и старте турниров</div></div><div class="pe-btn"><button class="btn primary sm" data-action="enablePush">Включить</button></div></div>';}catch(e){return'';}}
