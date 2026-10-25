@@ -1711,18 +1711,30 @@ function exportRatingCSV(){
     var wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,'Рейтинг');
     
-    // Безопасное скачивание для телефонов
+    // Генерируем файл как массив байтов
     var wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
     var blob = new Blob([wbout], {type:"application/octet-stream"});
-    var url = window.URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "rating.xlsx";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){ document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
     
-    toast('Excel готов','ok');
+    // Пробуем "Поделиться"
+    if (navigator.share) {
+      var file = new File([blob], 'rating.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      navigator.share({
+        files: [file],
+        title: 'Рейтинг ТОП-СПИН'
+      }).then(() => toast('Excel отправлен','ok')).catch(() => {
+        // Если пользователь отменил, ничего не делаем
+      });
+    } else {
+      // Если меню нет — скачиваем
+      var url = window.URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "rating.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){ document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
+      toast('Excel готов','ok');
+    }
   }catch(e){
     toast('Не удалось экспортировать','err');
     console.error(e);
@@ -1751,8 +1763,19 @@ function exportRatingPDF(){
       headStyles: { fillColor: [255, 139, 31] }
     });
     
-    doc.save('rating.pdf');
-    toast('PDF готов','ok');
+    // Сначала пробуем системное меню "Поделиться" (для телефонов)
+    if (navigator.share) {
+      var pdfBlob = doc.output('blob');
+      var file = new File([pdfBlob], 'rating.pdf', { type: 'application/pdf' });
+      navigator.share({
+        files: [file],
+        title: 'Рейтинг ТОП-СПИН'
+      }).then(() => toast('PDF отправлен','ok')).catch(() => doc.save('rating.pdf'));
+    } else {
+      // Если меню нет (например, на ПК) — просто скачиваем
+      doc.save('rating.pdf');
+      toast('PDF готов','ok');
+    }
   }catch(e){
     toast('Не удалось создать PDF','err');
     console.error(e);
