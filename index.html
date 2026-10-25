@@ -1461,7 +1461,9 @@ function viewAwards(){
   // Автонаградам тоже ставим текущую дату для красоты
   autoAwards.forEach(function(a){ if(!a.date) a.date = new Date().toISOString().slice(0,10); });
 
-  var allAwards = autoAwards.concat(manualAwards);
+    var allAwards = autoAwards.concat(manualAwards).filter(function(a){ 
+    return toursPlayedCount(a.playerId) >= 3; 
+  });
   if(!ui.awardFilter) ui.awardFilter = 'all';
   
   var filtered = allAwards;
