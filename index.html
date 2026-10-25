@@ -20,9 +20,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>   
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#0a1424;--bg2:#0e1c31;--panel:#132238;--panel2:#182b46;--line:#24395a;--line2:#31507e;--txt:#eaf2ff;--mut:#8ea6c8;--dim:#5f7699;--orange:#ff8b1f;--orange2:#ffb35c;--ball:#ffa41b;--blue:#3aa9ff;--green:#41e08d;--lime:#90ee90;--red:#ff5f6b;--gold:#ffd166;--silver:#cfd8e3;--bronze:#e0a06c;--rad:14px;--fd:'Russo One',system-ui,sans-serif;--fb:'Golos Text',system-ui,sans-serif}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -1702,20 +1699,20 @@ function registerToTournament(tid){var myPlayer=getPlayerByPhone(myPhone());if(!
 function exportRatingCSV(){
   try{
     var eng=engine();
-    var csv = '\uFEFFМесто;Игрок;Рейтинг;Побед;Поражений\n';
+    var csv = 'Место,Игрок,Рейтинг,Побед,Поражений\n';
     [].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];}).forEach(function(p,i){
       var st=playerStats(p.id,eng);
-      csv += (i+1)+';'+p.firstName+' '+p.lastName+';'+eng.R[p.id]+';'+st.w+';'+st.l+'\n';
+      csv += (i+1)+','+p.firstName+' '+p.lastName+','+eng.R[p.id]+','+st.w+','+st.l+'\n';
     });
-    var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'rating.csv';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){ document.body.removeChild(a); }, 100);
-    toast('Excel (CSV) готов','ok');
+    // Легкий способ без нагрузки на память
+    var uri = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+    var link = document.createElement('a');
+    link.href = uri;
+    link.download = 'rating.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast('Файл скачан','ok');
   }catch(e){ toast('Не удалось','err'); console.error(e); }
 }
 function exportRatingPDF(){
@@ -1725,19 +1722,16 @@ function exportRatingPDF(){
     if(!sorted.length) return;
     
     var win = window.open('', '_blank');
-    var html = '<html><head><title>Рейтинг</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px;text-align:left}th{background:#f0f0f0}</style></head><body>';
-    html += '<h2>Рейтинг ТОП-СПИН (RTTF)</h2><table><tr><th>#</th><th>Игрок</th><th>В-П</th><th>Рейтинг</th></tr>';
+    var html = '<html><head><title>Рейтинг</title><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font-family:sans-serif;padding:15px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:14px}th{background:#ff8b1f;color:#fff}</style></head><body>';
+    html += '<div style="background:#fff3cd;color:#856404;padding:12px;border-radius:8px;margin-bottom:15px;font-size:14px;line-height:1.4;"><b>💾 Как сохранить:</b><br>Нажмите на <u>три точки</u> в браузере (вверху справа) и выберите <b>«Печать»</b> или <b>«Сохранить как PDF»</b>.</div>';
+    html += '<h2>Рейтинг ТОП-СПИН</h2><table><tr><th>#</th><th>Игрок</th><th>В-П</th><th>Рейтинг</th></tr>';
     sorted.forEach(function(p, i) {
       var st = playerStats(p.id, eng);
       html += '<tr><td>'+(i+1)+'</td><td>'+p.firstName+' '+p.lastName+'</td><td>'+st.w+'В-'+st.l+'П</td><td>'+eng.R[p.id]+'</td></tr>';
     });
     html += '</table></body></html>';
-    
     win.document.write(html);
     win.document.close();
-    win.focus();
-    setTimeout(function(){ win.print(); }, 500);
-    toast('Открыто окно печати','ok');
   }catch(e){ toast('Ошибка','err'); console.error(e); }
 }
  function exportTournamentPDF(tid){
@@ -1746,39 +1740,35 @@ function exportRatingPDF(){
     var stnd=standings(tid); if(!stnd.length) return;
     
     var win = window.open('', '_blank');
-    var html = '<html><head><title>'+t.name+'</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px;text-align:left}th{background:#f0f0f0}</style></head><body>';
+    var html = '<html><head><title>'+t.name+'</title><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font-family:sans-serif;padding:15px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:14px}th{background:#3aa9ff;color:#fff}</style></head><body>';
+    html += '<div style="background:#d1ecf1;color:#0c5460;padding:12px;border-radius:8px;margin-bottom:15px;font-size:14px;line-height:1.4;"><b>💾 Как сохранить:</b><br>Нажмите на <u>три точки</u> в браузере и выберите <b>«Печать»</b>.</div>';
     html += '<h2>'+t.name+'</h2><table><tr><th>#</th><th>Игрок</th><th>И</th><th>В</th><th>П</th><th>Сеты</th><th>Мячи</th><th>Очки</th></tr>';
     stnd.forEach(function(r, i) {
       html += '<tr><td>'+(i+1)+'</td><td>'+pNameRaw(r.pid)+'</td><td>'+(r.w+r.l)+'</td><td>'+r.w+'</td><td>'+r.l+'</td><td>'+r.sw+':'+r.sl+'</td><td>'+r.bw+':'+r.bl+'</td><td>'+(r.w*2+r.l)+'</td></tr>';
     });
     html += '</table></body></html>';
-    
     win.document.write(html);
     win.document.close();
-    win.focus();
-    setTimeout(function(){ win.print(); }, 500);
-    toast('Открыто окно печати','ok');
-  }catch(e){ toast('Ошибка','err'); console.error(e); }
-}
-
 function exportTournamentCSV(tid){
   try{
     var t=tourn(tid); if(!t) return;
-    var csv = '\uFEFFМесто;Игрок;И;В;П;Сеты;Мячи;Очки\n';
+    var csv = 'Место,Игрок,И,В,П,Сеты,Мячи,Очки\n';
     standings(tid).forEach(function(r,i){
-      csv += (i+1)+';'+pNameRaw(r.pid)+';'+(r.w+r.l)+';'+r.w+';'+r.l+';'+r.sw+':'+r.sl+';'+r.bw+':'+r.bl+';'+(r.w*2+r.l)+'\n';
+      csv += (i+1)+','+pNameRaw(r.pid)+','+(r.w+r.l)+','+r.w+','+r.l+','+r.sw+':'+r.sl+','+r.bw+':'+r.bl+','+(r.w*2+r.l)+'\n';
     });
-    var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'tournament.csv';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){ document.body.removeChild(a); }, 100);
-    toast('Excel (CSV) готов','ok');
+    var uri = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+    var link = document.createElement('a');
+    link.href = uri;
+    link.download = 'tournament.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast('Файл скачан','ok');
   }catch(e){ toast('Не удалось','err'); console.error(e); }
+}  }catch(e){ toast('Ошибка','err'); console.error(e); }
 }
+
+
 function exportAllData(){var json=JSON.stringify(state,null,2);modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Резервная копия</h3><p class="mut small">Нажмите «Копировать» и сохраните текст в файл .json, либо «Поделиться».</p><textarea id="bakText" readonly style="width:100%;height:200px;font-size:11px;font-family:monospace">'+esc(json)+'</textarea><div class="row-actions"><button class="btn primary" data-action="copyBackup">Копировать</button>'+(typeof navigator!=='undefined'&&navigator.share?'<button class="btn ghost" data-action="shareBackup">Поделиться</button>':'')+'<button class="btn ghost" data-action="closeModal">Закрыть</button></div>');}
 function shareBackup(){var json=JSON.stringify(state,null,2);if(navigator.share){navigator.share({title:'ТОП-СПИН бэкап',text:json}).then(function(){toast('Отправлено','ok');}).catch(function(){});}else{toast('Поделиться недоступно','err');}}
 function copyBackup(){var ta=document.getElementById('bakText');if(!ta)return;ta.focus();ta.select();try{document.execCommand('copy');toast('Скопировано в буфер','ok');}catch(e){toast('Выделите текст и скопируйте вручную','err');}}
