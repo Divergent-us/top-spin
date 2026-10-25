@@ -1700,7 +1700,36 @@ function editMyProfileModal(){var myPlayer=getPlayerByPhone(myPhone());if(!myPla
 function saveMyProfile(){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer)return;var f=normalizeName((document.querySelector('#pf')?document.querySelector('#pf').value:'').trim()),l=normalizeName((document.querySelector('#pl')?document.querySelector('#pl').value:'').trim());if(!f||!l)return;myPlayer.firstName=f;myPlayer.lastName=l;myPlayer.avatar=__pendingAvatar||myPlayer.avatar;save();closeModal();render();toast('Обновлено','ok');}
 function registerToTournament(tid){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer){toast('Создайте профиль','err');return;}var t=tourn(tid);if(!t)return;if(tStatus(t)==='finished'){toast('Турнир завершён — запись закрыта','err');return;}if((t.playerIds||[]).indexOf(myPlayer.id)!==-1){toast('Вы уже записаны','err');return;}t.playerIds=t.playerIds||[];t.playerIds.push(myPlayer.id);save();render();toast('Вы записаны на «'+t.name+'»','ok');}
 function exportRatingCSV(){try{var eng=engine();var rows=[['Место','Игрок','Рейтинг','Побед','Поражений']];[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];}).forEach(function(p,i){var st=playerStats(p.id,eng);rows.push([i+1,p.firstName+' '+p.lastName,eng.R[p.id],st.w,st.l]);});var ws=XLSX.utils.aoa_to_sheet(rows);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Рейтинг');XLSX.writeFile(wb,'rating.xlsx');toast('Excel готов','ok');}catch(e){toast('Не удалось экспортировать','err');}}
-function exportRatingPDF(){try{var eng=engine();var sorted=[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});if(!sorted.length)return;var canvas=document.createElement('canvas');var scale=2,rowH=40*scale,totalH=60*scale+80*scale+(sorted.length+1)*rowH,totalW=800*scale;canvas.width=totalW;canvas.height=totalH;var ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,totalW,totalH);var y=60*scale;ctx.fillStyle='#000';ctx.font='bold '+(24*scale)+'px Arial';ctx.textAlign='center';ctx.fillText('Рейтинг ТОП-СПИН (RTTF)',totalW/2,y);y+=60*scale;ctx.font='bold '+(16*scale)+'px Arial';ctx.textAlign='left';ctx.fillText('#',30*scale,y);ctx.fillText('Игрок',80*scale,y);ctx.textAlign='right';ctx.fillText('Рейтинг',760*scale,y);y+=rowH;ctx.font=(16*scale)+'px Arial';sorted.forEach(function(p,i){ctx.textAlign='left';ctx.fillText(String(i+1),30*scale,y);ctx.fillText(p.firstName+' '+p.lastName,80*scale,y);ctx.textAlign='right';ctx.fillText(String(eng.R[p.id]),760*scale,y);y+=rowH;});var img=canvas.toDataURL('image/png');var pdf=new jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});var pw=pdf.internal.pageSize.getWidth();var ih=pw*(totalH/totalW);pdf.addImage(img,'PNG',0,0,pw,ih);pdf.save('rating.pdf');toast('PDF готов','ok');}catch(e){toast('Не удалось создать PDF','err');}}
+function exportRatingPDF(){
+  try{
+    var eng=engine();
+    var sorted=[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});
+    if(!sorted.length) return;
+    
+    var doc = new jspdf.jsPDF();
+    doc.setFontSize(16);
+    doc.text("Рейтинг ТОП-СПИН (RTTF)", 14, 15);
+    
+    var body = sorted.map(function(p, i) {
+      var st = playerStats(p.id, eng);
+      return [i+1, p.firstName+' '+p.lastName, st.w+'В-'+st.l+'П', eng.R[p.id]];
+    });
+    
+    doc.autoTable({
+      head: [['#', 'Игрок', 'В-П', 'Рейтинг']],
+      body: body,
+      startY: 20,
+      styles: { fontSize: 11 },
+      headStyles: { fillColor: [255, 139, 31] }
+    });
+    
+    doc.save('rating.pdf');
+    toast('PDF готов','ok');
+  }catch(e){
+    toast('Не удалось создать PDF','err');
+    console.error(e);
+  }
+}
 function exportAllData(){var json=JSON.stringify(state,null,2);modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Резервная копия</h3><p class="mut small">Нажмите «Копировать» и сохраните текст в файл .json, либо «Поделиться».</p><textarea id="bakText" readonly style="width:100%;height:200px;font-size:11px;font-family:monospace">'+esc(json)+'</textarea><div class="row-actions"><button class="btn primary" data-action="copyBackup">Копировать</button>'+(typeof navigator!=='undefined'&&navigator.share?'<button class="btn ghost" data-action="shareBackup">Поделиться</button>':'')+'<button class="btn ghost" data-action="closeModal">Закрыть</button></div>');}
 function shareBackup(){var json=JSON.stringify(state,null,2);if(navigator.share){navigator.share({title:'ТОП-СПИН бэкап',text:json}).then(function(){toast('Отправлено','ok');}).catch(function(){});}else{toast('Поделиться недоступно','err');}}
 function copyBackup(){var ta=document.getElementById('bakText');if(!ta)return;ta.focus();ta.select();try{document.execCommand('copy');toast('Скопировано в буфер','ok');}catch(e){toast('Выделите текст и скопируйте вручную','err');}}
