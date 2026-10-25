@@ -1699,7 +1699,35 @@ function saveProfile(){var f=normalizeName((document.querySelector('#profFirstNa
 function editMyProfileModal(){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer)return;__pendingAvatar=myPlayer.avatar;var avHtml=myPlayer.avatar?'<div class="av-preview" id="avPrev"><img src="'+myPlayer.avatar+'"><span class="del-av" data-action="clearAvatar">✕</span></div>':'<div class="av-preview" id="avPrev"></div>';modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Профиль</h3><label>Фото</label>'+avHtml+'<input type="file" id="pfAvatar" accept="image/*"><label>Имя</label><input id="pf" value="'+esc(myPlayer.firstName)+'"><label>Фамилия</label><input id="pl" value="'+esc(myPlayer.lastName)+'"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveMyProfile">Сохранить</button></div>');var fi=document.getElementById('pfAvatar');if(fi){fi.addEventListener('change',function(){if(this.files&&this.files[0]){compressImage(this.files[0],function(b64){__pendingAvatar=b64;refreshAvatarPreview();});}});}}
 function saveMyProfile(){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer)return;var f=normalizeName((document.querySelector('#pf')?document.querySelector('#pf').value:'').trim()),l=normalizeName((document.querySelector('#pl')?document.querySelector('#pl').value:'').trim());if(!f||!l)return;myPlayer.firstName=f;myPlayer.lastName=l;myPlayer.avatar=__pendingAvatar||myPlayer.avatar;save();closeModal();render();toast('Обновлено','ok');}
 function registerToTournament(tid){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer){toast('Создайте профиль','err');return;}var t=tourn(tid);if(!t)return;if(tStatus(t)==='finished'){toast('Турнир завершён — запись закрыта','err');return;}if((t.playerIds||[]).indexOf(myPlayer.id)!==-1){toast('Вы уже записаны','err');return;}t.playerIds=t.playerIds||[];t.playerIds.push(myPlayer.id);save();render();toast('Вы записаны на «'+t.name+'»','ok');}
-function exportRatingCSV(){try{var eng=engine();var rows=[['Место','Игрок','Рейтинг','Побед','Поражений']];[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];}).forEach(function(p,i){var st=playerStats(p.id,eng);rows.push([i+1,p.firstName+' '+p.lastName,eng.R[p.id],st.w,st.l]);});var ws=XLSX.utils.aoa_to_sheet(rows);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Рейтинг');XLSX.writeFile(wb,'rating.xlsx');toast('Excel готов','ok');}catch(e){toast('Не удалось экспортировать','err');}}
+function exportRatingCSV(){
+  try{
+    var eng=engine();
+    var rows=[['Место','Игрок','Рейтинг','Побед','Поражений']];
+    [].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];}).forEach(function(p,i){
+      var st=playerStats(p.id,eng);
+      rows.push([i+1,p.firstName+' '+p.lastName,eng.R[p.id],st.w,st.l]);
+    });
+    var ws=XLSX.utils.aoa_to_sheet(rows);
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Рейтинг');
+    
+    // Безопасное скачивание для телефонов
+    var wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    var blob = new Blob([wbout], {type:"application/octet-stream"});
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "rating.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
+    
+    toast('Excel готов','ok');
+  }catch(e){
+    toast('Не удалось экспортировать','err');
+    console.error(e);
+  }
+}
 function exportRatingPDF(){
   try{
     var eng=engine();
