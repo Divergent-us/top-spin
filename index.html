@@ -1458,33 +1458,37 @@ function viewAwards(){
   var autoAwards = computeAutoAwards(eng);
   var manualAwards = [].concat(state.awards).sort(function(a,b){return String(b.date||'').localeCompare(String(a.date||''));});
   
-  // Автонаградам тоже ставим текущую дату для красоты
   autoAwards.forEach(function(a){ if(!a.date) a.date = new Date().toISOString().slice(0,10); });
 
-    var allAwards = autoAwards.concat(manualAwards).filter(function(a){ 
-    return toursPlayedCount(a.playerId) >= 3; 
+  // ЖЕСТКИЙ ФИЛЬТР: минимум 1 матч и минимум 3 турнира
+  var allAwards = autoAwards.concat(manualAwards).filter(function(a){ 
+    var stats = playerStats(a.playerId, eng);
+    var tours = toursPlayedCount(a.playerId);
+    return stats.m > 0 && tours >= 3; 
   });
+
   if(!ui.awardFilter) ui.awardFilter = 'all';
   
   var filtered = allAwards;
-  if(ui.awardFilter === 'manual') filtered = manualAwards;
-  if(ui.awardFilter === 'auto') filtered = autoAwards;
+  if(ui.awardFilter === 'manual') filtered = manualAwards.filter(function(a){ 
+    return playerStats(a.playerId, eng).m > 0 && toursPlayedCount(a.playerId) >= 3; 
+  });
+  if(ui.awardFilter === 'auto') filtered = autoAwards.filter(function(a){ 
+    return playerStats(a.playerId, eng).m > 0 && toursPlayedCount(a.playerId) >= 3; 
+  });
   
-  // Считаем статистику
   var playersWithAwards = {};
   allAwards.forEach(function(a){ playersWithAwards[a.playerId] = (playersWithAwards[a.playerId]||0) + 1; });
   var topPlayerId = Object.keys(playersWithAwards).sort(function(a,b){return playersWithAwards[b]-playersWithAwards[a];})[0];
   
   var html = '<div class="sec-title">🏆 Зал славы <span class="cnt">'+allAwards.length+'</span></div>';
   
-  // Красивая карточка со статистикой
   html += '<div class="card rise" style="margin-bottom:12px; display:flex; gap:10px; text-align:center">';
   html += '<div style="flex:1"><div style="font-size:22px;font-family:var(--fd);color:var(--gold)">'+allAwards.length+'</div><div class="mut small">Всего наград</div></div>';
   html += '<div style="width:1px;background:var(--line)"></div>';
   html += '<div style="flex:1"><div style="font-size:22px;font-family:var(--fd);color:var(--gold)">'+(topPlayerId ? playersWithAwards[topPlayerId] : 0)+'</div><div class="mut small">Рекорд у 1 игрока</div></div>';
   html += '</div>';
   
-  // Кнопки фильтрации
   html += '<div class="seg" style="width:100%; display:flex; margin-bottom:12px">';
   html += '<button class="'+(ui.awardFilter==='all'?'on':'')+'" style="flex:1" data-action="filterAwards" data-type="all">Все</button>';
   html += '<button class="'+(ui.awardFilter==='manual'?'on':'')+'" style="flex:1" data-action="filterAwards" data-type="manual">🎖 Ручные</button>';
@@ -1496,7 +1500,7 @@ function viewAwards(){
   }
   
   var cardsHtml = filtered.map(function(a){ return awRowHtml(a); }).join('');
-  html += (cardsHtml ? '<div class="rise">' + cardsHtml + '</div>' : '<div class="empty"><div class="big">🏆</div><b>Наград пока нет</b></div>');
+  html += (cardsHtml ? '<div class="rise">' + cardsHtml + '</div>' : '<div class="empty"><div class="big">🏆</div><b>Наград пока нет</b><div class="mut small" style="margin-top:4px">Игроки получают награды после 3 турниров</div></div>');
   
   return html;
 }
