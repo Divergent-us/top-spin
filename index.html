@@ -1794,35 +1794,40 @@ function exportAllData(){
 function shareBackup(){var json=JSON.stringify(state,null,2);if(navigator.share){navigator.share({title:'ТОП-СПИН бэкап',text:json}).then(function(){toast('Отправлено','ok');}).catch(function(){});}else{toast('Поделиться недоступно','err');}}
  function downloadBackupJSON(){
   try{
-    var json = JSON.stringify(state, null, 2);
+    // 1. Убираем null, 2 — теперь файл будет минифицированным (весит в 2 раза меньше)
+    var json = JSON.stringify(state);
     var fileName = "topspin_backup_" + new Date().toISOString().slice(0,10) + ".json";
     
-    // Безопасное кодирование для русского текста (чтобы не было ошибок)
-    function safeBtoa(str) {
-      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
-        return String.fromCharCode('0x' + p1);
-      }));
-    }
-
     if (window.AndroidBridge && window.AndroidBridge.saveFile) {
-      // Если в APK подключен мост на Java (как я писал в прошлом сообщении)
-      var base64 = safeBtoa(json);
-      window.AndroidBridge.saveFile(base64, fileName, "application/json");
-      toast('Файл сохранен в папку Загрузки','ok');
+      // Если в твоем APK есть нативный мост на Java (о котором я писал ранее)
+      function safeBtoa(str) {
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+          return String.fromCharCode('0x' + p1);
+        }));
+      }
+      window.AndroidBridge.saveFile(safeBtoa(json), fileName, "application/json");
+      toast('Файл сохранен','ok');
     } else {
-      // Универсальный метод без использования памяти (работает на ПК и в браузере)
-      var uri = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
-      var link = document.createElement('a');
-      link.href = uri;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast('Файл отправлен на скачивание','ok');
+      // 2. Если моста нет, используем легкий Blob-метод
+      var blob = new Blob([json], {type: "application/json"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      
+      // Очищаем память через 2 секунды
+      setTimeout(function(){ 
+        document.body.removeChild(a); 
+        URL.revokeObjectURL(url); 
+      }, 2000);
+      
+      toast('Файл отправлен','ok');
     }
   }catch(e){
     toast('Ошибка: ' + e.message,'err');
-    console.error('Backup error:', e);
   }
 }
 function copyBackup(){var ta=document.getElementById('bakText');if(!ta)return;ta.focus();ta.select();try{document.execCommand('copy');toast('Скопировано в буфер','ok');}catch(e){toast('Выделите текст и скопируйте вручную','err');}}
