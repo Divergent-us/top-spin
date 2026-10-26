@@ -1704,15 +1704,25 @@ function exportRatingCSV(){
       var st=playerStats(p.id,eng);
       csv += (i+1)+','+p.firstName+' '+p.lastName+','+eng.R[p.id]+','+st.w+','+st.l+'\n';
     });
-    // Легкий способ без нагрузки на память
-    var uri = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
-    var link = document.createElement('a');
-    link.href = uri;
-    link.download = 'rating.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast('Файл скачан','ok');
+    
+    // Кодируем в Base64
+    var base64 = btoa(unescape(encodeURIComponent(csv)));
+    
+    // Если мы в APK (есть нативный мост), отправляем туда
+    if (window.AndroidBridge && window.AndroidBridge.saveFile) {
+      window.AndroidBridge.saveFile(base64, "rating.csv", "text/csv");
+      toast('Файл сохранен в папку Загрузки','ok');
+    } else {
+      // Если в браузере, используем старый метод
+      var uri = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+      var link = document.createElement('a');
+      link.href = uri;
+      link.download = 'rating.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast('Файл скачан','ok');
+    }
   }catch(e){ toast('Не удалось','err'); console.error(e); }
 }
 function exportRatingPDF(){
@@ -1721,17 +1731,25 @@ function exportRatingPDF(){
     var sorted=[].concat(state.players).sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});
     if(!sorted.length) return;
     
-    var win = window.open('', '_blank');
-    var html = '<html><head><title>Рейтинг</title><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font-family:sans-serif;padding:15px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:14px}th{background:#ff8b1f;color:#fff}</style></head><body>';
-    html += '<div style="background:#fff3cd;color:#856404;padding:12px;border-radius:8px;margin-bottom:15px;font-size:14px;line-height:1.4;"><b>💾 Как сохранить:</b><br>Нажмите на <u>три точки</u> в браузере (вверху справа) и выберите <b>«Печать»</b> или <b>«Сохранить как PDF»</b>.</div>';
+    var html = '<html><head><meta charset="utf-8"><style>body{font-family:sans-serif;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #000;padding:8px;}</style></head><body>';
     html += '<h2>Рейтинг ТОП-СПИН</h2><table><tr><th>#</th><th>Игрок</th><th>В-П</th><th>Рейтинг</th></tr>';
     sorted.forEach(function(p, i) {
       var st = playerStats(p.id, eng);
       html += '<tr><td>'+(i+1)+'</td><td>'+p.firstName+' '+p.lastName+'</td><td>'+st.w+'В-'+st.l+'П</td><td>'+eng.R[p.id]+'</td></tr>';
     });
     html += '</table></body></html>';
-    win.document.write(html);
-    win.document.close();
+    
+    var base64 = btoa(unescape(encodeURIComponent(html)));
+    
+    if (window.AndroidBridge && window.AndroidBridge.saveFile) {
+      window.AndroidBridge.saveFile(base64, "rating.html", "text/html");
+      toast('Файл для печати сохранен','ok');
+    } else {
+      var win = window.open('', '_blank');
+      win.document.write(html);
+      win.document.close();
+      toast('Открыто окно печати','ok');
+    }
   }catch(e){ toast('Ошибка','err'); console.error(e); }
 }
  function exportTournamentPDF(tid){
