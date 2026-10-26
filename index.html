@@ -1797,32 +1797,32 @@ function shareBackup(){var json=JSON.stringify(state,null,2);if(navigator.share)
     var json = JSON.stringify(state, null, 2);
     var fileName = "topspin_backup_" + new Date().toISOString().slice(0,10) + ".json";
     
-    // 1. Если у тебя в APK подключен AndroidBridge (из прошлого шага)
+    // Безопасное кодирование для русского текста (чтобы не было ошибок)
+    function safeBtoa(str) {
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode('0x' + p1);
+      }));
+    }
+
     if (window.AndroidBridge && window.AndroidBridge.saveFile) {
-      var base64 = btoa(unescape(encodeURIComponent(json)));
+      // Если в APK подключен мост на Java (как я писал в прошлом сообщении)
+      var base64 = safeBtoa(json);
       window.AndroidBridge.saveFile(base64, fileName, "application/json");
       toast('Файл сохранен в папку Загрузки','ok');
     } else {
-      // 2. Обычный способ (создает файл и "кликает" по нему)
-      var blob = new Blob([json], {type: "application/json"});
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      
-      // Очищаем память
-      setTimeout(function(){ 
-        document.body.removeChild(a); 
-        window.URL.revokeObjectURL(url); 
-      }, 100);
-      
+      // Универсальный метод без использования памяти (работает на ПК и в браузере)
+      var uri = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+      var link = document.createElement('a');
+      link.href = uri;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       toast('Файл отправлен на скачивание','ok');
     }
   }catch(e){
-    toast('Ошибка сохранения файла','err');
-    console.error(e);
+    toast('Ошибка: ' + e.message,'err');
+    console.error('Backup error:', e);
   }
 }
 function copyBackup(){var ta=document.getElementById('bakText');if(!ta)return;ta.focus();ta.select();try{document.execCommand('copy');toast('Скопировано в буфер','ok');}catch(e){toast('Выделите текст и скопируйте вручную','err');}}
