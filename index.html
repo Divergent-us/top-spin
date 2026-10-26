@@ -1789,6 +1789,39 @@ function exportTournamentCSV(tid){
 
 function exportAllData(){var json=JSON.stringify(state,null,2);modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Резервная копия</h3><p class="mut small">Нажмите «Копировать» и сохраните текст в файл .json, либо «Поделиться».</p><textarea id="bakText" readonly style="width:100%;height:200px;font-size:11px;font-family:monospace">'+esc(json)+'</textarea><div class="row-actions"><button class="btn primary" data-action="copyBackup">Копировать</button>'+(typeof navigator!=='undefined'&&navigator.share?'<button class="btn ghost" data-action="shareBackup">Поделиться</button>':'')+'<button class="btn ghost" data-action="closeModal">Закрыть</button></div>');}
 function shareBackup(){var json=JSON.stringify(state,null,2);if(navigator.share){navigator.share({title:'ТОП-СПИН бэкап',text:json}).then(function(){toast('Отправлено','ok');}).catch(function(){});}else{toast('Поделиться недоступно','err');}}
+ function downloadBackupJSON(){
+  try{
+    var json = JSON.stringify(state, null, 2);
+    var fileName = "topspin_backup_" + new Date().toISOString().slice(0,10) + ".json";
+    
+    // 1. Если у тебя в APK подключен AndroidBridge (из прошлого шага)
+    if (window.AndroidBridge && window.AndroidBridge.saveFile) {
+      var base64 = btoa(unescape(encodeURIComponent(json)));
+      window.AndroidBridge.saveFile(base64, fileName, "application/json");
+      toast('Файл сохранен в папку Загрузки','ok');
+    } else {
+      // 2. Обычный способ (создает файл и "кликает" по нему)
+      var blob = new Blob([json], {type: "application/json"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Очищаем память
+      setTimeout(function(){ 
+        document.body.removeChild(a); 
+        window.URL.revokeObjectURL(url); 
+      }, 100);
+      
+      toast('Файл отправлен на скачивание','ok');
+    }
+  }catch(e){
+    toast('Ошибка сохранения файла','err');
+    console.error(e);
+  }
+}
 function copyBackup(){var ta=document.getElementById('bakText');if(!ta)return;ta.focus();ta.select();try{document.execCommand('copy');toast('Скопировано в буфер','ok');}catch(e){toast('Выделите текст и скопируйте вручную','err');}}
 function importFile(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!d.players)throw 0;state=norm(d);migratePlayers();save();closeModal();render();toast('Импортировано','ok');}catch(e){toast('Файл не подходит','err');}};r.readAsText(f);}
 function resetAll(){confirmBox('Удалить ВСЕ данные?',function(){state=norm({});save();ui={tab:'arena',tournamentId:null,playerId:null,ratingSort:'r'};render();toast('Очищено');});}
