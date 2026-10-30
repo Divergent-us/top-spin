@@ -1515,7 +1515,7 @@ html+=challengesHtml(myPlayer.id);
 html+='<div class="row-actions"><button class="btn ghost w100 '+(un?'msg-alert':'')+'" data-action="inbox">💬 '+(un?('Вам новое сообщение ('+un+')'):'Сообщения')+'</button></div>';
 html+='<div class="row-actions"><button class="btn primary w100" data-action="newTraining">＋ Буду тренироваться</button></div>';
 html+='<div class="card rise" style="margin-top:12px"><div class="count-lbl" style="margin-bottom:6px">График успеха (динамика рейтинга)</div><div style="color:var(--green)">'+spark(eng.hist[myPlayer.id],300,60)+'</div></div>';
-html+='<div class="ai-trainer-card"><div class="ai-trainer-header"><svg class="ai-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>ЛИЧНЫЙ ИИ-ТРЕНЕР</div><button class="ai-btn-analyze" onclick="analyzeGameStyle(\'' + myPlayer.id + '\')">🧠 Проанализировать мою игру</button><div id="aiResponseBox" class="ai-response-area"></div></div>';
+html+='<div class="ai-trainer-card"><div class="ai-trainer-header"><svg class="ai-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>ЛИЧНЫЙ ИИ-ТРЕНЕР</div><button class="ai-btn-analyze" onclick="analyzeGameStyle(\'' + myPlayer.id + '\')">🧠 Проанализировать мою игру</button><div id="aiResponseBox" class="ai-response-area"></div></div>';                       
 if(myTrainings.length){html+='<div class="sec-title">Мои тренировки <span class="cnt">'+myTrainings.length+'</span></div><div class="train-list">'+myTrainings.sort(function(a,b){return trainingMs(a)-trainingMs(b);}).map(function(tr){var d=new Date((tr.date||'2000-01-01')+'T12:00');var day=d.getDate();var mon=MON[d.getMonth()];var pts=(tr.participantIds||[]).map(function(pid){var p=player(pid);return p?'<span class="tc-name">👤 '+esc(p.firstName+' '+p.lastName)+'</span>':'';}).join('');return'<div class="train-card rise"><div class="tc-left"><div class="tc-time">🏓 '+day+' '+mon+' · '+(tr.time||'')+'</div><div class="tc-sub">Орг: '+esc(tr.createdBy||'')+' · 👥 '+(tr.participantIds||[]).length+'</div>'+(pts?'<div class="tc-names">'+pts+'</div>':'')+'</div></div>';}).join('')+'</div>';}
 if(myUpcoming.length){html+='<div class="sec-title">Мои турниры (активные) <span class="cnt">'+myUpcoming.length+'</span></div><div class="list">';myUpcoming.forEach(function(t){html+='<div class="trow rise" style="cursor:default"><div class="datebox"><b>'+new Date((t.date||'2000-01-01')+'T12:00').getDate()+'</b><span>'+MON[new Date((t.date||'2000-01-01')+'T12:00').getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span class="start-lbl">старт '+(t.startTime||'—')+'</span></div></div><div style="display:flex;flex-direction:column;gap:6px;flex:none"><button class="btn danger sm" data-action="unregisterFromTournament" data-tid="'+t.id+'">Отписаться</button><button class="btn ghost sm" data-action="viewParticipants" data-id="'+t.id+'">Открыть</button></div></div>';});html+='</div>';}
 if(myPast.length){html+='<div class="sec-title">История моих турниров <span class="cnt">'+myPast.length+'</span></div><div class="list">';myPast.forEach(function(t){var stnd=standings(t.id);var place=stnd.findIndex(function(r){return r.pid===myPlayer.id;})+1;html+='<button class="trow rise" data-action="openTournament" data-id="'+t.id+'"><div class="datebox"><b>'+new Date((t.date||'2000-01-01')+'T12:00').getDate()+'</b><span>'+MON[new Date((t.date||'2000-01-01')+'T12:00').getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span>'+(place?('место: '+place):'участник')+'</span></div></div>'+I_CHEV+'</button>';});html+='</div>';}
@@ -2706,6 +2706,18 @@ setInterval(function() {
     try { listenIncomingCalls(); } catch(e) { console.error('Call listener error:', e); }
   }
 }, 3000);
+</script>
+<script type="module"
+      src="https://agent.d-id.com/v2/index.js"
+      data-mode="fabio"
+      data-client-key="ck_BHOdHCR7IG_zNSxNeQNpg"
+      data-agent-id="v2_agt_eD0y39X5"
+      data-name="did-agent"
+      data-monitor="true"
+      data-light-mode="false"
+      data-orientation="horizontal"
+      data-position="right"
+      data-open-mode="compact">
 </script>
 </body>
 </html>
