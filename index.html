@@ -2742,22 +2742,44 @@ function acceptIncoming(roomName, type) {
   startCall(type, callerId, true, roomName);
 }
 
-function rejectIncoming() {
-  var modal = document.getElementById('incomingCallModal');
-  if (modal) modal.remove();
-  window.__incomingShown = null;
-  if (incomingCallRoom && dbRef) {
-    dbRef.child('calls/' + incomingCallRoom).update({ status: 'rejected' });
-    setTimeout(function(){ dbRef.child('calls/' + incomingCallRoom).remove(); }, 1000);
-  }
-}
-
-// Автоматический запуск приемника каждые 3 секунды
 setInterval(function() {
   if (currentUser && !__callsListenerActive) {
     try { listenIncomingCalls(); } catch(e) { console.error('Call listener error:', e); }
   }
 }, 3000);
 
+// === ФУНКЦИИ ДЛЯ D-ID ===
+function toggleDIdAgent() {
+  var current = lsGet('dIdEnabled') === 'true';
+  var newState = !current;
+  lsSet('dIdEnabled', newState ? 'true' : 'false');
+  
+  if (newState) {
+    loadDIdScript();
+    toast('ИИ-Аватар включен', 'ok');
+  } else {
+    var existing = document.getElementById('d-id-script-tag');
+    if(existing) existing.remove();
+    var dIdWidget = document.querySelector('d-id-widget') || document.getElementById('d-id-agent-container');
+    if(dIdWidget) dIdWidget.style.display = 'none';
+    toast('ИИ-Аватар отключен', 'ok');
+  }
+  closeModal();
+}
+
+function loadDIdScript() {
+  if(document.getElementById('d-id-script-tag')) return;
+  var clientKey = 'ТВОЙ_CLIENT_KEY'; 
+  var agentId = 'ТВОЙ_AGENT_ID';
+  var script = document.createElement('script');
+  script.id = 'd-id-script-tag';
+  script.type = 'module';
+  script.src = 'https://agent.d-id.com/v2/index.js';
+  script.setAttribute('data-client-key', clientKey);
+  script.setAttribute('data-agent-id', agentId);
+  script.setAttribute('data-open-mode', 'compact');
+  document.body.appendChild(script);
+}
+</script>
 </body>
 </html>
