@@ -2226,6 +2226,7 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
   var participantName = myP.id;
   var isVideo = type === 'video';
 
+  // Настройка UI
   var callScreen = document.getElementById('callScreen');
   if (callScreen) callScreen.classList.add('active');
   var nameEl = document.getElementById('callName');
@@ -2250,6 +2251,8 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
 
   try {
     if (typeof LivekitClient === 'undefined') throw new Error('LiveKit не загружен');
+    
+    // Отправляем сигнал в Firebase (если это исходящий звонок)
     if (!isIncoming && dbRef) {
       dbRef.child('calls/' + roomName).set({ from: myP.id, to: partnerP.id, type: type, status: 'calling', ts: Date.now() });
       dbRef.child('calls/' + roomName).on('value', function(snap) {
@@ -2258,36 +2261,71 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
       });
     }
 
+    console.log('1. Запрос токена для:', roomName);
     var resp = await fetch('https://topspin-ai.styleman81.workers.dev/livekit-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ roomName: roomName, participantName: participantName })
     });
     var data = await resp.json();
-    if (!data.token) throw new Error('Токен не получен');
+    if (!data.token) throw new Error('Токен не получен: ' + JSON.stringify(data));
+    console.log('2. Токен получен!');
 
-    callRoom = new LivekitClient.Room();
+    callRoom = new LivekitClient.Room({
+      adaptiveStream: true,
+      dynacast: true,
+      // Добавляем TURN-серверы для обхода блокировок
+      rtcConfig: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      }
+    });
+
     callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) {
-      if (track.kind === LivekitClient.Track.Kind.Audio) attachAudioEl(track);
-      else if (track.kind === LivekitClient.Track.Kind.Video) {
+      console.log('🔥 Получен трек:', track.kind);
+      if (track.kind === LivekitClient.Track.Kind.Audio) {
+        var audioEl = track.attach();
+        audioEl.autoplay = true;
+        audioEl.playsInline = true;
+        audioEl.style.display = 'none';
+        document.body.appendChild(audioEl);
+        audioEl.play().catch(function(e){ console.warn('Audio play blocked', e); });
+      } else if (track.kind === LivekitClient.Track.Kind.Video) {
         var remoteVideoEl = document.getElementById('remoteVideo');
-        if (remoteVideoEl) { track.attach(remoteVideoEl); remoteVideoEl.play().catch(function(){}); }
+        if (remoteVideoEl) {
+          track.attach(remoteVideoEl);
+          remoteVideoEl.play().catch(function(e){ console.warn('Video play blocked', e); });
+        }
       }
     });
 
     callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
+      console.log('3. Собеседник подключился!');
       if (statusEl) statusEl.textContent = 'В сети';
       stopRingback();
       if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
     });
-    
-    callRoom.on(LivekitClient.RoomEvent.Disconnected, function() { endCall(); });
 
+    callRoom.on(LivekitClient.RoomEvent.ConnectionStateChanged, function(state) {
+      console.log('Состояние соединения:', state);
+    });
+
+    callRoom.on(LivekitClient.RoomEvent.Disconnected, function() { 
+      console.log('Соединение закрыто');
+      endCall(); 
+    });
+
+    console.log('3. Подключаемся к LiveKit...');
     await callRoom.connect(LIVEKIT_URL, data.token);
-    try { await callRoom.startAudio(); } catch (e) {}
+    
+    console.log('4. Подключено! Включаем аудио...');
+    try { await callRoom.startAudio(); } catch (e) { console.warn('startAudio error', e); }
     await callRoom.localParticipant.setMicrophoneEnabled(true);
     
     if (isVideo) {
+      console.log('5. Включаем камеру...');
       var localPub = await callRoom.localParticipant.setCameraEnabled(true);
       if (localPub && localPub.videoTrack) {
         var localVideoEl = document.getElementById('localVideo');
@@ -2300,15 +2338,11 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
     setTimeout(function() {
       if (callRoom && callRoom.remoteParticipants.size > 0) {
         stopRingback();
-        if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
         callRoom.remoteParticipants.forEach(function(p) {
           p.trackPublications.forEach(function(pub) {
-            if (pub.track) {
-              if (pub.track.kind === 'audio') attachAudioEl(pub.track);
-              if (pub.track.kind === 'video') {
-                var remoteVideoEl = document.getElementById('remoteVideo');
-                if (remoteVideoEl) pub.track.attach(remoteVideoEl);
-              }
+            if (pub.track && pub.track.kind === 'audio') {
+              var a = pub.track.attach();
+              a.autoplay = true; document.body.appendChild(a);
             }
           });
         });
@@ -2319,9 +2353,9 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
     }, 3000);
 
   } catch (e) {
-    console.error('Call error:', e);
+    console.error('❌ ОШИБКА ЗВОНКА:', e);
     stopRingback();
-    toast('Ошибка звонка: ' + e.message, 'err');
+    toast('Ошибка: ' + e.message, 'err');
     endCall();
   }
 }
@@ -2564,122 +2598,7 @@ function attachAudioEl(track) {
   });
 }
 
-async function startCall(type, targetId, isIncoming, existingRoom) {
-  var myP = getPlayerByPhone(myPhone());
-  var partnerP;
 
-  if (isIncoming && targetId) {
-    partnerP = player(targetId);
-  } else {
-    if (!__openChatPhone) { toast('Откройте чат с игроком', 'err'); return; }
-    partnerP = state.players.find(function(p){ return p.phone === __openChatPhone; });
-  }
-  if (!myP || !partnerP) { toast('Ошибка: игрок не найден', 'err'); return; }
-
-  ensureAudioCtx();
-  var roomName = existingRoom || ('call_' + [myP.id, partnerP.id].sort().join('_'));
-  var participantName = myP.id;
-  var isVideo = type === 'video';
-
-  var callScreen = document.getElementById('callScreen');
-  if (callScreen) callScreen.classList.add('active');
-  var nameEl = document.getElementById('callName');
-  if (nameEl) nameEl.textContent = partnerP.firstName + ' ' + partnerP.lastName;
-  var statusEl = document.getElementById('callStatus');
-  if (statusEl) statusEl.textContent = isIncoming ? 'Соединение...' : 'Звоним...';
-
-  var avEl = document.getElementById('callAvatar');
-  if (avEl) {
-    if (partnerP.avatar) avEl.innerHTML = '<img src="' + partnerP.avatar + '">';
-    else { avEl.textContent = initials(partnerP); avEl.style.background = avColor(partnerP.id); }
-  }
-
-  var videoWrap = document.getElementById('callVideoWrap');
-  if (isVideo && videoWrap) { videoWrap.style.display = 'block'; if (avEl) avEl.style.display = 'none'; }
-  else if (videoWrap) { videoWrap.style.display = 'none'; if (avEl) avEl.style.display = ''; }
-
-  var unlockBtn = document.getElementById('callAudioUnlockBtn');
-  if (unlockBtn) unlockBtn.style.display = 'none';
-
-  if (!isIncoming) playRingback();
-
-  try {
-    if (typeof LivekitClient === 'undefined') throw new Error('LiveKit не загружен');
-    if (!isIncoming && dbRef) {
-      dbRef.child('calls/' + roomName).set({ from: myP.id, to: partnerP.id, type: type, status: 'calling', ts: Date.now() });
-      dbRef.child('calls/' + roomName).on('value', function(snap) {
-        var c = snap.val();
-        if (c && c.status === 'rejected') { toast('Собеседник отклонил', 'err'); endCall(); }
-      });
-    }
-
-    var resp = await fetch('https://topspin-ai.styleman81.workers.dev/livekit-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomName: roomName, participantName: participantName })
-    });
-    var data = await resp.json();
-    if (!data.token) throw new Error('Токен не получен');
-
-    callRoom = new LivekitClient.Room();
-    callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) {
-      if (track.kind === LivekitClient.Track.Kind.Audio) attachAudioEl(track);
-      else if (track.kind === LivekitClient.Track.Kind.Video) {
-        var remoteVideoEl = document.getElementById('remoteVideo');
-        if (remoteVideoEl) { track.attach(remoteVideoEl); remoteVideoEl.play().catch(function(){}); }
-      }
-    });
-
-    callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
-      if (statusEl) statusEl.textContent = 'В сети';
-      stopRingback();
-      if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
-    });
-    
-    callRoom.on(LivekitClient.RoomEvent.Disconnected, function() { endCall(); });
-
-    await callRoom.connect(LIVEKIT_URL, data.token);
-    try { await callRoom.startAudio(); } catch (e) {}
-    await callRoom.localParticipant.setMicrophoneEnabled(true);
-    
-    if (isVideo) {
-      var localPub = await callRoom.localParticipant.setCameraEnabled(true);
-      if (localPub && localPub.videoTrack) {
-        var localVideoEl = document.getElementById('localVideo');
-        if (localVideoEl) localPub.videoTrack.attach(localVideoEl);
-      }
-    }
-
-    if (statusEl) statusEl.textContent = 'В сети';
-
-    setTimeout(function() {
-      if (callRoom && callRoom.remoteParticipants.size > 0) {
-        stopRingback();
-        if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
-        callRoom.remoteParticipants.forEach(function(p) {
-          p.trackPublications.forEach(function(pub) {
-            if (pub.track) {
-              if (pub.track.kind === 'audio') attachAudioEl(pub.track);
-              if (pub.track.kind === 'video') {
-                var remoteVideoEl = document.getElementById('remoteVideo');
-                if (remoteVideoEl) pub.track.attach(remoteVideoEl);
-              }
-            }
-          });
-        });
-      } else {
-        var btn = document.getElementById('callAudioUnlockBtn');
-        if (btn) btn.style.display = 'inline-flex';
-      }
-    }, 3000);
-
-  } catch (e) {
-    console.error('Call error:', e);
-    stopRingback();
-    toast('Ошибка звонка: ' + e.message, 'err');
-    endCall();
-  }
-}
 
 function toggleMute() {
   if (!callRoom) return;
