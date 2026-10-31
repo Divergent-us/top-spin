@@ -1555,16 +1555,14 @@ function settingsModal(){
   
   if(isAdminMode){
     modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Настройки</h3>'
-      +'<div class="settings-info">Админ: '+esc(currentUser?currentUser.email:'')+' | Старт='+state.settings.startRating+' | RTTF</div>'
+      +'<div class="settings-info">Админ: '+esc(currentUser?currentUser.email:'')+' | Старт='+state.settings.startRating+'</div>'
       +'<label>Стартовый рейтинг</label><input id="setR" type="number" value="'+state.settings.startRating+'">'
       +'<div class="row-actions"><button class="btn primary" data-action="saveSettings">Сохранить</button></div>'
       + rulesBtn
-      // НОВЫЙ БЛОК: Переключатель D-ID
       + '<label style="margin-top:15px">Платные модули</label>'
       + '<div class="toggle-row" data-action="toggleDId" style="cursor:pointer; border-color:'+(dIdEnabled?'var(--green)':'var(--line)')+'">'
       + '<input type="checkbox" '+(dIdEnabled?'checked':'')+' style="pointer-events:none">'
-      + '<span>🤖 ИИ-Аватар D-ID (Живой агент)</span></div>'
-      // -------------------------------
+      + '<span>🤖 ИИ-Аватар D-ID</span></div>'
       +'<div class="row-actions"><button class="btn ghost" data-action="managePlayerCodes">Коды игроков</button><button class="btn ghost" data-action="openAppearance">Оформление</button></div>'
       +'<div class="row-actions"><button class="btn ghost" data-action="exportRatingPDF">Рейтинг PDF</button><button class="btn ghost" data-action="exportAllData">Бэкап</button></div>'
       +'<div class="row-actions"><button class="btn ghost" data-action="importData">Импорт</button><button class="btn ghost" data-action="demo">Демо</button></div>'
@@ -1580,7 +1578,6 @@ function settingsModal(){
       +'<div class="row-actions"><button class="btn danger w100" data-action="logout">Выйти</button></div>');
   }
 }
-
 // Функция включения/выключения D-ID
 function toggleDIdAgent() {
   var current = lsGet('dIdEnabled') === 'true';
