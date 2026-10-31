@@ -1055,21 +1055,46 @@ function menuModal(){var on=lsGet('soundEnabled')!=='false';var adminRow=isAdmin
 function manageMatches(tid){
   var t=tourn(tid);
   if(!t)return;
+  
+  // Сортируем матчи по времени
   var ms=state.matches.filter(function(m){return m.tournamentId===tid;}).sort(function(a,b){return(a.time||'99:99').localeCompare(b.time||'99:99');});
   
-  var items=ms.map(function(m){
-    var played=m.sets&&m.sets.length;
-    var sc=played?setsCountArr(m.sets):null;
-    var setsStr=played?m.sets.map(function(s){return s[0]+':'+s[1];}).join(' '):'';
-    return'<div class="mm-item"><button class="mrow" data-action="resultFromManage" data-id="'+m.id+'" data-tid="'+tid+'"><span class="pl"><span>'+pName(m.playerAId)+'</span><span>'+pName(m.playerBId)+'</span></span>'+(played?'<span class="sc">'+sc[0]+':'+sc[1]+'</span>':'<span class="st">счёт</span>')+'</button>'+(setsStr?'<div class="sets-line">сеты: '+setsStr+'</div>':'')+'</div>';
-  }).join('');
+  // Ищем первый матч, который еще не сыгран
+  var nextMatch = ms.find(function(m){ return !m.sets || m.sets.length === 0; });
+
+  var html = '<button class="modal-x" data-action="closeModal">✕</button><h3>'+esc(t.name)+'</h3><div class="mut small">Страница турнира • ведение счёта</div>';
   
-  var html = '<button class="modal-x" data-action="closeModal">✕</button><h3>'+esc(t.name)+'</h3><div class="mut small">Страница турнира • ведение счёта по сетям</div><div class="mm-list">'+(items||'<div class="mut small">Пар пока нет — добавьте пару</div>')+'</div>';
-  
-  // Кнопка добавления участника
-  html += '<div class="row-actions" style="margin-bottom:8px"><button class="btn ghost w100" data-action="addParticipant" data-tid="'+tid+'">👤 Добавить участника</button></div>';
-  // Кнопка добавления пары
-  html += '<div class="row-actions"><button class="btn primary w100" data-action="addMatchFromManage" data-tid="'+tid+'">🏓 Добавить пару</button></div>';
+  // БЛОК "СЛЕДУЮЩИЙ МАТЧ"
+  if (nextMatch) {
+    html += '<div class="card rise" style="border-color:var(--orange); background:rgba(255,139,31,.08); margin-top:10px; text-align:center">';
+    html += '<div class="count-lbl" style="color:var(--orange); margin-bottom:8px">🔥 Следующий матч</div>';
+    html += '<div style="font-family:var(--fd); font-size:18px; margin-bottom:12px">'+pName(nextMatch.playerAId)+' <span style="color:var(--dim); font-size:14px">vs</span> '+pName(nextMatch.playerBId)+'</div>';
+    html += '<button class="btn primary w100" data-action="resultFromManage" data-id="'+nextMatch.id+'" data-tid="'+tid+'">🏓 Ввести счёт</button>';
+    html += '</div>';
+  } else if (ms.length > 0) {
+    html += '<div class="settings-info" style="text-align:center; color:var(--green)">🏆 Все матчи сыграны!</div>';
+  }
+
+  // СПИСОК ВСЕХ МАТЧЕЙ
+  html += '<div class="mm-list" style="margin-top:15px">';
+  if (ms.length === 0) {
+    html += '<div class="mut small">Пар пока нет — добавьте участников и нажмите «Авто-сетка».</div>';
+  } else {
+    html += ms.map(function(m){
+      var played = m.sets && m.sets.length;
+      var sc = played ? setsCountArr(m.sets) : null;
+      var setsStr = played ? m.sets.map(function(s){return s[0]+':'+s[1];}).join(' ') : '';
+      return '<div class="mm-item"><button class="mrow" data-action="resultFromManage" data-id="'+m.id+'" data-tid="'+tid+'" style="'+(played?'opacity:0.7':'')+'"><span class="pl"><span>'+pName(m.playerAId)+'</span><span>'+pName(m.playerBId)+'</span></span>'+(played?'<span class="sc">'+sc[0]+':'+sc[1]+'</span>':'<span class="st">счёт</span>')+'</button>'+(setsStr?'<div class="sets-line">сеты: '+setsStr+'</div>':'')+'</div>';
+    }).join('');
+  }
+  html += '</div>';
+
+  // КНОПКИ УПРАВЛЕНИЯ
+  html += '<div class="row-actions" style="margin-top:15px; flex-direction:column; gap:8px">';
+  html += '<button class="btn primary w100" data-action="autoGenerateMatches" data-tid="'+tid+'">⚡ Авто-сетка (сгенерировать недостающие)</button>';
+  html += '<button class="btn ghost w100" data-action="addParticipant" data-tid="'+tid+'">👤 Добавить участника</button>';
+  html += '<button class="btn ghost w100" data-action="addMatchFromManage" data-tid="'+tid+'">＋ Добавить пару вручную</button>';
+  html += '</div>';
   
   modal(html);
 }
