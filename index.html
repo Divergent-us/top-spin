@@ -1550,6 +1550,7 @@ function setTheme(theme){if(theme==='light'){document.body.classList.add('light'
 function setFontSize(size){if(size==='big'){document.body.classList.add('big-font');lsSet('fontSize','big');}else{document.body.classList.remove('big-font');lsSet('fontSize','normal');}closeModal();render();}
 function toggleSound(){var cur=lsGet('soundEnabled')!=='false';lsSet('soundEnabled',cur?'false':'true');openAppearanceModal();}
 function settingsModal(){
+  var dIdEnabled = lsGet('dIdEnabled') === 'true';
   var rulesBtn = '<div class="row-actions"><button class="btn ghost w100" data-action="showRules" style="border-color:var(--gold); color:var(--gold)">📖 Правила клуба и наград</button></div>';
   
   if(isAdminMode){
@@ -1558,6 +1559,12 @@ function settingsModal(){
       +'<label>Стартовый рейтинг</label><input id="setR" type="number" value="'+state.settings.startRating+'">'
       +'<div class="row-actions"><button class="btn primary" data-action="saveSettings">Сохранить</button></div>'
       + rulesBtn
+      // НОВЫЙ БЛОК: Переключатель D-ID
+      + '<label style="margin-top:15px">Платные модули</label>'
+      + '<div class="toggle-row" data-action="toggleDId" style="cursor:pointer; border-color:'+(dIdEnabled?'var(--green)':'var(--line)')+'">'
+      + '<input type="checkbox" '+(dIdEnabled?'checked':'')+' style="pointer-events:none">'
+      + '<span>🤖 ИИ-Аватар D-ID (Живой агент)</span></div>'
+      // -------------------------------
       +'<div class="row-actions"><button class="btn ghost" data-action="managePlayerCodes">Коды игроков</button><button class="btn ghost" data-action="openAppearance">Оформление</button></div>'
       +'<div class="row-actions"><button class="btn ghost" data-action="exportRatingPDF">Рейтинг PDF</button><button class="btn ghost" data-action="exportAllData">Бэкап</button></div>'
       +'<div class="row-actions"><button class="btn ghost" data-action="importData">Импорт</button><button class="btn ghost" data-action="demo">Демо</button></div>'
@@ -1572,6 +1579,45 @@ function settingsModal(){
       +'<div class="row-actions"><button class="btn ghost w100" data-action="openAppearance">Оформление</button></div>'
       +'<div class="row-actions"><button class="btn danger w100" data-action="logout">Выйти</button></div>');
   }
+}
+
+// Функция включения/выключения D-ID
+function toggleDIdAgent() {
+  var current = lsGet('dIdEnabled') === 'true';
+  var newState = !current;
+  lsSet('dIdEnabled', newState ? 'true' : 'false');
+  
+  if (newState) {
+    loadDIdScript();
+    toast('ИИ-Аватар включен', 'ok');
+  } else {
+    var existing = document.getElementById('d-id-script-tag');
+    if(existing) existing.remove();
+    // Прячем виджет, который создал D-ID
+    var dIdWidget = document.querySelector('d-id-widget') || document.getElementById('d-id-agent-container');
+    if(dIdWidget) dIdWidget.style.display = 'none';
+    toast('ИИ-Аватар отключен', 'ok');
+  }
+  closeModal();
+}
+
+// Функция загрузки скрипта
+function loadDIdScript() {
+  if(document.getElementById('d-id-script-tag')) return; // Уже загружен
+  
+  // ВСТАВЬ СВОИ КЛЮЧИ ИЗ D-ID СЮДА:
+  var clientKey = 'ТВОЙ_CLIENT_KEY'; 
+  var agentId = 'ТВОЙ_AGENT_ID';
+  
+  var script = document.createElement('script');
+  script.id = 'd-id-script-tag';
+  script.type = 'module';
+  script.src = 'https://agent.d-id.com/v2/index.js';
+  script.setAttribute('data-client-key', clientKey);
+  script.setAttribute('data-agent-id', agentId);
+  script.setAttribute('data-open-mode', 'compact'); // Свернутый режим
+  
+  document.body.appendChild(script);
 }
 function saveSettings(){var rEl=document.getElementById('setR');if(!rEl)return;var v=parseInt(rEl.value)||1000;state.settings.startRating=v;save();closeModal();render();toast('Настройки сохранены','ok');}
 function managePlayerCodes(){var codes=state.playerCodes||{};var keys=Object.keys(codes);var html='<button class="modal-x" data-action="closeModal">✕</button><h3>Коды игроков</h3><div class="mut small">Коды хранятся только как SHA-256 хеш.</div>';if(keys.length){keys.forEach(function(phone){html+='<div class="code-item"><span class="phone">'+esc(phone)+'</span><span class="code">hash: '+esc(String(codes[phone]).slice(0,10))+'…</span><button class="iconbtn" data-action="removePlayerCode" data-phone="'+esc(phone)+'">✕</button></div>';});}else{html+='<div class="empty"><b>Кодов пока нет</b></div>';}html+='<div class="row-actions"><button class="btn primary w100" data-action="addPlayerCodeModal">＋ Добавить код</button></div><div class="row-actions"><button class="btn ghost w100" data-action="closeModal">Закрыть</button></div>';modal(html);}
