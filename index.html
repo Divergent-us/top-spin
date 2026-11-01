@@ -2253,7 +2253,7 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
   try {
     if (typeof LivekitClient === 'undefined') throw new Error('LiveKit не загружен');
     
-    // Отправляем сигнал в Firebase (если это исходящий звонок)
+    // Отправляем сигнал в Firebase
     if (!isIncoming && dbRef) {
       dbRef.child('calls/' + roomName).set({ from: myP.id, to: partnerP.id, type: type, status: 'calling', ts: Date.now() });
       dbRef.child('calls/' + roomName).on('value', function(snap) {
@@ -2269,13 +2269,12 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
       body: JSON.stringify({ roomName: roomName, participantName: participantName })
     });
     var data = await resp.json();
-    if (!data.token) throw new Error('Токен не получен: ' + JSON.stringify(data));
+    if (!data.token) throw new Error('Токен не получен');
     console.log('2. Токен получен!');
 
     callRoom = new LivekitClient.Room({
       adaptiveStream: true,
       dynacast: true,
-      // Добавляем TURN-серверы для обхода блокировок
       rtcConfig: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
@@ -2284,6 +2283,7 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
       }
     });
 
+    // Обработка входящих треков
     callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) {
       console.log('🔥 Получен трек:', track.kind);
       if (track.kind === LivekitClient.Track.Kind.Audio) {
@@ -2301,6 +2301,7 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
         }
       }
     });
+
     callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
       console.log('3. Собеседник подключился!');
       if (statusEl) statusEl.textContent = 'В сети';
@@ -2310,18 +2311,17 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
 
     // Если собеседник положил трубку
     callRoom.on(LivekitClient.RoomEvent.ParticipantDisconnected, function(p) {
-      console.log('❌ Собеседник отключился:', p.identity);
+      console.log('❌ Собеседник отключился');
       if (callRoom && callRoom.remoteParticipants.size === 0) {
         toast('Собеседник завершил звонок', 'err');
         endCall();
       }
     });
 
-    // Если упало соединение (но не сбрасываем сразу, даем шанс восстановиться)
+    // Защита от обрыва связи (ждем 5 секунд перед сбросом)
     callRoom.on(LivekitClient.RoomEvent.ConnectionStateChanged, function(state) {
       console.log('Состояние соединения:', state);
       if (state === 'disconnected') {
-        // Вместо мгновенного сброса, ждем 5 секунд. Вдруг сеть восстановится.
         setTimeout(function() {
           if (callRoom && callRoom.state === 'disconnected') {
             endCall();
@@ -2335,6 +2335,10 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
     
     console.log('4. Подключено! Включаем аудио...');
     try { await callRoom.startAudio(); } catch (e) { console.warn('startAudio error', e); }
+    
+    // Принудительная разблокировка звука (через 1 сек)
+    setTimeout(function(){ if(callRoom) callRoom.startAudio().catch(function(){}); }, 1000);
+
     await callRoom.localParticipant.setMicrophoneEnabled(true);
     
     if (isVideo) {
@@ -2348,6 +2352,7 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
 
     if (statusEl) statusEl.textContent = 'В сети';
 
+    // Проверка, если собеседник уже в комнате
     setTimeout(function() {
       if (callRoom && callRoom.remoteParticipants.size > 0) {
         stopRingback();
