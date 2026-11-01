@@ -2301,7 +2301,6 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
         }
       }
     });
-
     callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
       console.log('3. Собеседник подключился!');
       if (statusEl) statusEl.textContent = 'В сети';
@@ -2309,13 +2308,26 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
       if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
     });
 
-    callRoom.on(LivekitClient.RoomEvent.ConnectionStateChanged, function(state) {
-      console.log('Состояние соединения:', state);
+    // Если собеседник положил трубку
+    callRoom.on(LivekitClient.RoomEvent.ParticipantDisconnected, function(p) {
+      console.log('❌ Собеседник отключился:', p.identity);
+      if (callRoom && callRoom.remoteParticipants.size === 0) {
+        toast('Собеседник завершил звонок', 'err');
+        endCall();
+      }
     });
 
-    callRoom.on(LivekitClient.RoomEvent.Disconnected, function() { 
-      console.log('Соединение закрыто');
-      endCall(); 
+    // Если упало соединение (но не сбрасываем сразу, даем шанс восстановиться)
+    callRoom.on(LivekitClient.RoomEvent.ConnectionStateChanged, function(state) {
+      console.log('Состояние соединения:', state);
+      if (state === 'disconnected') {
+        // Вместо мгновенного сброса, ждем 5 секунд. Вдруг сеть восстановится.
+        setTimeout(function() {
+          if (callRoom && callRoom.state === 'disconnected') {
+            endCall();
+          }
+        }, 5000);
+      }
     });
 
     console.log('3. Подключаемся к LiveKit...');
