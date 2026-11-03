@@ -1708,27 +1708,91 @@ function viewAwards(){
   return html;
 }
 function pushCardHtml(){try{if(!('Notification' in window))return'';if(!('serviceWorker' in navigator))return'';if(Notification.permission==='granted'&&FCM_TOKEN){return'';}return'<div class="push-enable-card"><div class="pe-ico">🔔</div><div class="pe-body"><div class="pe-title">Включить уведомления</div><div class="pe-sub">Получайте push о новых тренировках, сообщениях и старте турниров</div></div><div class="pe-btn"><button class="btn primary sm" data-action="enablePush">Включить</button></div></div>';}catch(e){return'';}}
-function viewProfile(){var eng=engine();var myPlayer=getPlayerByPhone(myPhone());var un=unreadCount();if(!myPlayer){
-  var adminHtml='<div class="sec-title">Мой кабинет</div><div class="empty rise"><div class="big">👤</div><b>'+(isAdminMode?'Вы вошли как админ':'Профиль не найден')+'</b>';
-  if(isAdminMode){
-    adminHtml+='<div class="row-actions"><button class="btn ghost w100 '+(un?'msg-alert':'')+'" data-action="inbox">💬 Сообщения и объявления ('+un+')</button></div>';
+function viewProfile(){
+  var eng=engine();
+  var myPlayer=getPlayerByPhone(myPhone());
+  var un=unreadCount();
+  
+  if(!myPlayer){
+    var adminHtml='<div class="sec-title">Мой кабинет</div><div class="empty rise"><div class="big">👤</div><b>'+(isAdminMode?'Вы вошли как админ':'Профиль не найден')+'</b>';
+    if(isAdminMode){
+      adminHtml+='<div class="row-actions"><button class="btn ghost w100 '+(un?'msg-alert':'')+'" data-action="inbox">💬 Сообщения и объявления ('+un+')</button></div>';
+    }
+    adminHtml+='<div class="row-actions"><button class="btn primary" data-action="createProfile">Создать профиль</button></div></div>';
+    return adminHtml;
   }
-  adminHtml+='<div class="row-actions"><button class="btn primary" data-action="createProfile">Создать профиль</button></div></div>';
-  return adminHtml;
-}var st=playerStats(myPlayer.id,eng);var myTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)!==-1;});var myUpcoming=myTournaments.filter(function(t){return tStatus(t)!=='finished';});var myPast=myTournaments.filter(function(t){return tStatus(t)==='finished';});var availableTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)===-1&&tStatus(t)!=='finished';});var myTrainings=(state.trainings||[]).filter(function(tr){return (tr.participantIds||[]).indexOf(myPlayer.id)>=0&&trainingMs(tr)>=Date.now()-3600000;});var aw=playerAwards(myPlayer.id).concat(computeAutoAwards(eng).filter(function(a){return a.playerId===myPlayer.id;}));var html='<div class="sec-title">Мой кабинет</div><div class="profile-card rise">'+avatarHtml(myPlayer,'xl')+'<div class="profile-info"><div class="profile-name">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div><div class="profile-phone">'+(currentUser?currentUser.phone:'')+'</div>   '<div class="profile-rating-num">'+eng.R[myPlayer.id]+'</div>'+
-   '<div style="margin-top:4px">'+styleChipHtml(myPlayer.playStyle)+'</div>'+'+(aw.length?'<div style="font-size:18px;margin-top:4px">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'')+'</div><button class="iconbtn" data-action="editMyProfile">✎</button></div>';
-html+=pushCardHtml();
-html+=challengesHtml(myPlayer.id);
-html+='<div class="row-actions"><button class="btn ghost w100 '+(un?'msg-alert':'')+'" data-action="inbox">💬 '+(un?('Вам новое сообщение ('+un+')'):'Сообщения')+'</button></div>';
-                       html+='<div class="row-actions"><button class="btn primary w100" data-action="openGeneralChat" style="background:linear-gradient(180deg,#3aa9ff,#1e7bc4);color:#fff">👥 Общий чат клуба</button></div>';
-html+='<div class="row-actions"><button class="btn primary w100" data-action="newTraining">＋ Буду тренироваться</button></div>';
-html+='<div class="card rise" style="margin-top:12px"><div class="count-lbl" style="margin-bottom:6px">График успеха (динамика рейтинга)</div><div style="color:var(--green)">'+spark(eng.hist[myPlayer.id],300,60)+'</div></div>';
-html+='<div class="ai-trainer-card"><div class="ai-trainer-header"><svg class="ai-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>ЛИЧНЫЙ ИИ-ТРЕНЕР</div><button class="ai-btn-analyze" onclick="analyzeGameStyle(\'' + myPlayer.id + '\')">🧠 Проанализировать мою игру</button><div id="aiResponseBox" class="ai-response-area"></div></div>';                       
-if(myTrainings.length){html+='<div class="sec-title">Мои тренировки <span class="cnt">'+myTrainings.length+'</span></div><div class="train-list">'+myTrainings.sort(function(a,b){return trainingMs(a)-trainingMs(b);}).map(function(tr){var d=new Date((tr.date||'2000-01-01')+'T12:00');var day=d.getDate();var mon=MON[d.getMonth()];var pts=(tr.participantIds||[]).map(function(pid){var p=player(pid);return p?'<span class="tc-name">👤 '+esc(p.firstName+' '+p.lastName)+'</span>':'';}).join('');return'<div class="train-card rise"><div class="tc-left"><div class="tc-time">🏓 '+day+' '+mon+' · '+(tr.time||'')+'</div><div class="tc-sub">Орг: '+esc(tr.createdBy||'')+' · 👥 '+(tr.participantIds||[]).length+'</div>'+(pts?'<div class="tc-names">'+pts+'</div>':'')+'</div></div>';}).join('')+'</div>';}
-if(myUpcoming.length){html+='<div class="sec-title">Мои турниры (активные) <span class="cnt">'+myUpcoming.length+'</span></div><div class="list">';myUpcoming.forEach(function(t){html+='<div class="trow rise" style="cursor:default"><div class="datebox"><b>'+new Date((t.date||'2000-01-01')+'T12:00').getDate()+'</b><span>'+MON[new Date((t.date||'2000-01-01')+'T12:00').getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span class="start-lbl">старт '+(t.startTime||'—')+'</span></div></div><div style="display:flex;flex-direction:column;gap:6px;flex:none"><button class="btn danger sm" data-action="unregisterFromTournament" data-tid="'+t.id+'">Отписаться</button><button class="btn ghost sm" data-action="viewParticipants" data-id="'+t.id+'">Открыть</button></div></div>';});html+='</div>';}
-if(myPast.length){html+='<div class="sec-title">История моих турниров <span class="cnt">'+myPast.length+'</span></div><div class="list">';myPast.forEach(function(t){var stnd=standings(t.id);var place=stnd.findIndex(function(r){return r.pid===myPlayer.id;})+1;html+='<button class="trow rise" data-action="openTournament" data-id="'+t.id+'"><div class="datebox"><b>'+new Date((t.date||'2000-01-01')+'T12:00').getDate()+'</b><span>'+MON[new Date((t.date||'2000-01-01')+'T12:00').getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span>'+(place?('место: '+place):'участник')+'</span></div></div>'+I_CHEV+'</button>';});html+='</div>';}
-if(aw.length){html+='<div class="sec-title">Мои награды <span class="cnt">'+aw.length+'</span></div><div class="rise">'+aw.map(function(a){return awRowHtml(a);}).join('')+'</div>';}
-html+='<div class="statgrid rise"><div class="stat"><b>'+st.m+'</b><span>матчей</span></div><div class="stat"><b>'+st.w+'</b><span>побед</span></div><div class="stat"><b>'+st.l+'</b><span>поражений</span></div><div class="stat"><b>'+st.winp+'%</b><span>% побед</span></div><div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div><div class="stat"><b>'+st.bw+':'+st.bl+'</b><span>мячи</span></div></div>';if(availableTournaments.length){html+='<div class="sec-title">Записаться на турнир <span class="cnt">'+availableTournaments.length+'</span></div><div class="list">';availableTournaments.forEach(function(t){html+='<div class="tournament-register-item rise"><div class="tournament-register-info"><div class="tournament-register-name">'+esc(t.name)+'</div><div class="tournament-register-meta">'+statusChip(t)+'<span>📅 '+fmtDate(t.date)+'</span><span class="start-lbl">старт '+(t.startTime||'—')+'</span></div></div>'+registerBtnHtml(t,true)+'</div>';});html+='</div>';}return html;}
+
+  var st=playerStats(myPlayer.id,eng);
+  var myTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)!==-1;});
+  var myUpcoming=myTournaments.filter(function(t){return tStatus(t)!=='finished';});
+  var myPast=myTournaments.filter(function(t){return tStatus(t)==='finished';});
+  var availableTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)===-1&&tStatus(t)!=='finished';});
+  var myTrainings=(state.trainings||[]).filter(function(tr){return (tr.participantIds||[]).indexOf(myPlayer.id)>=0&&trainingMs(tr)>=Date.now()-3600000;});
+  var aw=playerAwards(myPlayer.id).concat(computeAutoAwards(eng).filter(function(a){return a.playerId===myPlayer.id;}));
+  
+  var html='<div class="sec-title">Мой кабинет</div>'+
+  '<div class="profile-card rise">'+
+    avatarHtml(myPlayer,'xl')+
+    '<div class="profile-info">'+
+      '<div class="profile-name">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div>'+
+      '<div class="profile-phone">'+(currentUser?currentUser.phone:'')+'</div>'+
+      '<div class="profile-rating-num">'+eng.R[myPlayer.id]+'</div>'+
+      '<div style="margin-top:4px">'+styleChipHtml(myPlayer.playStyle)+'</div>'+
+      (aw.length?'<div style="font-size:18px;margin-top:4px">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'')+
+    '</div>'+
+    '<button class="iconbtn" data-action="editMyProfile">✎</button>'+
+  '</div>';
+  
+  html+=pushCardHtml();
+  html+=challengesHtml(myPlayer.id);
+  html+='<div class="row-actions"><button class="btn ghost w100 '+(un?'msg-alert':'')+'" data-action="inbox">💬 '+(un?('Вам новое сообщение ('+un+')'):'Сообщения')+'</button></div>';
+  html+='<div class="row-actions"><button class="btn primary w100" data-action="openGeneralChat" style="background:linear-gradient(180deg,#3aa9ff,#1e7bc4);color:#fff">👥 Общий чат клуба</button></div>';
+  html+='<div class="row-actions"><button class="btn primary w100" data-action="newTraining">＋ Буду тренироваться</button></div>';
+  html+='<div class="card rise" style="margin-top:12px"><div class="count-lbl" style="margin-bottom:6px">График успеха (динамика рейтинга)</div><div style="color:var(--green)">'+spark(eng.hist[myPlayer.id],300,60)+'</div></div>';
+  
+  // Блок ИИ-тренера
+  html+='<div class="ai-trainer-card"><div class="ai-trainer-header"><svg class="ai-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>ЛИЧНЫЙ ИИ-ТРЕНЕР</div><button class="ai-btn-analyze" onclick="analyzeGameStyle(\'' + myPlayer.id + '\')">🧠 Проанализировать мою игру</button><div id="aiResponseBox" class="ai-response-area"></div></div>';
+  
+  if(myTrainings.length){
+    html+='<div class="sec-title">Мои тренировки <span class="cnt">'+myTrainings.length+'</span></div><div class="train-list">'+myTrainings.sort(function(a,b){return trainingMs(a)-trainingMs(b);}).map(function(tr){
+      var d=new Date((tr.date||'2000-01-01')+'T12:00');var day=d.getDate();var mon=MON[d.getMonth()];var pts=(tr.participantIds||[]).map(function(pid){var p=player(pid);return p?'<span class="tc-name">👤 '+esc(p.firstName+' '+p.lastName)+'</span>':'';}).join('');
+      return'<div class="train-card rise"><div class="tc-left"><div class="tc-time">🏓 '+day+' '+mon+' · '+(tr.time||'')+'</div><div class="tc-sub">Орг: '+esc(tr.createdBy||'')+' · 👥 '+(tr.participantIds||[]).length+'</div>'+(pts?'<div class="tc-names">'+pts+'</div>':'')+'</div></div>';
+    }).join('')+'</div>';
+  }
+  
+  if(myUpcoming.length){
+    html+='<div class="sec-title">Мои турниры (активные) <span class="cnt">'+myUpcoming.length+'</span></div><div class="list">';
+    myUpcoming.forEach(function(t){
+      html+='<div class="trow rise" style="cursor:default"><div class="datebox"><b>'+new Date((t.date||'2000-01-01')+'T12:00').getDate()+'</b><span>'+MON[new Date((t.date||'2000-01-01')+'T12:00').getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span class="start-lbl">старт '+(t.startTime||'—')+'</span></div></div><div style="display:flex;flex-direction:column;gap:6px;flex:none"><button class="btn danger sm" data-action="unregisterFromTournament" data-tid="'+t.id+'">Отписаться</button><button class="btn ghost sm" data-action="viewParticipants" data-id="'+t.id+'">Открыть</button></div></div>';
+    });
+    html+='</div>';
+  }
+  
+  if(myPast.length){
+    html+='<div class="sec-title">История моих турниров <span class="cnt">'+myPast.length+'</span></div><div class="list">';
+    myPast.forEach(function(t){
+      var stnd=standings(t.id);var place=stnd.findIndex(function(r){return r.pid===myPlayer.id;})+1;
+      html+='<button class="trow rise" data-action="openTournament" data-id="'+t.id+'"><div class="datebox"><b>'+new Date((t.date||'2000-01-01')+'T12:00').getDate()+'</b><span>'+MON[new Date((t.date||'2000-01-01')+'T12:00').getMonth()]+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'<span>'+(place?('место: '+place):'участник')+'</span></div></div>'+I_CHEV+'</button>';
+    });
+    html+='</div>';
+  }
+  
+  if(aw.length){
+    html+='<div class="sec-title">Мои награды <span class="cnt">'+aw.length+'</span></div><div class="rise">'+aw.map(function(a){return awRowHtml(a);}).join('')+'</div>';
+  }
+  
+  html+='<div class="statgrid rise"><div class="stat"><b>'+st.m+'</b><span>матчей</span></div><div class="stat"><b>'+st.w+'</b><span>побед</span></div><div class="stat"><b>'+st.l+'</b><span>поражений</span></div><div class="stat"><b>'+st.winp+'%</b><span>% побед</span></div><div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div><div class="stat"><b>'+st.bw+':'+st.bl+'</b><span>мячи</span></div></div>';
+  
+  if(availableTournaments.length){
+    html+='<div class="sec-title">Записаться на турнир <span class="cnt">'+availableTournaments.length+'</span></div><div class="list">';
+    availableTournaments.forEach(function(t){
+      html+='<div class="tournament-register-item rise"><div class="tournament-register-info"><div class="tournament-register-name">'+esc(t.name)+'</div><div class="tournament-register-meta">'+statusChip(t)+'<span>📅 '+fmtDate(t.date)+'</span><span class="start-lbl">старт '+(t.startTime||'—')+'</span></div></div>'+registerBtnHtml(t,true)+'</div>';
+    });
+    html+='</div>';
+  }
+  
+  return html;
+}
 function fixCup(v){var ci=v.querySelector('.cup-img');if(!ci)return;var showFallback=function(){ci.style.display='none';var s=v.querySelector('.cup-svg');if(s)s.style.display='block';};ci.addEventListener('error',showFallback);if(ci.complete&&ci.naturalWidth===0){showFallback();}}
 function processCup(v){var img=v.querySelector('.cup-img');if(!img||img.dataset.processed)return;var src=img.getAttribute('src');if(!src)return;var loader=new Image();loader.onload=function(){try{var c=document.createElement('canvas');c.width=loader.width;c.height=loader.height;var g=c.getContext('2d');g.drawImage(loader,0,0);var d=g.getImageData(0,0,c.width,c.height);var px=d.data;for(var i=0;i<px.length;i+=4){if(px[i]>235&&px[i+1]>235&&px[i+2]>235){px[i+3]=0;}}g.putImageData(d,0,0);img.src=c.toDataURL('image/png');img.dataset.processed='1';}catch(e){}};loader.onerror=function(){};loader.src=src;}
 function render(){try{clearInterval(window.__tick);}catch(e){}var eng=engine();var v=$('#view');if(!v)return;var html='';try{if(ui.tab==='arena')html=viewArena(eng);else if(ui.tab==='tournaments')html=ui.tournamentId?viewTournamentDetail(ui.tournamentId):viewTournaments();else if(ui.tab==='players')html=ui.playerId?viewPlayer(ui.playerId):viewPlayers(eng);else if(ui.tab==='rating')html=viewRating(eng);else if(ui.tab==='awards')html=viewAwards();else if(ui.tab==='profile')html=viewProfile();}catch(err){html='<div class="empty"><b>Ошибка отображения</b><span class="small">'+esc(err&&err.message?err.message:'')+'</span></div>';}v.innerHTML=html;fixCup(v);processCup(v);refreshPresenceDots();document.querySelectorAll('.tabbtn').forEach(function(b){b.classList.toggle('on',b.dataset.tab===ui.tab);});var ps=document.getElementById('pSearch');if(ps)ps.addEventListener('input',function(){filterPlayers(this.value);});updateBadge();startTick();}
