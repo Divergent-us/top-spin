@@ -1914,7 +1914,26 @@ function delAward(id){confirmBox('Удалить награду?',function(){sta
 function getPlayerByPhone(phone){if(!phone)return null;return state.players.find(function(p){return p.phone===phone;})||null;}
 function createProfileModal(){modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Создать профиль</h3><p class="mut small">Ваш номер: '+(currentUser?currentUser.phone:'')+'</p><label>Имя</label><input id="profFirstName"><label>Фамилия</label><input id="profLastName"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveProfile">Создать</button></div>');}
 function saveProfile(){var f=normalizeName((document.querySelector('#profFirstName')?document.querySelector('#profFirstName').value:'').trim()),l=normalizeName((document.querySelector('#profLastName')?document.querySelector('#profLastName').value:'').trim());if(!f||!l){toast('Имя и фамилия','err');return;}if(!currentUser||!currentUser.phone){toast('Нет номера','err');return;}var existing=getPlayerByPhone(currentUser.phone);if(existing){toast('Уже есть','err');return;}var sameName=state.players.find(function(p){return(p.firstName+' '+p.lastName).toLowerCase()===(f+' '+l).toLowerCase();});if(sameName){sameName.phone=currentUser.phone;save();closeModal();render();toast('Профиль привязан к вашей истории','ok');return;}state.players.push({id:uid(),firstName:f,lastName:l,avatar:null,phone:currentUser.phone});save();closeModal();render();toast('Профиль создан','ok');}
-function editMyProfileModal(){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer)return;__pendingAvatar=myPlayer.avatar;var avHtml=myPlayer.avatar?'<div class="av-preview" id="avPrev"><img src="'+myPlayer.avatar+'"><span class="del-av" data-action="clearAvatar">✕</span></div>':'<div class="av-preview" id="avPrev"></div>';modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Профиль</h3><label>Фото</label>'+avHtml+'<input type="file" id="pfAvatar" accept="image/*"><label>Имя</label><input id="pf" value="'+esc(myPlayer.firstName)+'"><label>Фамилия</label><input id="pl" value="'+esc(myPlayer.lastName)+'"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveMyProfile">Сохранить</button></div>');var fi=document.getElementById('pfAvatar');if(fi){fi.addEventListener('change',function(){if(this.files&&this.files[0]){compressImage(this.files[0],function(b64){__pendingAvatar=b64;refreshAvatarPreview();});}});}}
+function editMyProfileModal(){
+  var myPlayer=getPlayerByPhone(myPhone());
+  if(!myPlayer)return;
+  __pendingAvatar=myPlayer.avatar;
+  window.__pendingStyle = myPlayer.playStyle || 'universal';
+  var avHtml=myPlayer.avatar?'<div class="av-preview" id="avPrev"><img src="'+myPlayer.avatar+'"><span class="del-av" data-action="clearAvatar">✕</span></div>':'<div class="av-preview" id="avPrev"></div>';
+  
+  var style = window.__pendingStyle;
+  var styleBlock = '<label>Стиль игры</label>'+
+    '<div class="seg" style="width:100%; display:flex; margin-bottom:6px">'+
+    '<button class="'+(style==='attack'?'on':'')+'" style="flex:1" data-action="setPlayStyle" data-style="attack">⚔️ Атака</button>'+
+    '<button class="'+(style==='defense'?'on':'')+'" style="flex:1" data-action="setPlayStyle" data-style="defense">🛡 Защита</button>'+
+    '<button class="'+(style==='universal'?'on':'')+'" style="flex:1" data-action="setPlayStyle" data-style="universal">⚖️ Универсал</button>'+
+    '</div>'+
+    '<div class="mut small" style="margin-bottom:12px">Поможет ИИ-тренеру давать более точные советы по технике</div>';
+
+  modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Профиль</h3><label>Фото</label>'+avHtml+'<input type="file" id="pfAvatar" accept="image/*"><label>Имя</label><input id="pf" value="'+esc(myPlayer.firstName)+'"><label>Фамилия</label><input id="pl" value="'+esc(myPlayer.lastName)+'">'+styleBlock+'<div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveMyProfile">Сохранить</button></div>');
+  var fi=document.getElementById('pfAvatar');
+  if(fi){fi.addEventListener('change',function(){if(this.files&&this.files[0]){compressImage(this.files[0],function(b64){__pendingAvatar=b64;refreshAvatarPreview();});}});}
+}
 function saveMyProfile(){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer)return;var f=normalizeName((document.querySelector('#pf')?document.querySelector('#pf').value:'').trim()),l=normalizeName((document.querySelector('#pl')?document.querySelector('#pl').value:'').trim());if(!f||!l)return;myPlayer.firstName=f;myPlayer.lastName=l;myPlayer.avatar=__pendingAvatar||myPlayer.avatar;save();closeModal();render();toast('Обновлено','ok');}
 function registerToTournament(tid){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer){toast('Создайте профиль','err');return;}var t=tourn(tid);if(!t)return;if(tStatus(t)==='finished'){toast('Турнир завершён — запись закрыта','err');return;}if((t.playerIds||[]).indexOf(myPlayer.id)!==-1){toast('Вы уже записаны','err');return;}t.playerIds=t.playerIds||[];t.playerIds.push(myPlayer.id);save();render();toast('Вы записаны на «'+t.name+'»','ok');}
 function exportRatingCSV(){
