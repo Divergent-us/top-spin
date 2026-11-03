@@ -2312,12 +2312,15 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
     });
 
     // Если собеседник положил трубку
-    callRoom.on(LivekitClient.RoomEvent.ParticipantDisconnected, function(p) {
+      callRoom.on(LivekitClient.RoomEvent.ParticipantDisconnected, function(p) {
       console.log('❌ Собеседник отключился');
-      if (callRoom && callRoom.remoteParticipants.size === 0) {
-        toast('Собеседник завершил звонок', 'err');
-        endCall();
-      }
+      // Ждем 2 секунды на случай, если это просто сбой сети
+      setTimeout(function() {
+        if (callRoom && callRoom.remoteParticipants.size === 0) {
+          toast('Собеседник завершил звонок', 'err');
+          endCall();
+        }
+      }, 2000);
     });
 
     // Защита от обрыва связи (ждем 5 секунд перед сбросом)
