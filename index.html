@@ -2265,7 +2265,7 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
     }
 
     console.log('1. Запрос токена для:', roomName);
-    var resp = await fetch('https://topspin-ai.styleman81.workers.dev/livekit-token', {
+    var resp = await fetch('https://topspin-deno-token.divergent-us.deno.net/livekit-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ roomName: roomName, participantName: participantName })
