@@ -1934,7 +1934,17 @@ function editMyProfileModal(){
   var fi=document.getElementById('pfAvatar');
   if(fi){fi.addEventListener('change',function(){if(this.files&&this.files[0]){compressImage(this.files[0],function(b64){__pendingAvatar=b64;refreshAvatarPreview();});}});}
 }
-function saveMyProfile(){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer)return;var f=normalizeName((document.querySelector('#pf')?document.querySelector('#pf').value:'').trim()),l=normalizeName((document.querySelector('#pl')?document.querySelector('#pl').value:'').trim());if(!f||!l)return;myPlayer.firstName=f;myPlayer.lastName=l;myPlayer.avatar=__pendingAvatar||myPlayer.avatar;save();closeModal();render();toast('Обновлено','ok');}
+function saveMyProfile(){
+  var myPlayer=getPlayerByPhone(myPhone());
+  if(!myPlayer)return;
+  var f=normalizeName((document.querySelector('#pf')?document.querySelector('#pf').value:'').trim()),l=normalizeName((document.querySelector('#pl')?document.querySelector('#pl').value:'').trim());
+  if(!f||!l)return;
+  myPlayer.firstName=f;
+  myPlayer.lastName=l;
+  myPlayer.avatar=__pendingAvatar||myPlayer.avatar;
+  myPlayer.playStyle = window.__pendingStyle || 'universal';
+  save();closeModal();render();toast('Обновлено','ok');
+}
 function registerToTournament(tid){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer){toast('Создайте профиль','err');return;}var t=tourn(tid);if(!t)return;if(tStatus(t)==='finished'){toast('Турнир завершён — запись закрыта','err');return;}if((t.playerIds||[]).indexOf(myPlayer.id)!==-1){toast('Вы уже записаны','err');return;}t.playerIds=t.playerIds||[];t.playerIds.push(myPlayer.id);save();render();toast('Вы записаны на «'+t.name+'»','ok');}
 function exportRatingCSV(){
   try{
