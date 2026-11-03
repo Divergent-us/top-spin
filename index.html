@@ -2341,7 +2341,12 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
     // Принудительная разблокировка звука (через 1 сек)
     setTimeout(function(){ if(callRoom) callRoom.startAudio().catch(function(){}); }, 1000);
 
-    await callRoom.localParticipant.setMicrophoneEnabled(true);
+        try {
+      await callRoom.localParticipant.setMicrophoneEnabled(true);
+    } catch (micError) {
+      console.warn('Микрофон не включился:', micError);
+      toast('Внимание: нет доступа к микрофону!', 'err');
+    }
     
     if (isVideo) {
       console.log('5. Включаем камеру...');
