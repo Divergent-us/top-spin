@@ -806,7 +806,12 @@ function resolvePhone(x){var p=player(x);if(p&&p.phone)return p.phone;return x;}
 function lastRead(){return parseInt(lsGet('topspin_lastread_'+myPhone())||'0');}
 function markRead(){lsSet('topspin_lastread_'+myPhone(),String(Date.now()));}
 function unreadCount(){var lr=lastRead();return MSGS.filter(function(m){return m.from!==myPhone()&&(m.to===myPhone()||m.to==='')&&m.ts>lr;}).length;}
-function threadWith(phone){return MSGS.filter(function(m){return (m.from===myPhone()&&m.to===phone)||(m.from===phone&&m.to===myPhone());}).sort(function(a,b){return a.ts-b.ts;});}
+function threadWith(phone){
+  if (phone === 'general') {
+    return MSGS.filter(function(m){ return m.to === 'general'; }).sort(function(a,b){return a.ts-b.ts;});
+  }
+  return MSGS.filter(function(m){return (m.from===myPhone()&&m.to===phone)||(m.from===phone&&m.to===myPhone());}).sort(function(a,b){return a.ts-b.ts;});
+}
 function inboxList(){var lr=lastRead();var map={};MSGS.forEach(function(m){if(m.from===myPhone())return;if(m.to!==myPhone()&&m.to!=='')return;var k=m.from;map[k]=map[k]||{from:k,name:m.fromName,last:'',ts:0,unread:0};map[k].last=m.text;if(m.ts>map[k].ts)map[k].ts=m.ts;if(m.ts>lr)map[k].unread++;});return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.ts-a.ts;});}
 function showSmsToast(name,text){var root=document.getElementById('toast-root');if(!root)return;var t=document.createElement('div');t.className='toast sms';t.innerHTML='<div class="sms-ico">💬</div><div class="sms-body"><div class="sms-head"><b>'+esc(name)+'</b><span class="sms-tag">SMS</span></div><div class="sms-text">'+esc(text)+'</div></div>';root.appendChild(t);requestAnimationFrame(function(){t.classList.add('in');});setTimeout(function(){t.classList.remove('in');setTimeout(function(){t.remove();},320);},4200);}
 function notifyMessage(m){showSmsToast(m.fromName,m.text);playSound('msg');try{if('Notification' in window&&Notification.permission==='granted'){new Notification('💬 Сообщение от '+m.fromName,{body:m.text,tag:'topspin-'+m.ts});}}catch(e){}}
@@ -861,15 +866,21 @@ function formatChatDate(ts){
 }
 
 function chatMsgHtml(m){
-  var mine=m.from===myPhone();
-  var time=new Date(m.ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-  var check='';
+  var mine = m.from === myPhone();
+  var time = new Date(m.ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  var check = '';
   if(mine){
-    var read=isMyMsgRead(m);
-    check=read?'<span class="check read">✓✓</span>':'<span class="check">✓</span>';
+    var read = isMyMsgRead(m);
+    check = read ? '<span class="check read">✓✓</span>' : '<span class="check">✓</span>';
   }
-  var msgAttr=mine?' data-msg-id="'+esc(m.id||'')+'"':'';
-  return'<div class="chat-msg '+(mine?'mine':'')+'"><div class="msg-bubble"'+msgAttr+'>'+esc(m.text)+'<div class="msg-meta">'+time+' '+check+'</div></div></div>';
+  
+  // Если это общий чат, и пишет не он, показываем имя
+  var senderName = '';
+  if (!mine && __openChatPhone === 'general') {
+    senderName = '<div style="font-size:11px; font-weight:800; color:var(--orange2); margin-bottom:2px; padding-left:4px;">'+esc(m.fromName)+'</div>';
+  }
+
+  return '<div class="chat-msg '+(mine?'mine':'')+'">' + senderName + '<div class="msg-bubble">'+esc(m.text)+'<div class="msg-meta">'+time+' '+check+'</div></div></div>';
 }
 
 function renderChatMessages(scrollToBottom){
