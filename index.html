@@ -1858,6 +1858,12 @@ function teamModal(tid,teamId){
   }).join(''):'<div class="mut small">Сначала запишите игроков на турнир</div>';
   modal('<button class="modal-x" data-action="closeModal">✕</button><h3>'+(tm?'Редактировать команду':'Новая команда')+'</h3><label>Название команды</label><input id="tmName" value="'+(tm?esc(tm.name):'')+'"><label>Состав</label><div class="mut small" style="margin-bottom:6px">Отметьте игроков, которые войдут в команду</div><div class="picker-list" id="teamPicker" style="max-height:40vh">'+listHtml+'</div><input type="hidden" id="tmPicked" value="'+picked.join(',')+'"><div class="row-actions"><button class="btn ghost" data-action="manageTeams" data-tid="'+tid+'">Назад</button><button class="btn primary" data-action="saveTeam" data-tid="'+tid+'" data-id="'+(teamId||'')+'">Сохранить</button></div>');
 }
+ function styleChipHtml(style){
+  style = style || 'universal';
+  if(style === 'attack') return '<span class="style-chip attack">⚔️ Атакующий</span>';
+  if(style === 'defense') return '<span class="style-chip defense">🛡 Защитный</span>';
+  return '<span class="style-chip universal">⚖️ Универсальный</span>';
+}                        
  function showInfoModal(title, text) {
   modal('<button class="modal-x" data-action="closeModal">✕</button><h3>💡 ' + esc(title) + '</h3><div style="font-size:14px; line-height:1.6; color:var(--txt); white-space:pre-wrap; margin-top:10px">' + esc(text) + '</div><div class="row-actions"><button class="btn primary w100" data-action="closeModal" style="margin-top:15px">Понятно</button></div>');
 }
