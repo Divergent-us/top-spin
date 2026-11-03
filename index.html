@@ -2280,44 +2280,45 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
     });
 
     // Обработка входящих треков
-    callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) {
-  console.log('🔥 Получен трек:', track.kind);
-  if (track.kind === LivekitClient.Track.Kind.Audio) {
-    var audioEl = track.attach();
-    audioEl.autoplay = true;
-    audioEl.playsInline = true;
-    audioEl.style.display = 'none';
-    document.body.appendChild(audioEl);
-    audioEl.play().then(function() {
-      console.log('✅ Аудио воспроизводится');
-    }).catch(function(e) {
-      console.warn('❌ Аудио заблокировано:', e);
-      var btn = document.getElementById('callAudioUnlockBtn');
-      if (btn) btn.style.display = 'inline-flex';
+        callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) {
+      console.log('🔥 Получен трек:', track.kind);
+      if (statusEl) statusEl.textContent = 'Получен ' + track.kind + '!';
+      
+      if (track.kind === LivekitClient.Track.Kind.Audio) {
+        var audioEl = track.attach();
+        audioEl.autoplay = true;
+        audioEl.playsInline = true;
+        audioEl.style.display = 'none';
+        document.body.appendChild(audioEl);
+        audioEl.play().then(function() {
+          if (statusEl) statusEl.textContent = 'Звук пошёл! 🎧';
+        }).catch(function(e) {
+          if (statusEl) statusEl.textContent = 'Звук заблокирован! Нажми кнопку ниже';
+          var btn = document.getElementById('callAudioUnlockBtn');
+          if (btn) btn.style.display = 'inline-flex';
+        });
+      } else if (track.kind === LivekitClient.Track.Kind.Video) {
+        var remoteVideoEl = document.getElementById('remoteVideo');
+        if (remoteVideoEl) {
+          track.attach(remoteVideoEl);
+          remoteVideoEl.play().catch(function(e){ console.warn('Video play blocked', e); });
+        }
+      }
     });
-  } else if (track.kind === LivekitClient.Track.Kind.Video) {
-    var remoteVideoEl = document.getElementById('remoteVideo');
-    if (remoteVideoEl) {
-      track.attach(remoteVideoEl);
-      remoteVideoEl.play().catch(function(e){ console.warn('Video play blocked', e); });
-    }
-  }
-});
 
-    callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
+      callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
       console.log('3. Собеседник подключился!');
-      if (statusEl) statusEl.textContent = 'В сети';
+      if (statusEl) statusEl.textContent = 'Собеседник в комнате! Ждём звук...';
       stopRingback();
       if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
     });
 
     // Если собеседник положил трубку
-      callRoom.on(LivekitClient.RoomEvent.ParticipantDisconnected, function(p) {
+        callRoom.on(LivekitClient.RoomEvent.ParticipantDisconnected, function(p) {
       console.log('❌ Собеседник отключился');
-      // Ждем 2 секунды на случай, если это просто сбой сети
+      if (statusEl) statusEl.textContent = 'Собеседник вышел из комнаты';
       setTimeout(function() {
         if (callRoom && callRoom.remoteParticipants.size === 0) {
-          toast('Собеседник завершил звонок', 'err');
           endCall();
         }
       }, 2000);
