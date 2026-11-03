@@ -976,27 +976,37 @@ function openChat(x,from){
   closeModal();
   var screen=document.getElementById('chatScreen');
   if(!screen)return;
-  var p=state.players.find(function(q){return q.phone===phone;});
-  var title=p?(p.firstName+' '+p.lastName):phone;
-  var nameEl=document.getElementById('chatHeaderName');
-  if(nameEl)nameEl.textContent=title;
-  var avEl=document.getElementById('chatHeaderAv');
-  if(avEl){
-    if(p&&p.avatar){avEl.innerHTML='<img src="'+p.avatar+'" alt="">';}
-    else{
-      avEl.style.background=avColor(p?p.id:'x');
-      avEl.style.color='#0a1424';
-      avEl.textContent=p?initials(p):'?';
-      avEl.innerHTML=p?initials(p):'?';
+    var p = state.players.find(function(q){return q.phone===phone;});
+  var title = p ? (p.firstName+' '+p.lastName) : (phone === 'general' ? 'Общий чат клуба' : phone);
+  
+  var nameEl = document.getElementById('chatHeaderName');
+  if (nameEl) nameEl.textContent = title;
+  
+  var avEl = document.getElementById('chatHeaderAv');
+  if (avEl) {
+    if (phone === 'general') {
+      avEl.innerHTML = '👥';
+      avEl.style.background = 'var(--blue)';
+      avEl.style.color = '#fff';
+    } else if (p && p.avatar) {
+      avEl.innerHTML = '<img src="'+p.avatar+'" alt="">';
+    } else {
+      avEl.style.background = avColor(p?p.id:'x');
+      avEl.style.color = '#0a1424';
+      avEl.textContent = p?initials(p):'?';
     }
   }
-  var statusEl=document.getElementById('chatHeaderStatus');
-  if(statusEl){
-    if(p&&p.phone&&isOnline(presKeyFor(p.phone))){
-      statusEl.textContent='в сети';
+  
+  var statusEl = document.getElementById('chatHeaderStatus');
+  if (statusEl) {
+    if (phone === 'general') {
+      statusEl.textContent = 'Все игроки клуба';
+      statusEl.classList.remove('online');
+    } else if (p && p.phone && isOnline(presKeyFor(p.phone))) {
+      statusEl.textContent = 'в сети';
       statusEl.classList.add('online');
-    }else{
-      statusEl.textContent='не в сети';
+    } else {
+      statusEl.textContent = 'не в сети';
       statusEl.classList.remove('online');
     }
   }
