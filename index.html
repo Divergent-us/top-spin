@@ -2285,22 +2285,28 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
 
     // Обработка входящих треков
     callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) {
-      console.log('🔥 Получен трек:', track.kind);
-      if (track.kind === LivekitClient.Track.Kind.Audio) {
-        var audioEl = track.attach();
-        audioEl.autoplay = true;
-        audioEl.playsInline = true;
-        audioEl.style.display = 'none';
-        document.body.appendChild(audioEl);
-        audioEl.play().catch(function(e){ console.warn('Audio play blocked', e); });
-      } else if (track.kind === LivekitClient.Track.Kind.Video) {
-        var remoteVideoEl = document.getElementById('remoteVideo');
-        if (remoteVideoEl) {
-          track.attach(remoteVideoEl);
-          remoteVideoEl.play().catch(function(e){ console.warn('Video play blocked', e); });
-        }
-      }
+  console.log('🔥 Получен трек:', track.kind);
+  if (track.kind === LivekitClient.Track.Kind.Audio) {
+    var audioEl = track.attach();
+    audioEl.autoplay = true;
+    audioEl.playsInline = true;
+    audioEl.style.display = 'none';
+    document.body.appendChild(audioEl);
+    audioEl.play().then(function() {
+      console.log('✅ Аудио воспроизводится');
+    }).catch(function(e) {
+      console.warn('❌ Аудио заблокировано:', e);
+      var btn = document.getElementById('callAudioUnlockBtn');
+      if (btn) btn.style.display = 'inline-flex';
     });
+  } else if (track.kind === LivekitClient.Track.Kind.Video) {
+    var remoteVideoEl = document.getElementById('remoteVideo');
+    if (remoteVideoEl) {
+      track.attach(remoteVideoEl);
+      remoteVideoEl.play().catch(function(e){ console.warn('Video play blocked', e); });
+    }
+  }
+});
 
     callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
       console.log('3. Собеседник подключился!');
