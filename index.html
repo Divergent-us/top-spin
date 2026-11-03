@@ -414,7 +414,19 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
   vertical-align: middle;
   box-shadow: 0 0 5px rgba(58, 169, 255, 0.3);
 }
-.info-icon:active { transform: scale(0.9); }
+.info-icon:active { transform: scale(0.9); }.style-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+}
+.style-chip.attack { background: rgba(255,95,107,.15); border: 1px solid rgba(255,95,107,.4); color: #ff5f6b; }
+.style-chip.defense { background: rgba(58,169,255,.15); border: 1px solid rgba(58,169,255,.4); color: #3aa9ff; }
+.style-chip.universal { background: rgba(65,224,141,.15); border: 1px solid rgba(65,224,141,.4); color: #41e08d; }
 .chat-send{width:44px;height:44px;flex:none;border-radius:50%;border:none;background:linear-gradient(180deg,#ffa14a,#ff7d12);color:#241203;cursor:pointer;display:grid;place-items:center;transition:transform .1s}
 .chat-send:active{transform:scale(.94)}
 .chat-send svg{width:20px;height:20px}
