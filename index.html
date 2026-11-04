@@ -1767,17 +1767,23 @@ function viewProfile(){
   var myTrainings=(state.trainings||[]).filter(function(tr){return (tr.participantIds||[]).indexOf(myPlayer.id)>=0&&trainingMs(tr)>=Date.now()-3600000;});
   var aw=playerAwards(myPlayer.id).concat(computeAutoAwards(eng).filter(function(a){return a.playerId===myPlayer.id;}));
   
+  // Читаемое название стиля
+  var styleNames = { attack: 'Атакующий', defense: 'Защитный', universal: 'Универсальный' };
+  var styleText = styleNames[myPlayer.playStyle || 'universal'];
+
   var html='<div class="sec-title">Мой кабинет</div>'+
-  '<div class="profile-card rise">'+
+  '<div class="profile-card-premium rise">'+
     avatarHtml(myPlayer,'xl')+
-    '<div class="profile-info">'+
-      '<div class="profile-name">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div>'+
-      '<div class="profile-phone">'+(currentUser?currentUser.phone:'')+'</div>'+
-      '<div class="profile-rating-num">'+eng.R[myPlayer.id]+'</div>'+
-      '<div style="margin-top:4px">'+styleChipHtml(myPlayer.playStyle)+'</div>'+
-      (aw.length?'<div style="font-size:18px;margin-top:4px">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'')+
+    '<div style="flex:1">'+
+      '<div class="profile-name" style="font-family:var(--fd); font-size:20px; margin-bottom:4px">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div>'+
+      '<div class="profile-phone" style="color:var(--mut); font-size:12px; margin-bottom:8px">'+(currentUser?currentUser.phone:'')+'</div>'+
+      '<div style="display:flex; align-items:center; gap:10px">'+
+        '<div class="profile-rating-num" style="font-family:var(--fd); font-size:26px; color:var(--ball)">'+eng.R[myPlayer.id]+'</div>'+
+        '<div class="profile-style-label">Стиль игры: <b>'+styleText+'</b></div>'+
+      '</div>'+
+      (aw.length?'<div style="font-size:18px;margin-top:8px">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'')+
     '</div>'+
-    '<button class="iconbtn" data-action="editMyProfile">✎</button>'+
+    '<button class="iconbtn" data-action="editMyProfile" style="position:absolute; top:16px; right:16px">✎</button>'+
   '</div>';
   
   html+=pushCardHtml();
