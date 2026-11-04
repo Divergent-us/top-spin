@@ -1819,25 +1819,19 @@ function viewTournaments(){
   var ts=[].concat(state.tournaments).sort(function(a,b){return new Date((b.date||'2000-01-01')+'T'+(b.endTime||'23:59'))-new Date((a.date||'2000-01-01')+'T'+(a.endTime||'23:59'));});
   var active=ts.filter(function(t){return tStatus(t)!=='finished';});
   var finished=ts.filter(function(t){return tStatus(t)==='finished';});
+  
   var renderTourRow=function(t){
     var d=new Date((t.date||'2000-01-01')+'T12:00');
-    var mAll=state.matches.filter(function(m){return m.tournamentId===t.id;});
-    var mDone=mAll.filter(function(m){return matchWinner(m);}).length;
     var day=d.getDate();
     var mon=MON[d.getMonth()];
-    var ids=t.playerIds||[];
-    var winHtml='';
-    if(tStatus(t)==='finished'){var stnd=standings(t.id);if(stnd.length){winHtml=winPhoto(player(stnd[0].pid));}}
-    var teamBadge=t.type==='team'?'<span style="font-size:10px;background:rgba(58,169,255,.15);border:1px solid rgba(58,169,255,.4);color:var(--blue);border-radius:999px;padding:1px 7px">КОМАНДНЫЙ</span>':'';
-    return'<button class="trow rise" data-action="openTournament" data-id="'+t.id+'"><div class="datebox"><b>'+day+'</b><span>'+mon+'</span></div><div class="info"><div class="nm" style="display:flex;align-items:center;gap:8px"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(t.name)+'</span>'+teamBadge+winHtml+'</div><div class="sub">'+statusChip(t)+'<span>👥 '+ids.length+' запис.</span><span>🏓 '+mDone+'/'+mAll.length+'</span></div></div>'+I_CHEV+'</button>';
+    return '<button class="trow rise" data-action="openTournament" data-id="'+t.id+'"><div class="datebox"><b>'+day+'</b><span>'+mon+'</span></div><div class="info"><div class="nm">'+esc(t.name)+'</div><div class="sub">'+statusChip(t)+'</div></div>'+I_CHEV+'</button>';
   };
+  
   var activeRows=active.map(renderTourRow).join('');
   var html='<div class="sec-title">Актуальные турниры <span class="cnt">'+active.length+'</span></div>';
   html+=(isAdminMode?'<button class="btn primary w100" data-action="newTournament" style="margin-bottom:12px">＋ Новый турнир</button>':'');
-  html+='<div class="list">'+(activeRows||'<div class="empty"><div class="big">📅</div><b>Пока нет активных турниров</b><div class="mut small" style="margin-top:6px">Создайте новый или откройте историю</div></div>')+'</div>';
-  if(finished.length){
-    html+='<button class="btn ghost w100" data-action="openHistory" style="margin-top:18px;justify-content:center;gap:8px"><span style="font-size:16px">📜</span> История турниров ('+finished.length+')</button>';
-  }
+  html+='<div class="list">'+(activeRows||'<div class="empty"><div class="big">📅</div><b>Пока нет активных турниров</b></div>')+'</div>';
+  if(finished.length){ html+='<button class="btn ghost w100" data-action="openHistory" style="margin-top:18px">📜 История турниров ('+finished.length+')</button>'; }
   return html;
 }
 function openHistoryModal(){
