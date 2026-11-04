@@ -2323,7 +2323,14 @@ function teamModal(tid,teamId){
   var html = '<button class="modal-x" data-action="closeModal">✕</button><h3 style="color:var(--gold)">📖 Правила клуба</h3><div style="font-size:13.5px; line-height:1.6; max-height:70vh; overflow-y:auto; padding-right:5px; margin-top:10px">';
   
   html += '<div class="settings-info" style="background:rgba(58,169,255,.1); border-color:rgba(58,169,255,.3); color:var(--blue)">Мы используем систему рейтинга <b>RTTF</b>. Победа над сильным соперником дает больше очков, чем над слабым. Чем крупнее счет по сетам (например 3:0), тем больше очков вы получите.</div>';
-  
+    html += '<h4 style="margin-top:15px; color:var(--orange2)">📈 Уровни и Рейтинг (RTTF)</h4>';
+  html += '<div style="background:rgba(255,255,255,.03); border:1px solid var(--line); border-radius:8px; padding:10px; margin-top:5px; color:var(--mut); font-size:13px; line-height:1.6">';
+  html += '<div>• <b>0 – 250:</b> Новичок (только учится держать ракетку)</div>';
+  html += '<div>• <b>250 – 450:</b> Любитель (уверенно играет на счёт)</div>';
+  html += '<div>• <b>450 – 700:</b> Разрядник (уровень III–II взрослого разряда)</div>';
+  html += '<div>• <b>700 – 900:</b> КМС (кандидат в мастера спорта)</div>';
+  html += '<div>• <b style="color:var(--gold)">900+:</b> Мастер (мастер спорта)</div>';
+  html += '</div>';
   html += '<h4 style="margin-top:15px; color:var(--orange2)">🏆 Автоматические награды (Выдает система)</h4>';
   html += '<ul style="padding-left:18px; margin-top:5px; color:var(--mut)">';
   html += '<li><b>🏆 Император рейтинга</b> — 1-е место в общем рейтинге.</li>';
