@@ -1771,20 +1771,38 @@ function viewPlayer(pid){
   (aw.length?'<div class="sec-title">Награды игрока</div><div class="rise">'+aw.map(function(a){return awRowHtml(a);}).join('')+'</div>':'')+
   (history.length?'<div class="sec-title">Последние матчи</div><div class="card rise">'+history.map(function(m){var isA=m.playerAId===pid;var opp=isA?m.playerBId:m.playerAId;var w=matchWinner(m)===pid;var sc=setsCountArr(m.sets);return'<div class="mover"><div style="flex:1"><b>'+pName(opp)+'</b><small>'+(isA?sc[0]+':'+sc[1]:sc[1]+':'+sc[0])+'</small></div><span class="delta '+(w?'up':'down')+'">'+(w?'W':'L')+'</span></div>';}).join('')+'</div>':'');
 }
-function viewRating(eng){var list=[].concat(state.players);if(ui.ratingSort==='w')list.sort(function(a,b){return playerStats(b.id,eng).w-playerStats(a.id,eng).w||eng.R[b.id]-eng.R[a.id];});else list.sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});var rows=list.map(function(p,i){var st=playerStats(p.id,eng);var aw=playerAwards(p.id);var awStr=aw.length?' '+aw.map(function(a){return a.emoji;}).join(''):'';return'<tr><td class="rk">'+(i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+p.id+'">'+esc(p.firstName)+' '+esc(p.lastName)+awStr+'</td><td>'+st.w+'В–'+st.l+'П</td><td style="text-align:right">'+eng.R[p.id]+'</td></tr>';}).join('');return'<div class="sec-title">Рейтинг игроков</div><div class="seg"><button class="'+(ui.ratingSort==='r'?'on':'')+'" data-action="sortR">По рейтингу</button><button class="'+(ui.ratingSort==='w'?'on':'')+'" data-action="sortW">По победам</button></div><div class="card rise" style="overflow-x:auto">'+(rows?'<table class="tbl"><tr><th>#</th><th>Игрок</th><th>В-П</th><th style="text-align:right">рейтинг</th></tr>'+rows+'</table>':'<div class="empty"><b>Рейтинг пуст</b></div>')+'</div>'+(isAdminMode?'<div class="row-actions"><button class="btn ghost" data-action="exportRatingCSV">Excel</button><button class="btn ghost" data-action="exportRatingPDF">PDF</button></div>':'')+'<div class="mut small" style="margin-top:10px">Рейтинг по правилам RTTF: дельта=[(100−(Rпоб−Rпор))/10]×k×D.</div>';}
-function awRowHtml(a){
-  var p=player(a.playerId);
-  var mc=a.emoji==='🥇'?'g':a.emoji==='🥈'?'s':a.emoji==='🥉'?'b':a.emoji==='💎'?'d':'';
-  var autoBadge = a.auto ? '<span class="auto-badge">АВТО</span>' : '';
-  var delBtn = (!a.auto && isAdminMode) ? '<button class="iconbtn del" data-action="delAward" data-id="'+a.id+'">✕</button>' : '';
+function viewRating(eng){
+  var list=[].concat(state.players);
+  if(ui.ratingSort==='w')list.sort(function(a,b){return playerStats(b.id,eng).w-playerStats(a.id,eng).w||eng.R[b.id]-eng.R[a.id];});
+  else list.sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});
   
-  // Форматируем дату (если её нет, ставим сегодняшнюю)
-  var dateStr = a.date ? fmtDate(a.date) : fmtDate(new Date().toISOString().slice(0,10));
-  var dateHtml = '<div style="font-size:11px;color:var(--dim);margin-top:4px;display:flex;align-items:center;gap:4px">📅 ' + dateStr + '</div>';
-  
-  var subText = a.auto ? esc(a.sub || 'автоматически') : (((a.tournamentId&&tourn(a.tournamentId))?esc(tourn(a.tournamentId).name):'вне турнира'));
-  
-  return'<div class="award-card '+mc+'"><div class="award-emoji">'+a.emoji+'</div><div class="award-mid">'+avatarHtml(p,'reg')+'<div class="award-info"><div class="award-title">'+esc(a.title)+autoBadge+'</div><div class="award-name">'+esc(p?p.firstName+' '+p.lastName:'—')+'</div><div class="award-sub">'+subText+'</div>'+dateHtml+'</div></div>'+delBtn+'</div>';
+  var rows=list.map(function(p,i){
+    var st=playerStats(p.id,eng);
+    var aw=playerAwards(p.id);
+    var awStr=aw.length?' '+aw.map(function(a){return a.emoji;}).join(''):'';
+    var pClass = i===0?'top1':i===1?'top2':i===2?'top3':'';
+    
+    return '<div class="rating-row '+pClass+'" data-action="openPlayer" data-id="'+p.id+'">'+
+      '<div class="rating-pos">'+(i+1)+'</div>'+
+      '<div class="rating-info">'+
+        '<div class="rating-name">'+esc(p.firstName)+' '+esc(p.lastName)+awStr+'</div>'+
+        '<div class="rating-sub">'+st.w+'В–'+st.l+'П · '+(p.playStyle==='attack'?'⚔️ Атака':p.playStyle==='defense'?'🛡 Защита':'⚖️ Универсал')+'</div>'+
+      '</div>'+
+      '<div class="rating-val">'+eng.R[p.id]+'</div>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="rating-hero">'+
+    '<h2>🏆 Элита клуба</h2>'+
+    '<p>Официальный рейтинг по системе RTTF.<br>Побеждай сильных соперников и поднимайся вверх!</p>'+
+  '</div>'+
+  '<div class="seg" style="width:100%; display:flex; margin-bottom:15px">'+
+    '<button class="'+(ui.ratingSort==='r'?'on':'')+'" style="flex:1" data-action="sortR">По рейтингу</button>'+
+    '<button class="'+(ui.ratingSort==='w'?'on':'')+'" style="flex:1" data-action="sortW">По победам</button>'+
+  '</div>'+
+  '<div class="rating-list rise">'+(rows||'<div class="empty"><b>Рейтинг пуст</b></div>')+'</div>'+
+  (isAdminMode?'<div class="row-actions"><button class="btn ghost" data-action="exportRatingCSV">Excel</button><button class="btn ghost" data-action="exportRatingPDF">PDF</button></div>':'')+
+  '<div class="mut small" style="margin-top:15px; text-align:center">Рейтинг RTTF: дельта=[(100−(Rпоб−Rпор))/10]×k×D</div>';
 }
 function viewAwards(){
   var eng = engine();
