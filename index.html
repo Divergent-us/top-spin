@@ -427,6 +427,99 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
 .style-chip.attack { background: rgba(255,95,107,.15); border: 1px solid rgba(255,95,107,.4); color: #ff5f6b; }
 .style-chip.defense { background: rgba(58,169,255,.15); border: 1px solid rgba(58,169,255,.4); color: #3aa9ff; }
 .style-chip.universal { background: rgba(65,224,141,.15); border: 1px solid rgba(65,224,141,.4); color: #41e08d; }
+ /* Красивая шапка рейтинга */
+.rating-hero {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 1px solid var(--gold);
+  border-radius: var(--rad);
+  padding: 24px 20px;
+  text-align: center;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(255,209,102,0.1);
+}
+.rating-hero h2 {
+  font-family: var(--fd);
+  color: var(--gold);
+  font-size: 24px;
+  margin-bottom: 6px;
+  text-shadow: 0 0 15px rgba(255,209,102,0.4);
+}
+.rating-hero p {
+  color: var(--mut);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Строки рейтинга */
+.rating-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.2s;
+}
+.rating-row:active { transform: scale(0.98); }
+.rating-row.top1 { background: linear-gradient(90deg, rgba(255,209,102,0.15), var(--panel)); border-color: rgba(255,209,102,0.5); }
+.rating-row.top2 { background: linear-gradient(90deg, rgba(207,216,227,0.15), var(--panel)); border-color: rgba(207,216,227,0.4); }
+.rating-row.top3 { background: linear-gradient(90deg, rgba(224,160,108,0.15), var(--panel)); border-color: rgba(224,160,108,0.4); }
+
+.rating-pos {
+  font-family: var(--fd);
+  font-size: 18px;
+  color: var(--dim);
+  width: 28px;
+  text-align: center;
+  flex: none;
+}
+.rating-row.top1 .rating-pos { color: var(--gold); font-size: 22px; }
+.rating-row.top2 .rating-pos { color: var(--silver); }
+.rating-row.top3 .rating-pos { color: var(--bronze); }
+
+.rating-info { flex: 1; min-width: 0; }
+.rating-name { font-weight: 800; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rating-sub { font-size: 11px; color: var(--mut); margin-top: 2px; }
+.rating-val { font-family: var(--fd); font-size: 22px; color: var(--ball); flex: none; }
+
+/* Вертикальная аватарка в кабинете */
+.avatar-portrait {
+  width: 90px;
+  height: 120px;
+  flex: none;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 3px solid var(--orange);
+  box-shadow: 0 6px 20px rgba(255, 139, 31, 0.4);
+  position: relative;
+  background: #0d1a2d;
+}
+.avatar-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.avatar-portrait .ini {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fd);
+  font-size: 36px;
+  color: #0a1424;
+  background: linear-gradient(135deg, #31507e, #0e1e34);
+}
  /* Новые стили для карточки в кабинете */
 .profile-card-premium {
   background: linear-gradient(145deg, #152741, #111f36);
