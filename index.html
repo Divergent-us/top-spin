@@ -1918,19 +1918,23 @@ function viewRating(eng){
     var pClass = i===0?'top1':i===1?'top2':i===2?'top3':'';
     var styleStr = p.playStyle==='attack'?'⚔️ Атака':p.playStyle==='defense'?'🛡 Защита':'⚖️ Универсал';
     
+    var r = eng.R[p.id];
+    var level = r < 250 ? 'Новичок' : r < 450 ? 'Любитель' : r < 700 ? 'Разрядник' : r < 900 ? 'КМС' : 'Мастер';
+
     return '<div class="rating-row '+pClass+'" data-action="openPlayer" data-id="'+p.id+'">'+
       '<div class="rating-pos">'+(i+1)+'</div>'+
       '<div class="rating-info">'+
         '<div class="rating-name">'+esc(p.firstName)+' '+esc(p.lastName)+awStr+'</div>'+
-        '<div class="rating-sub">'+st.w+'В–'+st.l+'П · '+styleStr+'</div>'+
+        '<div class="rating-sub">'+st.w+'В–'+st.l+'П · '+styleStr+' · <span style="color:var(--blue);font-weight:800">'+level+'</span></div>'+
       '</div>'+
-      '<div class="rating-val">'+eng.R[p.id]+'</div>'+
+      '<div class="rating-val">'+r+'</div>'+
     '</div>';
   }).join('');
 
-  return '<div class="rating-hero">'+
-    '<h2>🏆 Элита клуба</h2>'+
-    '<p>Официальный рейтинг по системе RTTF.<br>Побеждай сильных соперников и поднимайся вверх!</p>'+
+  // Уменьшенная шапка
+  return '<div class="rating-hero" style="padding: 16px 20px; text-align: left; margin-bottom: 15px;">'+
+    '<h2 style="font-size: 20px; margin-bottom: 4px;">🏆 Элита клуба</h2>'+
+    '<p style="font-size: 12px; line-height: 1.3;">Рейтинг RTTF: побеждай сильных соперников и поднимайся вверх!</p>'+
   '</div>'+
   '<div class="seg" style="width:100%; display:flex; margin-bottom:15px">'+
     '<button class="'+(ui.ratingSort==='r'?'on':'')+'" style="flex:1" data-action="sortR">По рейтингу</button>'+
