@@ -1679,22 +1679,26 @@ function viewTournamentDetail(tid){
   var mAll=state.matches.filter(function(m){return m.tournamentId===tid;});
   var mDone=mAll.filter(function(m){return matchWinner(m);}).length;
   var stnd=standings(tid);
+  
   var html='<button class="backlink" data-action="backTournaments">← Все турниры</button>';
+  
+  // Кнопки админа вынесены наверх
+  if(isAdminMode){
+    html+='<div class="row-actions" style="margin-bottom:12px; margin-top:0;">';
+    html+='<button class="btn ghost" data-action="manageMatches" data-tid="'+t.id+'">⚙️ Управление</button>';
+    html+='<button class="btn danger" data-action="delTournament" data-id="'+t.id+'">🗑 Удалить</button>';
+    html+='</div>';
+  }
+
   html+='<div class="card hero rise"><div class="kick">'+statusChip(t)+'<span class="small">'+fmtDate(t.date)+'</span></div><h2>'+esc(t.name)+'</h2><div class="meta"><span>🕑 '+(t.startTime||'—')+' – '+(t.endTime||'—')+'</span><span>👥 '+ids.length+' уч.</span><span>🏓 '+mDone+'/'+mAll.length+'</span></div><div class="hero-body"><div class="hb-left">';
+  
   if(st==='live'){html+='<div class="count-lbl">осталось играть до '+(t.endTime||'—')+'</div><div class="count cd" data-end="'+t.date+'T'+(t.endTime||'23:59')+':00">--:--:--</div>';}
   else if(st==='upcoming'){html+='<div class="count-lbl" style="color:var(--lime)">до старта турнира</div><div class="count cd" data-end="'+t.date+'T'+(t.startTime||'10:00')+':00">--:--:--</div>';}
   else{
     var stnd0=standings(t.id);
     if(stnd0.length){var wp=player(stnd0[0].pid);html+='<button class="winner-card" data-action="openPlayer" data-id="'+stnd0[0].pid+'">'+avatarHtml(wp,'reg')+'<span>Победил: '+esc(pNameRaw(stnd0[0].pid))+'</span></button>';}
   }
-  html+='</div><div class="cup-wrap"><img class="cup-img" src="cup.png" alt="">'+CUP_SVG+'</div></div><div class="row-actions">'+registerBtnHtml(t,false);
-  
-  // КНОПКИ ДЛЯ АДМИНА
-  if(isAdminMode){
-    html+='<button class="btn ghost" data-action="manageMatches" data-tid="'+t.id+'">⚙️ Управление</button>';
-    html+='<button class="btn danger" data-action="delTournament" data-id="'+t.id+'">🗑 Удалить</button>';
-  }
-  html+='</div></div>';
+  html+='</div><div class="cup-wrap"><img class="cup-img" src="cup.png" alt="">'+CUP_SVG+'</div></div><div class="row-actions">'+registerBtnHtml(t,false)+'</div></div>';
   
   var ptags=ids.map(function(pid){var p=player(pid);return p?'<span class="ptag">'+miniAvatar(p)+'<span>'+esc(p.firstName+' '+p.lastName)+'</span></span>':'';}).join('');
   html+='<div class="sec-title">Записаны на турнир <span class="cnt">'+ids.length+'</span></div><div class="card rise"><div class="ptags">'+(ptags||'<span class="mut small">Пока никто не записан</span>')+'</div></div>';
