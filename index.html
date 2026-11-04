@@ -1419,15 +1419,11 @@ function manageMatches(tid){
   var t=tourn(tid);
   if(!t)return;
   
-  // Сортируем матчи по времени
   var ms=state.matches.filter(function(m){return m.tournamentId===tid;}).sort(function(a,b){return(a.time||'99:99').localeCompare(b.time||'99:99');});
-  
-  // Ищем первый матч, который еще не сыгран
   var nextMatch = ms.find(function(m){ return !m.sets || m.sets.length === 0; });
 
   var html = '<button class="modal-x" data-action="closeModal">✕</button><h3>'+esc(t.name)+'</h3><div class="mut small">Страница турнира • ведение счёта</div>';
   
-  // БЛОК "СЛЕДУЮЩИЙ МАТЧ"
   if (nextMatch) {
     html += '<div class="card rise" style="border-color:var(--orange); background:rgba(255,139,31,.08); margin-top:10px; text-align:center">';
     html += '<div class="count-lbl" style="color:var(--orange); margin-bottom:8px">🔥 Следующий матч</div>';
@@ -1438,7 +1434,6 @@ function manageMatches(tid){
     html += '<div class="settings-info" style="text-align:center; color:var(--green)">🏆 Все матчи сыграны!</div>';
   }
 
-  // СПИСОК ВСЕХ МАТЧЕЙ
   html += '<div class="mm-list" style="margin-top:15px">';
   if (ms.length === 0) {
     html += '<div class="mut small">Пар пока нет — добавьте участников и нажмите «Авто-сетка».</div>';
@@ -1452,10 +1447,9 @@ function manageMatches(tid){
   }
   html += '</div>';
 
-    // КНОПКИ УПРАВЛЕНИЯ
   html += '<div class="row-actions" style="margin-top:15px; flex-direction:column; gap:8px">';
-  html += '<button class="btn primary w100" data-action="autoGenerateMatches" data-tid="'+tid+'">⚡ Авто-сетка (сгенерировать недостающие) <span class="info-icon" data-action="showInfo" data-title="Авто-сетка" data-text="Эта кнопка создает все возможные матчи между участниками турнира (каждый с каждым).&#10;Если во время турнира пришел новый игрок, сначала добавьте его через кнопку «Добавить участника», а затем снова нажмите «Авто-сетка». Система не тронет уже сыгранные матчи и создаст только новые пары.">i</span></button>';
-  html += '<button class="btn ghost w100" data-action="addParticipant" data-tid="'+tid+'">👤 Добавить участника <span class="info-icon" data-action="showInfo" data-title="Добавление игрока" data-text="Позволяет записать на турнир игрока, если он пришел после начала. Просто выберите его из списка. После добавления не забудьте нажать «Авто-сетка», чтобы создать для него матчи.">i</span></button>';
+  html += '<button class="btn primary w100" data-action="autoGenerateMatches" data-tid="'+tid+'">⚡ Авто-сетка (сгенерировать)</button>';
+  html += '<button class="btn ghost w100" data-action="addParticipant" data-tid="'+tid+'">👤 Добавить участника</button>';
   html += '<button class="btn ghost w100" data-action="addMatchFromManage" data-tid="'+tid+'">＋ Добавить пару вручную</button>';
   html += '</div>';
   
