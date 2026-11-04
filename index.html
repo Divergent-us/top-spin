@@ -2031,23 +2031,12 @@ function viewProfile(){
   var myTrainings=(state.trainings||[]).filter(function(tr){return (tr.participantIds||[]).indexOf(myPlayer.id)>=0&&trainingMs(tr)>=Date.now()-3600000;});
   var aw=playerAwards(myPlayer.id).concat(computeAutoAwards(eng).filter(function(a){return a.playerId===myPlayer.id;}));
   
-  // Читаемое название стиля
   var styleNames = { attack: 'Атакующий', defense: 'Защитный', universal: 'Универсальный' };
   var styleText = styleNames[myPlayer.playStyle || 'universal'];
-
-  // Вертикальная аватарка
-  var avatarPortrait = '<div class="avatar-portrait">'+
-    (myPlayer.avatar ? '<img src="'+myPlayer.avatar+'" alt="" data-avatar-src="'+myPlayer.avatar+'">' : '<div class="ini" style="background:'+avColor(myPlayer.id)+'">'+initials(myPlayer)+'</div>')+
-    '</div>';
-
-    // Читаемое название стиля
-  var styleNames = { attack: 'Атакующий', defense: 'Защитный', universal: 'Универсальный' };
-  var styleText = styleNames[myPlayer.playStyle || 'universal'];
-  var styleClass = myPlayer.playStyle === 'attack' ? 'attack' : myPlayer.playStyle === 'defense' ? 'defense' : 'universal';
-  
-  // Определяем уровень по рейтингу (для красоты)
   var r = eng.R[myPlayer.id];
-  var level = r < 300 ? 'Любитель' : r < 600 ? 'Продвинутый' : 'Мастер';
+  
+  // Новая логика уровней
+  var level = r < 250 ? 'Новичок' : r < 450 ? 'Любитель' : r < 700 ? 'Разрядник' : r < 900 ? 'КМС' : 'Мастер';
 
   var avatarPortrait = '<div class="avatar-portrait-lg">'+
     (myPlayer.avatar ? '<img src="'+myPlayer.avatar+'" alt="" data-avatar-src="'+myPlayer.avatar+'">' : '<div class="ini" style="background:'+avColor(myPlayer.id)+'">'+initials(myPlayer)+'</div>')+
@@ -2077,15 +2066,11 @@ function viewProfile(){
   '</div>';
   
   html+=pushCardHtml();
-  
-  html+=pushCardHtml();
   html+=challengesHtml(myPlayer.id);
   html+='<div class="row-actions"><button class="btn ghost w100 '+(un?'msg-alert':'')+'" data-action="inbox">💬 '+(un?('Вам новое сообщение ('+un+')'):'Сообщения')+'</button></div>';
   html+='<div class="row-actions"><button class="btn primary w100" data-action="openGeneralChat" style="background:linear-gradient(180deg,#3aa9ff,#1e7bc4);color:#fff">👥 Общий чат клуба</button></div>';
   html+='<div class="row-actions"><button class="btn primary w100" data-action="newTraining">＋ Буду тренироваться</button></div>';
-  html+='<div class="card rise" style="margin-top:12px"><div class="count-lbl" style="margin-bottom:6px">График успеха (динамика рейтинга)</div><div style="color:var(--green)">'+spark(eng.hist[myPlayer.id],300,60)+'</div></div>';
   
-  // Блок ИИ-тренера
   html+='<div class="ai-trainer-card"><div class="ai-trainer-header"><svg class="ai-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>ЛИЧНЫЙ ИИ-ТРЕНЕР</div><button class="ai-btn-analyze" onclick="analyzeGameStyle(\'' + myPlayer.id + '\')">🧠 Проанализировать мою игру</button><div id="aiResponseBox" class="ai-response-area"></div></div>';
   
   if(myTrainings.length){
