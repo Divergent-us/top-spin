@@ -1864,30 +1864,47 @@ function viewPlayer(pid){
   var history=eng.played.filter(function(m){return m.playerAId===pid||m.playerBId===pid;}).slice(-10).reverse();
   var aw=playerAwards(pid).concat(computeAutoAwards(eng).filter(function(a){return a.playerId===pid;}));
   
-  return '<button class="backlink" data-action="backPlayers">← Все игроки</button>'+
-  '<div class="card hero rise" style="display:flex;gap:14px;align-items:center">'+
-    avatarHtml(p,'lg')+
-    '<div style="flex:1">'+
-      '<h2 style="font-size:19px">'+esc(p.firstName)+' '+esc(p.lastName)+'</h2>'+
-      '<div style="font-size:27px;color:var(--ball)">'+eng.R[pid]+'</div>'+
-      '<div style="margin-top:4px">'+styleChipHtml(p.playStyle)+'</div>'+
-      (aw.length?'<div style="font-size:18px;margin-top:4px">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'')+
+  var styleNames = { attack: 'Атакующий', defense: 'Защитный', universal: 'Универсальный' };
+  var styleText = styleNames[p.playStyle || 'universal'];
+  var r = eng.R[pid];
+  var level = r < 300 ? 'Любитель' : r < 600 ? 'Продвинутый' : 'Мастер';
+
+  var avatarPortrait = '<div class="avatar-portrait-lg">'+
+    (p.avatar ? '<img src="'+p.avatar+'" alt="" data-avatar-src="'+p.avatar+'">' : '<div class="ini" style="background:'+avColor(p.id)+'">'+initials(p)+'</div>')+
+    '</div>';
+
+  var html = '<button class="backlink" data-action="backPlayers">← Все игроки</button>'+
+  '<div class="profile-header-new rise">'+
+    '<div class="profile-av-side">'+avatarPortrait+'</div>'+
+    '<div class="profile-info-side">'+
+      '<div>'+
+        '<div class="profile-name-lg">'+esc(p.firstName)+' '+esc(p.lastName)+'</div>'+
+        '<div class="profile-phone-sm">'+(p.phone ? p.phone : 'Номер скрыт')+'</div>'+
+        '<div class="profile-rating-wrap"><span class="rating-big">'+r+'</span><span class="rating-label">Рейтинг</span></div>'+
+        '<div class="badges-wrap">'+
+          '<span class="badge-pill badge-style">Стиль: '+styleText+'</span>'+
+          '<span class="badge-pill badge-level">Уровень: '+level+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="mini-stats-row">'+
+        '<span class="mini-stat">Матчей: <b>'+st.m+'</b></span>'+
+        '<span class="mini-stat">Побед: <b>'+st.w+'</b></span>'+
+        '<span class="mini-stat">Серия: <b>'+st.streak+'</b> 🔥</span>'+
+      '</div>'+
+      '<div class="profile-graph-wrap" style="color:var(--green)">'+spark(eng.hist[pid],140,40)+'</div>'+
     '</div>'+
-    (isAdminMode?'<button class="iconbtn" data-action="editPlayer" data-id="'+pid+'">✎</button>':'')+
+    (isAdminMode?'<button class="iconbtn" data-action="editPlayer" data-id="'+pid+'" style="position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.1)">✎</button>':'')+
   '</div>'+
+  
   '<div class="row-actions"><button class="btn ghost w100" data-action="chatWith" data-id="'+pid+'">💬 Написать сообщение</button></div>'+
-  '<div class="card rise" style="margin-top:12px"><div class="count-lbl" style="margin-bottom:6px">График успеха (динамика рейтинга)</div><div style="color:var(--green)">'+spark(eng.hist[pid],300,60)+'</div></div>'+
-  '<div class="sec-title">Статистика</div>'+
-  '<div class="statgrid rise">'+
-    '<div class="stat"><b>'+st.m+'</b><span>матчей</span></div>'+
-    '<div class="stat"><b>'+st.w+'</b><span>побед</span></div>'+
-    '<div class="stat"><b>'+st.l+'</b><span>поражений</span></div>'+
-    '<div class="stat"><b>'+st.winp+'%</b><span>% побед</span></div>'+
-    '<div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div>'+
-    '<div class="stat"><b>'+st.bw+':'+st.bl+'</b><span>мячи</span></div>'+
-  '</div>'+
+  
   (aw.length?'<div class="sec-title">Награды игрока</div><div class="rise">'+aw.map(function(a){return awRowHtml(a);}).join('')+'</div>':'')+
+  
+  '<div class="statgrid rise" style="margin-top:16px"><div class="stat"><b>'+st.m+'</b><span>матчей</span></div><div class="stat"><b>'+st.w+'</b><span>побед</span></div><div class="stat"><b>'+st.l+'</b><span>поражений</span></div><div class="stat"><b>'+st.winp+'%</b><span>% побед</span></div><div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div><div class="stat"><b>'+st.bw+':'+st.bl+'</b><span>мячи</span></div></div>'+
+  
   (history.length?'<div class="sec-title">Последние матчи</div><div class="card rise">'+history.map(function(m){var isA=m.playerAId===pid;var opp=isA?m.playerBId:m.playerAId;var w=matchWinner(m)===pid;var sc=setsCountArr(m.sets);return'<div class="mover"><div style="flex:1"><b>'+pName(opp)+'</b><small>'+(isA?sc[0]+':'+sc[1]:sc[1]+':'+sc[0])+'</small></div><span class="delta '+(w?'up':'down')+'">'+(w?'W':'L')+'</span></div>';}).join('')+'</div>':'');
+  
+  return html;
 }
 function viewRating(eng){
   var list=[].concat(state.players);
