@@ -1498,14 +1498,46 @@ function updateSyncIndicator(status){var ind=document.getElementById('syncIndica
     console.error('forceSave error:', e);
   }
 }
-function saveToFirebase(){if(!dbRef)return;try{
-dbRef.child('players').set(state.players).catch(function(){updateSyncIndicator('error');});
-dbRef.child('tournaments').set(state.tournaments).catch(function(){updateSyncIndicator('error');});
-dbRef.child('matches').set(state.matches).catch(function(){updateSyncIndicator('error');});
-dbRef.child('awards').set(state.awards).catch(function(){updateSyncIndicator('error');});
-if(isAdminMode){dbRef.child('settings').set(state.settings).catch(function(){});dbRef.child('playerCodes').set(state.playerCodes).catch(function(){});}
-updateSyncIndicator('synced');
-}catch(e){updateSyncIndicator('error');}}
+function saveToFirebase(){
+  if(!dbRef)return;
+  try{
+    // 1. Сохраняем игроков
+    dbRef.child('players').set(state.players).catch(function(e){
+      console.error('Ошибка сохранения players:', e);
+      toast('Ошибка сохранения! Проверьте интернет.', 'err');
+      updateSyncIndicator('error');
+    });
+
+    // 2. Сохраняем турниры
+    dbRef.child('tournaments').set(state.tournaments).catch(function(e){
+      console.error('Ошибка сохранения tournaments:', e);
+      updateSyncIndicator('error');
+    });
+
+    // 3. Сохраняем матчи
+    dbRef.child('matches').set(state.matches).catch(function(e){
+      console.error('Ошибка сохранения matches:', e);
+      updateSyncIndicator('error');
+    });
+
+    // 4. Сохраняем награды
+    dbRef.child('awards').set(state.awards).catch(function(e){
+      updateSyncIndicator('error');
+    });
+
+    // 5. Настройки и коды (только для админа)
+    if(isAdminMode){
+      dbRef.child('settings').set(state.settings).catch(function(){});
+      dbRef.child('playerCodes').set(state.playerCodes).catch(function(){});
+    }
+
+    updateSyncIndicator('synced');
+    console.log('✅ Все данные успешно отправлены в Firebase');
+  }catch(e){
+    console.error('Критическая ошибка сохранения:', e);
+    updateSyncIndicator('error');
+  }
+}
 function loadFromFirebase(){if(!dbRef){booted=true;return;}var local=loadState();var backup=loadBackup();dbRef.once('value').then(function(snap){var data=snap.val();var remote=(data&&data.players)?norm(data):null;var cands=[local,backup,remote].filter(function(x){return !!x;});var chosen=null;for(var i=0;i<cands.length;i++){if(!chosen||weight(cands[i])>weight(chosen))chosen=cands[i];}
 if(chosen&&weight(chosen)>0){state=chosen;migratePlayers();lsSet(LS_KEY,JSON.stringify(state));lsSet(BAK_KEY,JSON.stringify(state));if(isAdminMode){saveToFirebase();}render();toast('История восстановлена: игроков '+state.players.length+', турниров '+state.tournaments.length,'ok');}
 booted=true;updateSyncIndicator('synced');updateBadge();}).catch(function(){booted=true;updateSyncIndicator('error');});}
