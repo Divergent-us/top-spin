@@ -1869,6 +1869,14 @@ function showHistoryDetail(tid){
   html += '<button class="btn ghost sm" data-action="openHistory" style="padding:6px 10px">← Назад</button>';
   html += '<h3 style="margin:0; font-size:16px; flex:1">'+esc(t.name)+'</h3>';
   html += '</div>';
+
+  // БЛОК КНОПОК ДЛЯ АДМИНА В ИСТОРИИ
+  if (isAdminMode) {
+    html += '<div class="row-actions" style="margin-bottom:12px; margin-top:0;">';
+    html += '<button class="btn ghost" data-action="manageMatches" data-tid="'+t.id+'">⚙️ Управление</button>';
+    html += '<button class="btn danger" data-action="delTournament" data-id="'+t.id+'">🗑 Удалить</button>';
+    html += '</div>';
+  }
   
   if(stnd.length === 0) {
     html += '<div class="empty"><b>Нет данных о матчах</b><div class="mut small">В этом турнире не было сыграно ни одной игры</div></div>';
