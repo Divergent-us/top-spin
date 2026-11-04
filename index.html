@@ -520,6 +520,124 @@ label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-t
   color: #0a1424;
   background: linear-gradient(135deg, #31507e, #0e1e34);
 }
+ /* --- НОВЫЙ ДИЗАЙН ПРОФИЛЯ --- */
+.profile-header-new {
+  background: linear-gradient(145deg, #0f172a, #152741);
+  border: 1px solid var(--line2);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  margin-bottom: 16px;
+}
+.profile-av-side {
+  flex: none;
+  width: 110px;
+}
+.avatar-portrait-lg {
+  width: 110px;
+  height: 150px;
+  border-radius: 14px;
+  border: 2px solid var(--orange);
+  box-shadow: 0 0 15px rgba(255,139,31,0.3);
+  overflow: hidden;
+  background: #0d1a2d;
+  position: relative;
+}
+.avatar-portrait-lg img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.avatar-portrait-lg .ini {
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+  font-family: var(--fd); font-size: 40px; color: #0a1424;
+}
+.profile-info-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+.profile-name-lg {
+  font-family: var(--fd);
+  font-size: 20px;
+  color: #fff;
+  line-height: 1.1;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.profile-phone-sm {
+  color: var(--mut);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.profile-rating-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.rating-big {
+  font-family: var(--fd);
+  font-size: 32px;
+  color: var(--orange);
+  line-height: 1;
+  text-shadow: 0 0 15px rgba(255,139,31,0.4);
+}
+.rating-label {
+  font-size: 11px;
+  color: var(--mut);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.badges-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.badge-pill {
+  font-size: 10.5px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-weight: 700;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.badge-style { background: rgba(255,139,31,0.1); border-color: rgba(255,139,31,0.4); color: var(--orange); }
+.badge-level { background: rgba(58,169,255,0.1); border-color: rgba(58,169,255,0.4); color: var(--blue); }
+
+.mini-stats-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 8px;
+  flex-wrap: wrap;
+}
+.mini-stat {
+  font-size: 11.5px;
+  color: var(--mut);
+}
+.mini-stat b {
+  color: #fff;
+  font-size: 13px;
+  margin-left: 3px;
+}
+.profile-graph-wrap {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  width: 140px;
+  height: 40px;
+  opacity: 0.8;
+  pointer-events: none;
+}
  /* Новые стили для карточки в кабинете */
 .profile-card-premium {
   background: linear-gradient(145deg, #152741, #111f36);
