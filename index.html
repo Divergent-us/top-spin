@@ -1781,12 +1781,13 @@ function viewRating(eng){
     var aw=playerAwards(p.id);
     var awStr=aw.length?' '+aw.map(function(a){return a.emoji;}).join(''):'';
     var pClass = i===0?'top1':i===1?'top2':i===2?'top3':'';
+    var styleStr = p.playStyle==='attack'?'⚔️ Атака':p.playStyle==='defense'?'🛡 Защита':'⚖️ Универсал';
     
     return '<div class="rating-row '+pClass+'" data-action="openPlayer" data-id="'+p.id+'">'+
       '<div class="rating-pos">'+(i+1)+'</div>'+
       '<div class="rating-info">'+
         '<div class="rating-name">'+esc(p.firstName)+' '+esc(p.lastName)+awStr+'</div>'+
-        '<div class="rating-sub">'+st.w+'В–'+st.l+'П · '+(p.playStyle==='attack'?'⚔️ Атака':p.playStyle==='defense'?'🛡 Защита':'⚖️ Универсал')+'</div>'+
+        '<div class="rating-sub">'+st.w+'В–'+st.l+'П · '+styleStr+'</div>'+
       '</div>'+
       '<div class="rating-val">'+eng.R[p.id]+'</div>'+
     '</div>';
