@@ -2019,20 +2019,43 @@ function viewProfile(){
     (myPlayer.avatar ? '<img src="'+myPlayer.avatar+'" alt="" data-avatar-src="'+myPlayer.avatar+'">' : '<div class="ini" style="background:'+avColor(myPlayer.id)+'">'+initials(myPlayer)+'</div>')+
     '</div>';
 
+    // Читаемое название стиля
+  var styleNames = { attack: 'Атакующий', defense: 'Защитный', universal: 'Универсальный' };
+  var styleText = styleNames[myPlayer.playStyle || 'universal'];
+  var styleClass = myPlayer.playStyle === 'attack' ? 'attack' : myPlayer.playStyle === 'defense' ? 'defense' : 'universal';
+  
+  // Определяем уровень по рейтингу (для красоты)
+  var r = eng.R[myPlayer.id];
+  var level = r < 300 ? 'Любитель' : r < 600 ? 'Продвинутый' : 'Мастер';
+
+  var avatarPortrait = '<div class="avatar-portrait-lg">'+
+    (myPlayer.avatar ? '<img src="'+myPlayer.avatar+'" alt="" data-avatar-src="'+myPlayer.avatar+'">' : '<div class="ini" style="background:'+avColor(myPlayer.id)+'">'+initials(myPlayer)+'</div>')+
+    '</div>';
+
   var html='<div class="sec-title">Мой кабинет</div>'+
-  '<div class="profile-card-premium rise">'+
-    avatarPortrait+
-    '<div style="flex:1">'+
-      '<div class="profile-name" style="font-family:var(--fd); font-size:20px; margin-bottom:4px">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div>'+
-      '<div class="profile-phone" style="color:var(--mut); font-size:12px; margin-bottom:8px">'+(currentUser?currentUser.phone:'')+'</div>'+
-      '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">'+
-        '<div class="profile-rating-num" style="font-family:var(--fd); font-size:26px; color:var(--ball)">'+eng.R[myPlayer.id]+'</div>'+
-        '<div class="profile-style-label">Стиль игры: <b>'+styleText+'</b></div>'+
+  '<div class="profile-header-new rise">'+
+    '<div class="profile-av-side">'+avatarPortrait+'</div>'+
+    '<div class="profile-info-side">'+
+      '<div>'+
+        '<div class="profile-name-lg">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div>'+
+        '<div class="profile-phone-sm">'+(currentUser?currentUser.phone:'')+'</div>'+
+        '<div class="profile-rating-wrap"><span class="rating-big">'+r+'</span><span class="rating-label">Рейтинг</span></div>'+
+        '<div class="badges-wrap">'+
+          '<span class="badge-pill badge-style">Стиль: '+styleText+'</span>'+
+          '<span class="badge-pill badge-level">Уровень: '+level+'</span>'+
+        '</div>'+
       '</div>'+
-      (aw.length?'<div style="font-size:18px;margin-top:8px">'+aw.map(function(a){return a.emoji;}).join(' ')+'</div>':'')+
+      '<div class="mini-stats-row">'+
+        '<span class="mini-stat">Матчей: <b>'+st.m+'</b></span>'+
+        '<span class="mini-stat">Побед: <b>'+st.w+'</b></span>'+
+        '<span class="mini-stat">Серия: <b>'+st.streak+'</b> 🔥</span>'+
+      '</div>'+
+      '<div class="profile-graph-wrap" style="color:var(--green)">'+spark(eng.hist[myPlayer.id],140,40)+'</div>'+
     '</div>'+
-    '<button class="iconbtn" data-action="editMyProfile" style="position:absolute; top:16px; right:16px">✎</button>'+
+    '<button class="iconbtn" data-action="editMyProfile" style="position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.1)">✎</button>'+
   '</div>';
+  
+  html+=pushCardHtml();
   
   html+=pushCardHtml();
   html+=challengesHtml(myPlayer.id);
