@@ -1884,7 +1884,12 @@ function viewProfile(){
 
   var html='<div class="sec-title">Мой кабинет</div>'+
   '<div class="profile-card-premium rise">'+
-    avatarHtml(myPlayer,'xl')+
+        '<div class="avatar-portrait">'+
+      (myPlayer.avatar ? 
+        '<img src="'+myPlayer.avatar+'" alt="" data-avatar-src="'+myPlayer.avatar+'">' : 
+        '<div class="ini" style="background:'+avColor(myPlayer.id)+'">'+initials(myPlayer)+'</div>'
+      )+
+    '</div>'+
     '<div style="flex:1">'+
       '<div class="profile-name" style="font-family:var(--fd); font-size:20px; margin-bottom:4px">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div>'+
       '<div class="profile-phone" style="color:var(--mut); font-size:12px; margin-bottom:8px">'+(currentUser?currentUser.phone:'')+'</div>'+
