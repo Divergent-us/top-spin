@@ -1883,18 +1883,18 @@ function viewProfile(){
   var styleNames = { attack: 'Атакующий', defense: 'Защитный', universal: 'Универсальный' };
   var styleText = styleNames[myPlayer.playStyle || 'universal'];
 
+  // Вертикальная аватарка
+  var avatarPortrait = '<div class="avatar-portrait">'+
+    (myPlayer.avatar ? '<img src="'+myPlayer.avatar+'" alt="" data-avatar-src="'+myPlayer.avatar+'">' : '<div class="ini" style="background:'+avColor(myPlayer.id)+'">'+initials(myPlayer)+'</div>')+
+    '</div>';
+
   var html='<div class="sec-title">Мой кабинет</div>'+
   '<div class="profile-card-premium rise">'+
-        '<div class="avatar-portrait">'+
-      (myPlayer.avatar ? 
-        '<img src="'+myPlayer.avatar+'" alt="" data-avatar-src="'+myPlayer.avatar+'">' : 
-        '<div class="ini" style="background:'+avColor(myPlayer.id)+'">'+initials(myPlayer)+'</div>'
-      )+
-    '</div>'+
+    avatarPortrait+
     '<div style="flex:1">'+
       '<div class="profile-name" style="font-family:var(--fd); font-size:20px; margin-bottom:4px">'+esc(myPlayer.firstName)+' '+esc(myPlayer.lastName)+'</div>'+
       '<div class="profile-phone" style="color:var(--mut); font-size:12px; margin-bottom:8px">'+(currentUser?currentUser.phone:'')+'</div>'+
-      '<div style="display:flex; align-items:center; gap:10px">'+
+      '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">'+
         '<div class="profile-rating-num" style="font-family:var(--fd); font-size:26px; color:var(--ball)">'+eng.R[myPlayer.id]+'</div>'+
         '<div class="profile-style-label">Стиль игры: <b>'+styleText+'</b></div>'+
       '</div>'+
