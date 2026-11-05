@@ -1755,7 +1755,7 @@ function confirmTraining(){
   };
   var newKey=TRAIN_REF.push().key;
   tr.id=newKey;
-  
+  alert('Проверки пройдены. Отправляю в базу...');
   trainingWrite(tr,function(){
     closeModal();
     toast('Тренировка создана!','ok');
