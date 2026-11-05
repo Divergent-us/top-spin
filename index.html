@@ -1998,23 +1998,29 @@ function viewPlayer(pid){
 function viewRating(eng){
   var list=[].concat(state.players);
   
-  // Сортируем: сначала по рейтингу, но потом разделим на опытных и новичков
   if(ui.ratingSort==='w'){
     list.sort(function(a,b){return playerStats(b.id,eng).w-playerStats(a.id,eng).w||eng.R[b.id]-eng.R[a.id];});
   } else {
     list.sort(function(a,b){return eng.R[b.id]-eng.R[a.id];});
   }
   
-  // Делим игроков на две группы
-  var veterans = list.filter(function(p){ return toursPlayedCount(p.id) >= 3; });
-  var rookies = list.filter(function(p){ return toursPlayedCount(p.id) < 3; });
+  // ЖЕСТКАЯ ПРОВЕРКА: В элиту попадают только те, у кого есть хотя бы 1 сыгранный матч и 3 турнира
+  var veterans = list.filter(function(p){ 
+    var stats = playerStats(p.id, eng);
+    return stats.m > 0 && toursPlayedCount(p.id) >= 3; 
+  });
+  
+  // Все остальные (новички) идут вниз
+  var rookies = list.filter(function(p){ 
+    var stats = playerStats(p.id, eng);
+    return !(stats.m > 0 && toursPlayedCount(p.id) >= 3); 
+  });
 
   var renderRow = function(p, index, isRookie) {
     var st = playerStats(p.id, eng);
     var aw = playerAwards(p.id);
     var awStr = aw.length ? ' ' + aw.map(function(a){return a.emoji;}).join('') : '';
     
-    // Медали только для ветеранов
     var pos = isRookie ? '-' : (index + 1);
     var pClass = isRookie ? 'rookie-row' : (index===0?'top1':index===1?'top2':index===2?'top3':'');
     
@@ -2023,15 +2029,15 @@ function viewRating(eng){
     var level = r < 250 ? 'Новичок' : r < 450 ? 'Любитель' : r < 700 ? 'Разрядник' : r < 900 ? 'КМС' : 'Мастер';
 
     if (isRookie) {
-      // Стиль для новичков (маленький и тусклый)
+      // Если матчей 0, пишем "Нет игр"
+      var subText = st.m === 0 ? 'Нет игр' : 'Мало игр ('+st.m+')';
       return '<div class="rating-row" style="opacity:0.6; padding:8px 12px;" data-action="openPlayer" data-id="'+p.id+'">'+
         '<div class="rating-info">'+
-          '<div style="font-size:13px; font-weight:600; color:var(--mut)">'+esc(p.firstName)+' '+esc(p.lastName)+' <span style="font-size:10px">(Новичок)</span></div>'+
+          '<div style="font-size:13px; font-weight:600; color:var(--mut)">'+esc(p.firstName)+' '+esc(p.lastName)+' <span style="font-size:10px">('+subText+')</span></div>'+
         '</div>'+
         '<div class="rating-val" style="font-size:16px; color:var(--mut)">'+r+'</div>'+
       '</div>';
     } else {
-      // Стиль для опытных (как было)
       return '<div class="rating-row '+pClass+'" data-action="openPlayer" data-id="'+p.id+'">'+
         '<div class="rating-pos">'+pos+'</div>'+
         '<div class="rating-info">'+
@@ -2048,7 +2054,7 @@ function viewRating(eng){
 
   var html = '<div class="rating-hero" style="padding: 16px 20px; text-align: left; margin-bottom: 15px;">'+
     '<h2 style="font-size: 20px; margin-bottom: 4px;">🏆 Элита клуба</h2>'+
-    '<p style="font-size: 12px; line-height: 1.3;">Опытные игроки (3+ турнира). Новички не участвуют в гонке за медали.</p>'+
+    '<p style="font-size: 12px; line-height: 1.3;">Опытные игроки (3+ турнира и есть матчи). Новички не участвуют в гонке за медали.</p>'+
   '</div>'+
   '<div class="seg" style="width:100%; display:flex; margin-bottom:15px">'+
     '<button class="'+(ui.ratingSort==='r'?'on':'')+'" style="flex:1" data-action="sortR">По рейтингу</button>'+
@@ -2057,9 +2063,8 @@ function viewRating(eng){
   
   '<div class="rating-list rise">'+(veteransHtml || '<div class="empty"><b>Пока нет опытных игроков</b></div>')+'</div>';
 
-  // Добавляем блок новичков, если они есть
   if (rookies.length > 0) {
-    html += '<div class="sec-title" style="margin-top:24px; font-size:12px; opacity:0.7">Остальные участники (Новички)</div>';
+    html += '<div class="sec-title" style="margin-top:24px; font-size:12px; opacity:0.7">Остальные участники</div>';
     html += '<div class="rating-list">'+rookiesHtml+'</div>';
   }
 
