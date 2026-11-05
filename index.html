@@ -1755,7 +1755,7 @@ function trainingDelete(id, cb){
 }
 function newTraining(){var my=getPlayerByPhone(myPhone());if(!my){toast('Сначала создайте профиль','err');return;}var today=new Date().toISOString().slice(0,10);modal('<button class="modal-x" data-action="closeModal">✕</button><h3>🏓 Буду тренироваться</h3><div class="mut small">Создайте заявку. Все игроки и админ увидят её мгновенно.</div><label>Дата</label><input id="trD" type="date" value="'+today+'"><label>Время</label><input id="trT" type="time" value="18:00"><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="confirmTraining">Создать</button></div>');}
 function confirmTraining(){
- alert('Кнопка нажата! Начинаю создание.');
+ 
   var my=getPlayerByPhone(myPhone());
   if(!my){toast('Сначала создайте профиль','err');return;}
   var d=(document.querySelector('#trD')?document.querySelector('#trD').value:'');
@@ -1774,7 +1774,7 @@ function confirmTraining(){
   };
   var newKey=TRAIN_REF.push().key;
   tr.id=newKey;
-  alert('Проверки пройдены. Отправляю в базу...');
+  
   trainingWrite(tr,function(){
     closeModal();
     toast('Тренировка создана!','ok');
