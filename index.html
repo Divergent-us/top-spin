@@ -1710,6 +1710,25 @@ function viewTournamentDetail(tid){
   }
   return html;
 }
+ function trainingWrite(tr, cb){
+  if(!TRAIN_REF){
+    toast('Нет связи с сервером', 'err');
+    return;
+  }
+  TRAIN_REF.child(tr.id).set(tr).then(function(){
+    if(cb) cb();
+  }).catch(function(e){
+    alert('Ошибка сохранения в Firebase: ' + e.message);
+    toast('Ошибка сохранения', 'err');
+  });
+}
+
+function trainingDelete(id, cb){
+  if(!TRAIN_REF) return;
+  TRAIN_REF.child(id).remove().then(function(){
+    if(cb) cb();
+  }).catch(function(){});
+}
  function initTrainings(){
   if(!dbRef){
     TRAIN_BOOT = true;
