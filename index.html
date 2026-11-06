@@ -1460,7 +1460,7 @@ function manageMatches(tid){
       var pBName = pNameRaw(m.playerBId).split(' ')[0];
       
       return '<button class="card" data-action="resultFromManage" data-id="'+m.id+'" data-tid="'+tid+'" style="background:'+bg+'; border-color:'+border+'; padding:10px; text-align:left; cursor:pointer; color:var(--txt)">'+
-        '<div style="font-size:11px; color:var(--mut); margin-bottom:4px; display:flex; justify-content:space-between"><span>'+(m.time||'')+'</span><span>'+(played?'✅':'⏳')+'</span></div>'+
+           '<div style="font-size:11px; color:var(--mut); margin-bottom:4px; display:flex; justify-content:space-between"><span style="color:var(--blue); font-weight:700">'+(m.time ? '🕑 '+m.time : '—')+'</span><span>'+(played?'✅':'⏳')+'</span></div>'+
         '<div style="font-weight:700; font-size:13px; line-height:1.2">'+pAName+'<br><span style="color:var(--dim); font-size:10px; font-weight:normal">vs</span><br>'+pBName+'</div>'+
         (played ? '<div style="font-family:var(--fd); font-size:16px; color:var(--ball); margin-top:6px; text-align:right">'+sc[0]+':'+sc[1]+'</div>' : '')+
       '</button>';
