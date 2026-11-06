@@ -2480,11 +2480,14 @@ function teamModal(tid,teamId){
 }
  function autoGenerateMatches(tid){
   var t = tourn(tid);
-  if(!t || !t.playerIds || t.playerIds.length < 2) {
-    toast('Нужно минимум 2 участника', 'err'); return;
+  if(!t) return;
+  
+  var ids = t.playerIds || [];
+  if(ids.length < 2) {
+    toast('Нужно минимум 2 участника', 'err'); 
+    return;
   }
   
-  var ids = t.playerIds;
   var newMatchesCount = 0;
   
   for (var i = 0; i < ids.length; i++) {
@@ -2492,11 +2495,17 @@ function teamModal(tid,teamId){
       var pA = ids[i];
       var pB = ids[j];
       
-      var exists = state.matches.some(function(m){
-        return m.tournamentId === tid && 
-              ((m.playerAId === pA && m.playerBId === pB) || 
-               (m.playerAId === pB && m.playerBId === pA));
-      });
+      // Проверяем, есть ли уже такая пара
+      var exists = false;
+      for (var k = 0; k < state.matches.length; k++) {
+        var m = state.matches[k];
+        if (m.tournamentId === tid) {
+          if ((m.playerAId === pA && m.playerBId === pB) || (m.playerAId === pB && m.playerBId === pA)) {
+            exists = true;
+            break;
+          }
+        }
+      }
       
       if (!exists) {
         state.matches.push({
@@ -2504,7 +2513,7 @@ function teamModal(tid,teamId){
           tournamentId: tid,
           playerAId: pA,
           playerBId: pB,
-          time: '', // Время пока пустое, заполнится при вводе счета
+          time: '', 
           sets: null
         });
         newMatchesCount++;
@@ -2513,9 +2522,9 @@ function teamModal(tid,teamId){
   }
   
   if(newMatchesCount > 0) {
-    save();
+    save(); // Сохраняем в базу
     toast('Создано пар: ' + newMatchesCount, 'ok');
-    manageMatches(tid);
+    manageMatches(tid); // Перерисовываем окно
   } else {
     toast('Все пары уже созданы', 'err');
   }
