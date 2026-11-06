@@ -1882,6 +1882,8 @@ function challengesHtml(pid){
   var list = computeChallenges(pid);
   var doneCount = list.filter(function(c){return c.cur>=c.goal;}).length;
   var totalPct = Math.round((doneCount / list.length) * 100);
+  var endDate = new Date(weekRange()[1] + 1);
+  var endStr = endDate.getDate() + ' ' + MONF[endDate.getMonth()];
 
   var items = list.map(function(c){
     var done = c.cur >= c.goal;
@@ -1899,7 +1901,7 @@ function challengesHtml(pid){
 
   return '<div class="challenges">' +
     '<div class="ch-title">🎯 Челленджи недели</div>' +
-    '<div class="ch-sub">Выполняй задания и получай внутренние баллы клуба!</div>' +
+    '<div class="ch-sub">Выполняй задания и получай внутренние баллы клуба! До конца недели (' + endStr + '):</div>' +
     '<div class="ch-total">' +
       '<div class="ch-total-bar"><i style="width:' + totalPct + '%"></i></div>' +
       '<span>Выполнено ' + doneCount + ' из ' + list.length + '</span>' +
