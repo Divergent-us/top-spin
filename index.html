@@ -2173,12 +2173,25 @@ function viewRating(eng){
 function viewAwards(){
   var eng = engine();
   var autoAwards = computeAutoAwards(eng);
-  var manualAwards = [].concat(state.awards).sort(function(a,b){return String(b.date||'').localeCompare(String(a.date||''));});
   
-  autoAwards.forEach(function(a){ if(!a.date) a.date = new Date().toISOString().slice(0,10); });
+  // 1. Берем из базы ручные награды
+  var manualAwards = [].concat(state.awards).filter(function(a){ return !a.auto; });
+  
+  // 2. Берем из базы автонаграды, которые уже были зафиксированы ранее
+  var savedAutoAwards = [].concat(state.awards).filter(function(a){ return a.auto; });
+  
+  // 3. Добавляем новые автонаграды, которых еще нет в базе (и ставим им дату)
+  autoAwards.forEach(function(a){
+    var existing = savedAutoAwards.find(function(x){ return x.title === a.title && x.playerId === a.playerId; });
+    if (!existing) {
+      a.auto = true;
+      a.date = new Date().toISOString().slice(0,10); // Фиксируем сегодняшнюю дату
+      savedAutoAwards.push(a);
+    }
+  });
 
-  // ЖЕСТКИЙ ФИЛЬТР: минимум 1 матч и минимум 3 турнира
-  var allAwards = autoAwards.concat(manualAwards).filter(function(a){ 
+  // 4. Объединяем и применяем правило "минимум 3 турнира"
+  var allAwards = manualAwards.concat(savedAutoAwards).filter(function(a){ 
     var stats = playerStats(a.playerId, eng);
     var tours = toursPlayedCount(a.playerId);
     return stats.m > 0 && tours >= 3; 
@@ -2190,7 +2203,7 @@ function viewAwards(){
   if(ui.awardFilter === 'manual') filtered = manualAwards.filter(function(a){ 
     return playerStats(a.playerId, eng).m > 0 && toursPlayedCount(a.playerId) >= 3; 
   });
-  if(ui.awardFilter === 'auto') filtered = autoAwards.filter(function(a){ 
+  if(ui.awardFilter === 'auto') filtered = savedAutoAwards.filter(function(a){ 
     return playerStats(a.playerId, eng).m > 0 && toursPlayedCount(a.playerId) >= 3; 
   });
   
