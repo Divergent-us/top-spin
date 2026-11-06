@@ -2478,6 +2478,48 @@ function teamModal(tid,teamId){
   html += '</div>';
   modal(html);
 }
+ function autoGenerateMatches(tid){
+  var t = tourn(tid);
+  if(!t || !t.playerIds || t.playerIds.length < 2) {
+    toast('Нужно минимум 2 участника', 'err'); return;
+  }
+  
+  var ids = t.playerIds;
+  var newMatchesCount = 0;
+  
+  for (var i = 0; i < ids.length; i++) {
+    for (var j = i + 1; j < ids.length; j++) {
+      var pA = ids[i];
+      var pB = ids[j];
+      
+      var exists = state.matches.some(function(m){
+        return m.tournamentId === tid && 
+              ((m.playerAId === pA && m.playerBId === pB) || 
+               (m.playerAId === pB && m.playerBId === pA));
+      });
+      
+      if (!exists) {
+        state.matches.push({
+          id: uid(),
+          tournamentId: tid,
+          playerAId: pA,
+          playerBId: pB,
+          time: '', // Время пока пустое, заполнится при вводе счета
+          sets: null
+        });
+        newMatchesCount++;
+      }
+    }
+  }
+  
+  if(newMatchesCount > 0) {
+    save();
+    toast('Создано пар: ' + newMatchesCount, 'ok');
+    manageMatches(tid);
+  } else {
+    toast('Все пары уже созданы', 'err');
+  }
+}
 function addParticipantModal(tid){var avail=state.players.filter(function(p){return(tourn(tid).playerIds||[]).indexOf(p.id)<0;});if(!avail.length){toast('Все добавлены','err');return;}var items=avail.map(function(p){return'<div class="picker-item" data-action="pickParticipant" data-tid="'+tid+'" data-id="'+p.id+'">'+miniAvatar(p)+'<span class="nm">'+esc(p.firstName+' '+p.lastName)+'</span></div>';}).join('');modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Добавить участника</h3><div class="picker-list">'+items+'</div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Закрыть</button></div>');}
 function pickParticipant(tid,pid){var t=tourn(tid);t.playerIds=t.playerIds||[];if(t.playerIds.indexOf(pid)<0)t.playerIds.push(pid);save();closeModal();render();toast('Добавлен','ok');}
 function addAllParticipants(tid){var t=tourn(tid);t.playerIds=t.playerIds||[];var added=0;state.players.forEach(function(p){if(t.playerIds.indexOf(p.id)<0){t.playerIds.push(p.id);added++;}});save();render();toast('Добавлено '+added,'ok');}
