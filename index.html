@@ -3268,6 +3268,7 @@ function endCall() {
   isMuted = false;
   var btn = document.getElementById('callMuteBtn');
   if (btn) btn.classList.remove('muted');
+ if (callScreen) callScreen.style.display = 'none';
   
   document.querySelectorAll('audio, video').forEach(function(el){
     if (el.hasAttribute('data-lk-track') || el.id === 'localVideo' || el.id === 'remoteVideo') {
@@ -3399,11 +3400,19 @@ var lp=document.getElementById('loginPhone');if(lp)lp.addEventListener('keydown'
 var lc=document.getElementById('loginCode');if(lc)lc.addEventListener('keydown',function(e){if(e.key==='Enter')verifyPhoneCode();});
 var ap=document.getElementById('adminPass');if(ap)ap.addEventListener('keydown',function(e){if(e.key==='Enter')adminLogin();});
 document.addEventListener('click',function(e){
-var av=e.target&&e.target.closest?e.target.closest('[data-avatar-src]'):null;
+  // Принудительно прячем экран звонка при старте
+  try { 
+    var cs = document.getElementById('callScreen'); 
+    if(cs) { 
+      cs.classList.remove('active'); 
+      cs.style.display = 'none'; 
+    } 
+  } catch(e) {}var av=e.target&&e.target.closest?e.target.closest('[data-avatar-src]'):null;
 if(av){e.preventDefault();e.stopPropagation();openLightbox(av.getAttribute('data-avatar-src'));return;}
 var el=e.target&&e.target.closest?e.target.closest('[data-action]'):null;
 if(el)dispatch(el);
-});})();/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
+});
+})();/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
 var LIVEKIT_URL = "wss://topspin-club-lmgx3s0y.livekit.cloud";
 var callRoom = null;
 var isMuted = false;
