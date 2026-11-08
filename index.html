@@ -2041,13 +2041,15 @@ function viewPlayer(pid){
   var styleNames = { attack: 'Атакующий', defense: 'Защитный', universal: 'Универсальный' };
   var styleText = styleNames[p.playStyle || 'universal'];
   var r = eng.R[pid];
-  var level = r < 300 ? 'Любитель' : r < 600 ? 'Продвинутый' : 'Мастер';
+  var level = r < 250 ? 'Новичок' : r < 450 ? 'Любитель' : r < 700 ? 'Разрядник' : r < 900 ? 'КМС' : 'Мастер';
 
+  // Вертикальная аватарка
   var avatarPortrait = '<div class="avatar-portrait-lg">'+
     (p.avatar ? '<img src="'+p.avatar+'" alt="" data-avatar-src="'+p.avatar+'">' : '<div class="ini" style="background:'+avColor(p.id)+'">'+initials(p)+'</div>')+
     '</div>';
 
   var html = '<button class="backlink" data-action="backPlayers">← Все игроки</button>'+
+  
   '<div class="profile-header-new rise">'+
     '<div class="profile-av-side">'+avatarPortrait+'</div>'+
     '<div class="profile-info-side">'+
@@ -2065,18 +2067,26 @@ function viewPlayer(pid){
         '<span class="mini-stat">Побед: <b>'+st.w+'</b></span>'+
         '<span class="mini-stat">Серия: <b>'+st.streak+'</b> 🔥</span>'+
       '</div>'+
-      '<div class="profile-graph-wrap" style="color:var(--green)">'+spark(eng.hist[pid],140,40)+'</div>'+
     '</div>'+
     (isAdminMode?'<button class="iconbtn" data-action="editPlayer" data-id="'+pid+'" style="position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.1)">✎</button>':'')+
-  '</div>'+
+  '</div>';
+
+  // ВЫНОСИМ ГРАФИК В ОТДЕЛЬНУЮ КАРТОЧКУ (как в личном кабинете)
+  html += '<div class="card rise" style="margin-top:12px; padding:14px">'+
+          '<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px">'+
+            '<div class="count-lbl">📈 Динамика рейтинга</div>'+
+            '<div style="font-family:var(--fd); font-size:20px; color:var(--green)">'+r+'</div>'+
+          '</div>'+
+          '<div style="color:var(--green); height:70px;">'+spark(eng.hist[pid],300,70)+'</div>'+
+        '</div>';
   
-  '<div class="row-actions"><button class="btn ghost w100" data-action="chatWith" data-id="'+pid+'">💬 Написать сообщение</button></div>'+
+  html += '<div class="row-actions"><button class="btn ghost w100" data-action="chatWith" data-id="'+pid+'">💬 Написать сообщение</button></div>';
   
-  (aw.length?'<div class="sec-title">Награды игрока</div><div class="rise">'+aw.map(function(a){return awRowHtml(a);}).join('')+'</div>':'')+
+  html += (aw.length?'<div class="sec-title">Награды игрока</div><div class="rise">'+aw.map(function(a){return awRowHtml(a);}).join('')+'</div>':'');
   
-  '<div class="statgrid rise" style="margin-top:16px"><div class="stat"><b>'+st.m+'</b><span>матчей</span></div><div class="stat"><b>'+st.w+'</b><span>побед</span></div><div class="stat"><b>'+st.l+'</b><span>поражений</span></div><div class="stat"><b>'+st.winp+'%</b><span>% побед</span></div><div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div><div class="stat"><b>'+st.bw+':'+st.bl+'</b><span>мячи</span></div></div>'+
+  html += '<div class="statgrid rise" style="margin-top:16px"><div class="stat"><b>'+st.m+'</b><span>матчей</span></div><div class="stat"><b>'+st.w+'</b><span>побед</span></div><div class="stat"><b>'+st.l+'</b><span>поражений</span></div><div class="stat"><b>'+st.winp+'%</b><span>% побед</span></div><div class="stat"><b>'+st.sw+':'+st.sl+'</b><span>сеты</span></div><div class="stat"><b>'+st.bw+':'+st.bl+'</b><span>мячи</span></div></div>';
   
-  (history.length?'<div class="sec-title">Последние матчи</div><div class="card rise">'+history.map(function(m){var isA=m.playerAId===pid;var opp=isA?m.playerBId:m.playerAId;var w=matchWinner(m)===pid;var sc=setsCountArr(m.sets);return'<div class="mover"><div style="flex:1"><b>'+pName(opp)+'</b><small>'+(isA?sc[0]+':'+sc[1]:sc[1]+':'+sc[0])+'</small></div><span class="delta '+(w?'up':'down')+'">'+(w?'W':'L')+'</span></div>';}).join('')+'</div>':'');
+  html += (history.length?'<div class="sec-title">Последние матчи</div><div class="card rise">'+history.map(function(m){var isA=m.playerAId===pid;var opp=isA?m.playerBId:m.playerAId;var w=matchWinner(m)===pid;var sc=setsCountArr(m.sets);return'<div class="mover"><div style="flex:1"><b>'+pName(opp)+'</b><small>'+(isA?sc[0]+':'+sc[1]:sc[1]+':'+sc[0])+'</small></div><span class="delta '+(w?'up':'down')+'">'+(w?'W':'L')+'</span></div>';}).join('')+'</div>':'');
   
   return html;
 }
