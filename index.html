@@ -1466,6 +1466,48 @@ function menuModal(){
                  
   document.body.classList.add('locked');
 }
+ function speakMatchQueue(tid){
+  if (!('speechSynthesis' in window)) {
+    toast('Браузер не поддерживает озвучку', 'err');
+    return;
+  }
+
+  var ms = state.matches.filter(function(m){ return m.tournamentId === tid && (!m.sets || m.sets.length === 0); });
+  
+  if (ms.length === 0) {
+    toast('Все матчи уже сыграны!', 'err');
+    return;
+  }
+
+  var current = ms[0];
+  var next = ms.length > 1 ? ms[1] : null;
+
+  var text = "Внимание! На стол приглашается пара: " + pNameRaw(current.playerAId) + " и " + pNameRaw(current.playerBId) + ". ";
+  if (next) {
+    text += "Готовится следующая пара: " + pNameRaw(next.playerAId) + " и " + pNameRaw(next.playerBId) + ".";
+  } else {
+    text += "Это последняя пара в турнире.";
+  }
+
+  // Останавливаем предыдущую озвучку, если она была
+  window.speechSynthesis.cancel();
+
+  var utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'ru-RU'; // Русский голос
+  utterance.rate = 0.95;    // Чуть медленнее для важности
+  utterance.pitch = 1.0;
+  
+  // Ищем мужской русский голос (если есть)
+  var voices = window.speechSynthesis.getVoices();
+  var ruVoice = voices.find(function(v){ return v.lang.includes('ru') && v.name.includes('Yuri'); }) 
+             || voices.find(function(v){ return v.lang.includes('ru') && v.name.includes('Dmitry'); }) 
+             || voices.find(function(v){ return v.lang.includes('ru'); });
+  
+  if (ruVoice) utterance.voice = ruVoice;
+
+  window.speechSynthesis.speak(utterance);
+  toast('Озвучка запущена', 'ok');
+}
 function manageMatches(tid){
   var t=tourn(tid);
   if(!t)return;
@@ -1519,11 +1561,21 @@ function manageMatches(tid){
   }
   html += '</div>';
 
-  // Кнопки управления
-  html += '<div class="row-actions" style="display:grid; grid-template-columns:1fr 1fr; gap:8px">';
-  html += '<button class="btn primary" data-action="autoGenerateMatches" data-tid="'+tid+'">⚡ Создать все пары</button>';
+   // Кнопки управления
+  html += '<div class="row-actions" style="display:flex; flex-direction:column; gap:8px">';
+  
+  // НОВАЯ КНОПКА ОЗВУЧКИ (показывается только если есть несыгранные матчи)
+  if (ms.some(function(m){ return !m.sets || m.sets.length === 0; })) {
+    html += '<button class="btn" style="background:linear-gradient(180deg,#41e08d,#2f7d3a); color:#0a1424; font-weight:800" onclick="speakMatchQueue(\''+tid+'\')">🔊 Озвучить очередь</button>';
+  }
+
+  // Остальные кнопки в две колонки
+  html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">';
+  html += '<button class="btn primary" data-action="autoGenerateMatches" data-tid="'+tid+'">⚡ Создать пары</button>';
   html += '<button class="btn ghost" data-action="addMatchFromManage" data-tid="'+tid+'">＋ Своя пара</button>';
-  html += '<button class="btn ghost" style="grid-column: span 2" data-action="addParticipant" data-tid="'+tid+'">👤 Добавить участника</button>';
+  html += '</div>';
+  
+  html += '<button class="btn ghost w100" data-action="addParticipant" data-tid="'+tid+'">👤 Добавить участника</button>';
   html += '</div>';
   
   modal(html);
