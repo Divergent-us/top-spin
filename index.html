@@ -2742,23 +2742,7 @@ function saveResult(){
   toast('Сохранено. Время игры: ' + m.time, 'ok');
 }
   
-  // ФИКСИРУЕМ РЕАЛЬНОЕ ВРЕМЯ ИГРЫ
-  var now = new Date();
-  m.time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-  
-  save();
-  playSound('matchEnd');
-  closeModal();
-  
-  if(__returnTo){
-    var rt=__returnTo;
-    __returnTo=null;
-    manageMatches(rt); // Возвращаем в окно управления
-  }else{
-    render();
-  }
-  toast('Результат сохранён (' + m.time + ')','ok');
-}
+ 
 function clearResult(){var m=state.matches.find(function(x){return x.id===__rmid;});m.sets=null;save();closeModal();if(__returnTo){var rt=__returnTo;__returnTo=null;manageMatches(rt);}else{render();}}
 function awardModal(){if(!isAdminMode)return;if(!state.players.length)return;var emo=['🏆','⭐','🎖','👑','💎','🔥','🎯','⚡','🥇','️'];__emo='';modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Вручить награду</h3><label>Игрок</label><select id="awP">'+state.players.map(function(p){return'<option value="'+p.id+'">'+esc(p.firstName+' '+p.lastName)+'</option>';}).join('')+'</select><label>Награда</label><div class="emorow">'+emo.map(function(e,i){return'<button class="emopt '+(i===0?'on':'')+'" data-action="emo" data-emo="'+e+'">'+e+'</button>';}).join('')+'</div><label>Название</label><input id="awT"><label>Турнир</label><select id="awTid"><option value="">— без турнира —</option>'+state.tournaments.map(function(t){return'<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join('')+'</select><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveAward">Вручить</button></div>');}
 function pickEmoji(btn,e){__emo=e;document.querySelectorAll('.emopt').forEach(function(b){b.classList.toggle('on',b===btn);});}
