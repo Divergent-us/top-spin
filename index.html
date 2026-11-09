@@ -2695,6 +2695,24 @@ function saveResult(){
   
   m.sets=cs.sets;
   
+  // ФИКСИРУЕМ ФАКТИЧЕСКОЕ ВРЕМЯ
+  var now = new Date();
+  m.time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  
+  save();
+  playSound('matchEnd');
+  closeModal();
+  
+  if(__returnTo){
+    var rt=__returnTo;
+    __returnTo=null;
+    manageMatches(rt); // Возвращаем в окно управления
+  }else{
+    render();
+  }
+  toast('Сохранено. Время игры: ' + m.time, 'ok');
+}
+  
   // ФИКСИРУЕМ РЕАЛЬНОЕ ВРЕМЯ ИГРЫ
   var now = new Date();
   m.time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
