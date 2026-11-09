@@ -1955,7 +1955,46 @@ function joinTraining(id){var my=getPlayerByPhone(myPhone());if(!my){toast('Сн
 function leaveTraining(id){var my=getPlayerByPhone(myPhone());if(!my&&!isAdminMode){toast('Профиль не найден','err');return;}var tr=(state.trainings||[]).find(function(x){return x.id===id;});if(!tr)return;var isCreator=(my&&(tr.creatorId===my.id||((tr.creatorPhone||'')!==''&&tr.creatorPhone===myPhone())));if(my){tr.participantIds=(tr.participantIds||[]).filter(function(x){return x!==my.id;});}var remove=isCreator||isAdminMode||(tr.participantIds||[]).length===0;if(remove){trainingDelete(id,function(){toast('Тренировка удалена у всех');});}else{trainingWrite(tr,function(){toast('Вы отписались');});}}
 /* ===== ЧЕЛЛЕНДЖИ ===== */
 function weekRange(){var d=new Date();var day=(d.getDay()+6)%7;var s=new Date(d);s.setHours(0,0,0,0);s.setDate(s.getDate()-day);var e=new Date(s.getTime()+7*86400000-1);return[s.getTime(),e.getTime()];}
-function computeChallenges(pid){var wr=weekRange();var ws=wr[0],we=wr[1];var ms=state.matches.filter(function(m){var tm=mKey(m);return tm>=ws&&tm<=we&&m.sets&&m.sets.length&&matchWinner(m)&&(m.playerAId===pid||m.playerBId===pid);}).sort(function(a,b){return mKey(a)-mKey(b);});var played=ms.length;var wins=ms.filter(function(m){return matchWinner(m)===pid;}).length;var opp={};ms.forEach(function(m){var o=(m.playerAId===pid)?m.playerBId:m.playerAId;opp[o]=1;});var oppCount=Object.keys(opp).length;var streak=0,maxStreak=0;ms.forEach(function(m){if(matchWinner(m)===pid){streak++;if(streak>maxStreak)maxStreak=streak;}else{streak=0;}});var trJoined=(state.trainings||[]).filter(function(tr){var t=trainingMs(tr);return t>=ws&&t<=we&&(tr.participantIds||[]).indexOf(pid)>=0;}).length;return[{emoji:'🏓',title:'Сыграть 5 матчей за неделю',goal:5,cur:played},{emoji:'🏆',title:'Одержать 3 победы',goal:3,cur:wins},{emoji:'🤝',title:'Сразиться с 3 разными соперниками',goal:3,cur:oppCount},{emoji:'🔥',title:'Серия из 2 побед подряд',goal:2,cur:maxStreak},{emoji:'🎽',title:'Попасть на 1 тренировку',goal:1,cur:trJoined}];}
+function computeChallenges(pid){
+  var wr = weekRange();
+  var ws = wr[0], we = wr[1];
+  
+  // Получаем все матчи игрока за неделю
+  var ms = state.matches.filter(function(m){
+    var tm = mKey(m);
+    return tm >= ws && tm <= we && m.sets && m.sets.length && matchWinner(m) && (m.playerAId === pid || m.playerBId === pid);
+  }).sort(function(a,b){ return mKey(a) - mKey(b); });
+  
+  // Считаем УНИКАЛЬНЫЕ турниры на этой неделе
+  var uniqueTours = {};
+  ms.forEach(function(m){ uniqueTours[m.tournamentId] = true; });
+  var toursCount = Object.keys(uniqueTours).length;
+
+  var wins = ms.filter(function(m){ return matchWinner(m) === pid; }).length;
+  
+  var opp = {};
+  ms.forEach(function(m){ var o = (m.playerAId === pid) ? m.playerBId : m.playerAId; opp[o] = 1; });
+  var oppCount = Object.keys(opp).length;
+  
+  var streak = 0, maxStreak = 0;
+  ms.forEach(function(m){ 
+    if(matchWinner(m) === pid){ streak++; if(streak > maxStreak) maxStreak = streak; } 
+    else { streak = 0; } 
+  });
+  
+  var trJoined = (state.trainings || []).filter(function(tr){
+    var t = trainingMs(tr);
+    return t >= ws && t <= we && (tr.participantIds || []).indexOf(pid) >= 0;
+  }).length;
+  
+  return [
+    { emoji: '🏆', title: 'Сыграть 4 турнира за неделю', goal: 4, cur: toursCount },
+    { emoji: '🎯', title: 'Одержать 3 победы', goal: 3, cur: wins },
+    { emoji: '🤝', title: 'Сразиться с 3 разными соперниками', goal: 3, cur: oppCount },
+    { emoji: '🔥', title: 'Серия из 2 побед подряд', goal: 2, cur: maxStreak },
+    { emoji: '🎽', title: 'Попасть на 1 тренировку', goal: 1, cur: trJoined }
+  ];
+}
 function challengesHtml(pid){
   var list = computeChallenges(pid);
   var doneCount = list.filter(function(c){return c.cur>=c.goal;}).length;
