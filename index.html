@@ -1828,9 +1828,16 @@ function viewTournamentDetail(tid){
   var ptags=ids.map(function(pid){var p=player(pid);return p?'<span class="ptag">'+miniAvatar(p)+'<span>'+esc(p.firstName+' '+p.lastName)+'</span></span>':'';}).join('');
   html+='<div class="sec-title">Записаны на турнир <span class="cnt">'+ids.length+'</span></div><div class="card rise"><div class="ptags">'+(ptags||'<span class="mut small">Пока никто не записан</span>')+'</div></div>';
   
-  if(stnd.length){
-    html+='<div class="sec-title">Таблица турнира</div><div class="card rise" style="overflow-x:auto"><table class="tbl"><tr><th>#</th><th>Игрок</th><th>В-П</th><th>Сеты</th><th>Мячи</th></tr>';
-    stnd.forEach(function(r,i){var p=player(r.pid);html+='<tr><td class="rk">'+(i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+r.pid+'">'+esc(p?p.firstName+' '+p.lastName:'—')+'</td><td>'+r.w+'В-'+r.l+'П</td><td>'+r.sw+':'+r.sl+'</td><td>'+r.bw+':'+r.bl+'</td></tr>';});
+   if(stnd.length){
+    html+='<div class="sec-title">Таблица турнира</div><div class="card rise" style="overflow-x:auto"><table class="tbl"><tr><th>#</th><th>Игрок</th><th>В-П</th><th>Сеты</th><th>Время</th></tr>';
+    stnd.forEach(function(r,i){
+      var p=player(r.pid);
+      // Ищем последний матч этого игрока в этом турнире, чтобы показать время
+      var playerMatches = mAll.filter(function(m){ return m.sets && m.sets.length > 0 && (m.playerAId === r.pid || m.playerBId === r.pid); });
+      var lastMatchTime = playerMatches.length > 0 ? playerMatches[playerMatches.length - 1].time : '—';
+      
+      html+='<tr><td class="rk">'+(i+1)+'</td><td class="nm" data-action="openPlayer" data-id="'+r.pid+'">'+esc(p?p.firstName+' '+p.lastName:'—')+'</td><td>'+r.w+'В-'+r.l+'П</td><td>'+r.sw+':'+r.sl+'</td><td style="font-size:11px; color:var(--mut)">🕑 '+lastMatchTime+'</td></tr>';
+    });
     html+='</table></div>';
   }
   return html;
