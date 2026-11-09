@@ -2686,7 +2686,28 @@ function saveMatch(tid,mid){var a=(document.querySelector('#mA')?document.queryS
 function delMatch(mid){confirmBox('Удалить встречу?',function(){state.matches=state.matches.filter(function(m){return m.id!==mid;});save();if(__returnTo){var rt=__returnTo;__returnTo=null;manageMatches(rt);}else{render();}});}
 function roundRobin(ids){var a=[].concat(ids);if(a.length%2)a.push(null);var n=a.length,res=[];for(var r=0;r<n-1;r++){for(var i=0;i<n/2;i++){var x=a[i],y=a[n-1-i];if(x&&y)res.push(r%2?[y,x]:[x,y]);}a.splice(1,0,a.pop());}return res;}
 function addMinutes(hm,mins){var parts=(hm||'10:00').split(':');var tot=(((+parts[0])*60+(+parts[1])+mins)%1440+1440)%1440;return p2(Math.floor(tot/60))+':'+p2(tot%60);}
-function resultSheet(mid){if(!isAdminMode)return;var m=state.matches.find(function(x){return x.id===mid;});var t=tourn(m.tournamentId);__rmid=mid;var sets=(m.sets&&m.sets.length)?m.sets:[[null,null]];modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Результат матча</h3><div class="vshead"><span></span><div class="side">'+pName(m.playerAId)+'</div><div class="vs">VS</div><div class="side">'+pName(m.playerBId)+'</div><span></span></div><div id="setsWrap">'+sets.map(function(s,i){return setRowHtml(i,s[0],s[1]);}).join('')+'</div><button class="btn ghost sm" data-action="addSet">＋ Сет</button><div class="tally" id="tallyBox"></div><div class="rprev" id="rprev"></div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveResult">Сохранить</button></div>'+(m.sets?'<button class="btn danger w100" data-action="clearResult">Убрать результат</button>':''));resultPreview();}
+function resultSheet(mid){
+  if(!isAdminMode)return;
+  var m=state.matches.find(function(x){return x.id===mid;});
+  var t=tourn(m.tournamentId);
+  __rmid=mid;
+  var sets=(m.sets&&m.sets.length)?m.sets:[[null,null]];
+  
+  // Берем время из матча, если оно есть. Если нет — ставим текущее время
+  var defaultTime = m.time;
+  if (!defaultTime) {
+    var now = new Date();
+    defaultTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  }
+
+  modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Результат матча</h3>'+
+  '<div style="display:flex; gap:10px; align-items:center; margin-bottom:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:10px">'+
+    '<label style="margin:0; flex:1">Время игры:</label>'+
+    '<input id="matchTimeInput" type="time" value="'+defaultTime+'" style="width:120px; padding:8px; text-align:center">'+
+  '</div>'+
+  '<div class="vshead"><span></span><div class="side">'+pName(m.playerAId)+'</div><div class="vs">VS</div><div class="side">'+pName(m.playerBId)+'</div><span></span></div><div id="setsWrap">'+sets.map(function(s,i){return setRowHtml(i,s[0],s[1]);}).join('')+'</div><button class="btn ghost sm" data-action="addSet">＋ Сет</button><div class="tally" id="tallyBox"></div><div class="rprev" id="rprev"></div><div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button><button class="btn primary" data-action="saveResult">Сохранить</button></div>'+(m.sets?'<button class="btn danger w100" data-action="clearResult">Убрать результат</button>':''));
+  resultPreview();
+}
 function setRowHtml(i,a,b){return'<div class="setrow"><span class="setlabel">Сет '+(i+1)+'</span><input type="number" class="setin pa" value="'+((a==null)?'':a)+'" oninput="resultPreview()"><span class="colon">:</span><input type="number" class="setin pb" value="'+((b==null)?'':b)+'" oninput="resultPreview()"><button class="iconbtn rm" data-action="rmSet">✕</button></div>';}
 function addSetRow(){var wrap=document.getElementById('setsWrap');if(!wrap)return;if(wrap.children.length>=MAX_SETS){toast('Максимум '+MAX_SETS,'err');return;}wrap.insertAdjacentHTML('beforeend',setRowHtml(wrap.children.length,null,null));resultPreview();}
 function collectSets(){var sets=[];var bad=false;document.querySelectorAll('#setsWrap .setrow').forEach(function(r){var a=r.querySelector('.pa').value,b=r.querySelector('.pb').value;if(a===''&&b==='')return;if(a===''||b===''||a===b){bad=true;return;}sets.push([+a,+b]);});return{sets:sets,bad:bad};}
