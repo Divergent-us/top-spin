@@ -2721,12 +2721,13 @@ function saveResult(){
   var sc=setsCountArr(cs.sets);
   if(sc[0]===sc[1]){toast('Счёт сетов равный','err');return;}
   
+  // БЕРЕМ ВРЕМЯ ИЗ ПОЛЯ ВВОДА
+  var timeInput = document.getElementById('matchTimeInput');
+  if (timeInput && timeInput.value) {
+    m.time = timeInput.value;
+  }
+  
   m.sets=cs.sets;
-  
-  // ФИКСИРУЕМ ФАКТИЧЕСКОЕ ВРЕМЯ
-  var now = new Date();
-  m.time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-  
   save();
   playSound('matchEnd');
   closeModal();
