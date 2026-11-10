@@ -2029,6 +2029,7 @@ function joinTraining(id){
     
     // ЗДЕСЬ ВЫЗЫВАЕТСЯ ОЗВУЧКА
     if (typeof speakEncouragement === 'function') {
+     alert('Передаю текст в Java: ' + playerName + ', ' + actionText);
       speakEncouragement(my.firstName, 'ты записан на тренировку');
     }
   });
