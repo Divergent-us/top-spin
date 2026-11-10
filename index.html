@@ -2568,14 +2568,20 @@ function setFontSize(size){if(size==='big'){document.body.classList.add('big-fon
 function toggleSound(){var cur=lsGet('soundEnabled')!=='false';lsSet('soundEnabled',cur?'false':'true');openAppearanceModal();}
 function settingsModal(){
   var dIdEnabled = lsGet('dIdEnabled') === 'true';
-  var rulesBtn = '<div class="row-actions"><button class="btn ghost w100" data-action="showRules" style="border-color:var(--gold); color:var(--gold)">📖 Правила клуба и наград</button></div>';
+  var notifEnabled = lsGet('globalNotifications') !== 'false';
   
+  var rulesBtn = '<div class="row-actions"><button class="btn ghost w100" data-action="showRules" style="border-color:var(--gold); color:var(--gold)">📖 Правила клуба и наград</button></div>';
+  var notifRow = '<div class="toggle-row" data-action="toggleGlobalNotif" style="cursor:pointer; border-color:'+(notifEnabled?'var(--green)':'var(--line)')+'">'
+    + '<input type="checkbox" '+(notifEnabled?'checked':'')+' style="pointer-events:none">'
+    + '<span>🔔 Глобальные Push-уведомления</span></div>';
+
   if(isAdminMode){
     modal('<button class="modal-x" data-action="closeModal">✕</button><h3>Настройки</h3>'
       +'<div class="settings-info">Админ: '+esc(currentUser?currentUser.email:'')+' | Старт='+state.settings.startRating+'</div>'
       +'<label>Стартовый рейтинг</label><input id="setR" type="number" value="'+state.settings.startRating+'">'
       +'<div class="row-actions"><button class="btn primary" data-action="saveSettings">Сохранить</button></div>'
       + rulesBtn
+      + notifRow
       + '<label style="margin-top:15px">Платные модули</label>'
       + '<div class="toggle-row" data-action="toggleDId" style="cursor:pointer; border-color:'+(dIdEnabled?'var(--green)':'var(--line)')+'">'
       + '<input type="checkbox" '+(dIdEnabled?'checked':'')+' style="pointer-events:none">'
