@@ -3740,6 +3740,7 @@ document.addEventListener('click',function(e){
 if(av){e.preventDefault();e.stopPropagation();openLightbox(av.getAttribute('data-avatar-src'));return;}
 var el=e.target&&e.target.closest?e.target.closest('[data-action]'):null;
 if(el)dispatch(el);
+ try { if(lsGet('dIdEnabled') === 'true') loadDIdScript(); } catch(e) {}
 });
    // Жесткая очистка экрана звонка при старте
   setTimeout(function(){
