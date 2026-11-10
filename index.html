@@ -2009,7 +2009,8 @@ function sendPushNotification(title, body, data){
     });
   });
 }
-function joinTraining(id){var my=getPlayerByPhone(myPhone());if(!my){toast('Сначала создайте профиль','err');return;}var tr=(state.trainings||[]).find(function(x){return x.id===id;});if(!tr){toast('Тренировка не найдена','err');return;}if((tr.participantIds||[]).indexOf(my.id)>=0){toast('Вы уже записаны','err');return;}tr.participantIds=tr.participantIds||[];tr.participantIds.push(my.id);trainingWrite(tr,function(){toast('Вы записаны!','ok');});}
+function joinTraining(id){var my=getPlayerByPhone(myPhone());if(!my){toast('Сначала создайте профиль','err');return;}var tr=(state.trainings||[]).find(function(x){return x.id===id;});if(!tr){toast('Тренировка не найдена','err');return;}if((tr.participantIds||[]).indexOf(my.id)>=0){toast('Вы уже записаны','err');return;}tr.participantIds=tr.participantIds||[];tr.participantIds.push(my.id);trainingWrite(tr,function(){toastvar my = getPlayerByPhone(myPhone());
+if (my) speakEncouragement(my.firstName, 'ты записан на тренировку');('Вы записаны!','ok');});}
 function leaveTraining(id){var my=getPlayerByPhone(myPhone());if(!my&&!isAdminMode){toast('Профиль не найден','err');return;}var tr=(state.trainings||[]).find(function(x){return x.id===id;});if(!tr)return;var isCreator=(my&&(tr.creatorId===my.id||((tr.creatorPhone||'')!==''&&tr.creatorPhone===myPhone())));if(my){tr.participantIds=(tr.participantIds||[]).filter(function(x){return x!==my.id;});}var remove=isCreator||isAdminMode||(tr.participantIds||[]).length===0;if(remove){trainingDelete(id,function(){toast('Тренировка удалена у всех');});}else{trainingWrite(tr,function(){toast('Вы отписались');});}}
 /* ===== ЧЕЛЛЕНДЖИ ===== */
 function weekRange(){var d=new Date();var day=(d.getDay()+6)%7;var s=new Date(d);s.setHours(0,0,0,0);s.setDate(s.getDate()-day);var e=new Date(s.getTime()+7*86400000-1);return[s.getTime(),e.getTime()];}
