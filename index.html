@@ -1598,7 +1598,38 @@ function hideLoginScreen(){document.getElementById('loginScreen').style.display=
 function showLoginScreen(){document.getElementById('loginScreen').style.display='flex';document.getElementById('mainHeader').style.display='none';document.getElementById('view').style.display='none';document.getElementById('mainTabbar').style.display='none';showPhoneStep();}
 function logout(){dropPresence();if(authRef&&firebaseUser){authRef.signOut();}lsSet('topspin_session','');currentUser=null;isAdminMode=false;showLoginScreen();}
 function loadPlayerSession(){try{var s=JSON.parse(lsGet('topspin_session'));if(s&&s.role==='player')return s;}catch(e){}return null;}
-function updateSyncIndicator(status){var ind=document.getElementById('syncIndicator');if(!ind)return;ind.className='sync-indicator '+status;if(status==='synced'){ind.innerHTML='<span class="sync-dot"></span>синхр';}else if(status==='error'){ind.innerHTML='<span class="sync-dot"></span>ошибка';}}
+function updateSyncIndicator(status){
+  var ind = document.getElementById('syncIndicator');
+  if(!ind) return;
+  
+  if(status === 'synced'){
+    ind.className = 'sync-indicator synced';
+    ind.innerHTML = '<span class="sync-dot"></span>Сохранено ✓';
+    ind.style.background = 'rgba(65,224,141,0.2)';
+    ind.style.borderColor = 'var(--green)';
+    ind.style.color = 'var(--green)';
+    ind.style.fontWeight = 'bold';
+    
+    // Через 3 секунды возвращаем обычный вид
+    setTimeout(function(){
+      ind.innerHTML = '<span class="sync-dot"></span>синхр';
+      ind.style.background = '';
+      ind.style.borderColor = '';
+      ind.style.color = '';
+      ind.style.fontWeight = '';
+    }, 3000);
+  } else if(status === 'error'){
+    ind.className = 'sync-indicator error';
+    ind.innerHTML = '<span class="sync-dot"></span>Ошибка!';
+    ind.style.background = 'rgba(255,95,107,0.2)';
+    ind.style.borderColor = 'var(--red)';
+    ind.style.color = 'var(--red)';
+    ind.style.fontWeight = 'bold';
+  } else {
+    ind.className = 'sync-indicator';
+    ind.innerHTML = '<span class="sync-dot"></span>синхр';
+  }
+}
 function forceSave(){
   try{
     if(state.players && state.players.length){ lsSet(BAK_KEY, JSON.stringify(state)); }
