@@ -1467,6 +1467,7 @@ function menuModal(){
   document.body.classList.add('locked');
 }
  function speakMatchQueue(tid){
+  alert('Проверка моста: ' + (typeof window.AndroidTTS));
   var ms = state.matches.filter(function(m){ return m.tournamentId === tid && (!m.sets || m.sets.length === 0); });
   if (ms.length === 0) { toast('Все матчи уже сыграны!', 'err'); return; }
 
