@@ -2031,12 +2031,15 @@ function joinTraining(id){
   tr.participantIds.push(my.id);
   
   trainingWrite(tr, function(){
+    // Показываем сообщение
     toast('Вы записаны на тренировку!', 'ok');
-    // ОЗВУЧКА НАПУТСТВИЯ
-    try { speakEncouragement(my.firstName, 'ты записан на тренировку'); } catch(e) {}
+    
+    // Включаем озвучку
+    if (typeof speakEncouragement === 'function') {
+      speakEncouragement(my.firstName, 'ты записан на тренировку');
+    }
   });
 }
-if (my) speakEncouragement(my.firstName, 'ты записан на тренировку');('Вы записаны!','ok');});}
 function leaveTraining(id){var my=getPlayerByPhone(myPhone());if(!my&&!isAdminMode){toast('Профиль не найден','err');return;}var tr=(state.trainings||[]).find(function(x){return x.id===id;});if(!tr)return;var isCreator=(my&&(tr.creatorId===my.id||((tr.creatorPhone||'')!==''&&tr.creatorPhone===myPhone())));if(my){tr.participantIds=(tr.participantIds||[]).filter(function(x){return x!==my.id;});}var remove=isCreator||isAdminMode||(tr.participantIds||[]).length===0;if(remove){trainingDelete(id,function(){toast('Тренировка удалена у всех');});}else{trainingWrite(tr,function(){toast('Вы отписались');});}}
 /* ===== ЧЕЛЛЕНДЖИ ===== */
 function weekRange(){var d=new Date();var day=(d.getDay()+6)%7;var s=new Date(d);s.setHours(0,0,0,0);s.setDate(s.getDate()-day);var e=new Date(s.getTime()+7*86400000-1);return[s.getTime(),e.getTime()];}
