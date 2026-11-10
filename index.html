@@ -2013,30 +2013,20 @@ function sendPushNotification(title, body, data){
 }
 function joinTraining(id){
   var my = getPlayerByPhone(myPhone());
-  if(!my){ 
-    toast('Сначала создайте профиль', 'err'); 
-    return; 
-  }
+  if(!my){ toast('Сначала создайте профиль', 'err'); return; }
   
   var tr = (state.trainings || []).find(function(x){ return x.id === id; });
-  if(!tr){ 
-    toast('Тренировка не найдена', 'err'); 
-    return; 
-  }
+  if(!tr){ toast('Тренировка не найдена', 'err'); return; }
   
-  if((tr.participantIds || []).indexOf(my.id) >= 0){ 
-    toast('Вы уже записаны', 'err'); 
-    return; 
-  }
+  if((tr.participantIds || []).indexOf(my.id) >= 0){ toast('Вы уже записаны', 'err'); return; }
   
   tr.participantIds = tr.participantIds || [];
   tr.participantIds.push(my.id);
   
   trainingWrite(tr, function(){
-    // Показываем сообщение
     toast('Вы записаны на тренировку!', 'ok');
     
-    // Включаем озвучку
+    // ЗДЕСЬ ВЫЗЫВАЕТСЯ ОЗВУЧКА
     if (typeof speakEncouragement === 'function') {
       speakEncouragement(my.firstName, 'ты записан на тренировку');
     }
