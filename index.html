@@ -1980,6 +1980,10 @@ function confirmTraining(){
 
 /* Отправка push через Cloudflare Worker */
 function sendPushNotification(title, body, data){
+ if (lsGet('globalNotifications') === 'false') {
+  console.log('Push-уведомления отключены админом.');
+  return;
+}
   if(!dbRef) return;
   
   // Получаем все токены из базы
