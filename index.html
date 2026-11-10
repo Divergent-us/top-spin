@@ -1478,13 +1478,13 @@ function speakEncouragement(playerName, actionText){
   var randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
   var text = playerName + ", " + actionText + ". " + randomPhrase;
 
-  // 1. ДЛЯ APK (Нативный Java)
-  if (window.AndroidTTS && typeof window.AndroidTTS.speak === 'function') {
+  // Проверка на наличие Java-моста
+  if (typeof window.AndroidTTS !== 'undefined' && window.AndroidTTS !== null) {
     window.AndroidTTS.speak(text);
     return;
   }
 
-  // 2. ДЛЯ БРАУЗЕРА
+  // Если моста нет (браузер)
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     var utterance = new SpeechSynthesisUtterance(text);
@@ -1493,6 +1493,8 @@ function speakEncouragement(playerName, actionText){
     var ruVoice = voices.find(function(v){ return v.lang.includes('ru'); });
     if (ruVoice) utterance.voice = ruVoice;
     window.speechSynthesis.speak(utterance);
+  } else {
+    toast('Озвучка недоступна', 'err');
   }
 }
  function speakMatchQueue(tid){
