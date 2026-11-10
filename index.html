@@ -1943,10 +1943,8 @@ function trainingDelete(id, cb){
   });
 }
 function newTraining(){
-  // Проверяем, кто мы (игрок или админ)
   var my = getPlayerByPhone(myPhone());
   var creatorName = my ? (my.firstName + ' ' + my.lastName) : (isAdminMode ? 'Админ' : 'Гость');
-  
   var today = new Date().toISOString().slice(0, 10);
   
   modal('<button class="modal-x" data-action="closeModal">✕</button><h3>🏓 Буду тренироваться</h3>'+
@@ -1955,37 +1953,6 @@ function newTraining(){
     '<label>Время</label><input id="trT" type="time" value="18:00">'+
     '<div class="row-actions"><button class="btn ghost" data-action="closeModal">Отмена</button>'+
     '<button class="btn primary" data-action="confirmTraining">Создать</button></div>');
-}
-  var my=getPlayerByPhone(myPhone());
-  if(!my){toast('Сначала создайте профиль','err');return;}
-  var d=(document.querySelector('#trD')?document.querySelector('#trD').value:'');
-  var tm=(document.querySelector('#trT')?document.querySelector('#trT').value:'');
-  if(!d||!tm){toast('Укажите дату и время','err');return;}
-  if(!TRAIN_REF){toast('Нет связи с сервером','err');return;}
-  
-  var tr={
-    date:d,
-    time:tm,
-    creatorId:my.id,
-    creatorPhone:myPhone(),
-    participantIds:[my.id],
-    createdBy:myName(),
-    createdAt:Date.now()
-  };
-  var newKey=TRAIN_REF.push().key;
-  tr.id=newKey;
-  
-  trainingWrite(tr,function(){
-    closeModal();
-    toast('Тренировка создана!','ok');
-    
-    // === ОТПРАВКА PUSH ЧЕРЕЗ CLOUDFLARE WORKER ===
-    sendPushNotification(
-      '🏓 Новая тренировка',
-      myName()+' · '+d+' в '+tm,
-      { type: 'training', trainingId: newKey }
-    );
-  });
 }
 
 /* Отправка push через Cloudflare Worker */
