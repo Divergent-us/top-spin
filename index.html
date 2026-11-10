@@ -1599,24 +1599,27 @@ function showLoginScreen(){document.getElementById('loginScreen').style.display=
 function logout(){dropPresence();if(authRef&&firebaseUser){authRef.signOut();}lsSet('topspin_session','');currentUser=null;isAdminMode=false;showLoginScreen();}
 function loadPlayerSession(){try{var s=JSON.parse(lsGet('topspin_session'));if(s&&s.role==='player')return s;}catch(e){}return null;}
 function updateSyncIndicator(status){var ind=document.getElementById('syncIndicator');if(!ind)return;ind.className='sync-indicator '+status;if(status==='synced'){ind.innerHTML='<span class="sync-dot"></span>синхр';}else if(status==='error'){ind.innerHTML='<span class="sync-dot"></span>ошибка';}}
- function forceSave(){
+function forceSave(){
   try{
-    if(state.players&&state.players.length){lsSet(BAK_KEY,JSON.stringify(state));}
-    lsSet(LS_KEY,JSON.stringify(state));
-    if(window.__st){clearTimeout(window.__st);window.__st=null;}
+    if(state.players && state.players.length){ lsSet(BAK_KEY, JSON.stringify(state)); }
+    lsSet(LS_KEY, JSON.stringify(state));
+    if(window.__st){ clearTimeout(window.__st); window.__st = null; }
     
-    // Проверяем, есть ли связь с Firebase
-    if (!dbRef) {
-      toast('Нет подключения к базе данных!', 'err');
-      return;
+    // Жестко перезаписываем облако текущими данными
+    if (dbRef) {
+      dbRef.child('players').set(state.players);
+      dbRef.child('tournaments').set(state.tournaments);
+      dbRef.child('matches').set(state.matches);
+      dbRef.child('awards').set(state.awards);
+      dbRef.child('settings').set(state.settings);
+      toast('Данные жестко сохранены в облако ✓','ok');
+    } else {
+      toast('Нет связи с базой!','err');
     }
-
-    saveToFirebase();
-    toast('Отправлено в облако ✓', 'ok');
   }catch(e){
     toast('Ошибка сохранения: '+e.message,'err');
-    console.error('forceSave error:',e);
   }
+}
 }
 function saveToFirebase(){
   if(!dbRef)return;
