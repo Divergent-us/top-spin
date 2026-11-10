@@ -2030,8 +2030,13 @@ function sendPushNotification(title, body, data){
   });
 }
 function joinTraining(id){
- alert('Кнопка записи нажата! ID тренировки: ' + id);
   var my = getPlayerByPhone(myPhone());
+  
+  // Если это админ, у которого нет профиля, даем ему виртуальный ID
+  if (!my && isAdminMode) {
+    my = { id: 'admin_' + myPhone(), firstName: 'Админ', lastName: '', phone: myPhone() };
+  }
+  
   if(!my){ toast('Сначала создайте профиль', 'err'); return; }
   
   var tr = (state.trainings || []).find(function(x){ return x.id === id; });
@@ -2045,9 +2050,8 @@ function joinTraining(id){
   trainingWrite(tr, function(){
     toast('Вы записаны на тренировку!', 'ok');
     
-    // ЗДЕСЬ ВЫЗЫВАЕТСЯ ОЗВУЧКА
+    // ОЗВУЧКА
     if (typeof speakEncouragement === 'function') {
-     alert('Передаю текст в Java: ' + playerName + ', ' + actionText);
       speakEncouragement(my.firstName, 'ты записан на тренировку');
     }
   });
