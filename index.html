@@ -3059,30 +3059,42 @@ var VAPID_KEY="BPAhmTURjIIPH1IbbQ-SsCj5Q7fefOnaft_7zk9Nly_8KsTixze5OCkKUW86s2Ove
 var FCM_SW_URL='./firebase-messaging-sw.js';
 var FCM_SW_SCOPE='./';
 async function enablePush(){
+  // 1. ДЛЯ APK (Вызываем нативное уведомление)
+  if (window.AndroidNotify && typeof window.AndroidNotify.showNotification === 'function') {
+    window.AndroidNotify.showNotification("ТОП-СПИН", "Уведомления успешно включены!");
+    toast('Уведомления включены (APK)', 'ok');
+    return;
+  }
+
+  // 2. ДЛЯ БРАУЗЕРА (Старый код)
   try{
     if(!('serviceWorker' in navigator)){toast('Браузер не поддерживает SW','err');return;}
     if(!('Notification' in window)){toast('Браузер не поддерживает уведомления','err');return;}
     var perm=await Notification.requestPermission();
     if(perm!=='granted'){toast('Разрешение не выдано','err');return;}
+    
     toast('Регистрирую SW…');
-    var reg;
-    try{reg=await navigator.serviceWorker.register(FCM_SW_URL,{scope:FCM_SW_SCOPE});}
-    catch(e){console.error('SW reg error',e);toast('Ошибка регистрации SW: '+e.message,'err');return;}
+    var reg=await navigator.serviceWorker.register('./firebase-messaging-sw.js',{scope:'./'});
     await navigator.serviceWorker.ready;
+    
     var app2=firebase.initializeApp(firebaseConfig,'pushApp');
     var messaging=firebase.messaging(app2);
     var token=await messaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
-    if(!token){toast('Токен не получен. Проверьте VAPID.','err');return;}
+    
+    if(!token){toast('Токен не получен.','err');return;}
     FCM_TOKEN=token;
     FCM_MSG=messaging;
+    
     var phone=currentUser?(currentUser.phone||currentUser.email||'anon'):'anon';
     var key=String(phone).replace(/[.#$/\[\]]/g,'_');
     if(dbRef){await dbRef.child('pushTokens').child(key).set({token:token,updatedAt:Date.now(),name:myName()});}
-    try{lsSet('topspin_push_token',token);}catch(e){}
+    
     toast('Уведомления включены!','ok');
-    messaging.onMessage(function(payload){try{var title=(payload.notification&&payload.notification.title)||'ТОП-СПИН';var body=(payload.notification&&payload.notification.body)||'';if(Notification.permission==='granted'){new Notification(title,{body:body,icon:'./icon-192.png'});}}catch(e){}});
     if(currentUser&&ui.tab==='profile'){render();}
-  }catch(e){console.error('enablePush',e);toast('Ошибка: '+(e.message||e),'err');}
+  }catch(e){
+    console.error('enablePush',e);
+    toast('Ошибка: '+(e.message||e),'err');
+  }
 }
 /* ===== ИИ-ТРЕНЕР ===== */
 var WORKER_URL="https://topspin-ai.styleman81.workers.dev";
