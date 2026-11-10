@@ -2013,6 +2013,7 @@ function sendPushNotification(title, body, data){
   });
 }
 function joinTraining(id){
+ alert('Кнопка записи нажата! ID тренировки: ' + id);
   var my = getPlayerByPhone(myPhone());
   if(!my){ toast('Сначала создайте профиль', 'err'); return; }
   
