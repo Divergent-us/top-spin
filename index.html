@@ -1467,46 +1467,36 @@ function menuModal(){
   document.body.classList.add('locked');
 }
  function speakMatchQueue(tid){
-  if (!('speechSynthesis' in window)) {
-    toast('Браузер не поддерживает озвучку', 'err');
-    return;
-  }
-
   var ms = state.matches.filter(function(m){ return m.tournamentId === tid && (!m.sets || m.sets.length === 0); });
-  
-  if (ms.length === 0) {
-    toast('Все матчи уже сыграны!', 'err');
-    return;
-  }
+  if (ms.length === 0) { toast('Все матчи уже сыграны!', 'err'); return; }
 
   var current = ms[0];
   var next = ms.length > 1 ? ms[1] : null;
-
   var text = "Внимание! На стол приглашается пара: " + pNameRaw(current.playerAId) + " и " + pNameRaw(current.playerBId) + ". ";
-  if (next) {
-    text += "Готовится следующая пара: " + pNameRaw(next.playerAId) + " и " + pNameRaw(next.playerBId) + ".";
-  } else {
-    text += "Это последняя пара в турнире.";
+  if (next) text += "Готовится следующая пара: " + pNameRaw(next.playerAId) + " и " + pNameRaw(next.playerBId) + ".";
+  else text += "Это последняя пара в турнире.";
+
+  // 1. Если мы в APK (с нативным Java-мостом) — используем его
+  if (window.AndroidTTS && typeof window.AndroidTTS.speak === 'function') {
+    window.AndroidTTS.speak(text);
+    toast('Озвучка запущена (APK)', 'ok');
+    return;
   }
 
-  // Останавливаем предыдущую озвучку, если она была
-  window.speechSynthesis.cancel();
-
-  var utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'ru-RU'; // Русский голос
-  utterance.rate = 0.95;    // Чуть медленнее для важности
-  utterance.pitch = 1.0;
-  
-  // Ищем мужской русский голос (если есть)
-  var voices = window.speechSynthesis.getVoices();
-  var ruVoice = voices.find(function(v){ return v.lang.includes('ru') && v.name.includes('Yuri'); }) 
-             || voices.find(function(v){ return v.lang.includes('ru') && v.name.includes('Dmitry'); }) 
-             || voices.find(function(v){ return v.lang.includes('ru'); });
-  
-  if (ruVoice) utterance.voice = ruVoice;
-
-  window.speechSynthesis.speak(utterance);
-  toast('Озвучка запущена', 'ok');
+  // 2. Если мы в обычном браузере — используем старый способ
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ru-RU';
+    utterance.rate = 0.95;
+    var voices = window.speechSynthesis.getVoices();
+    var ruVoice = voices.find(function(v){ return v.lang.includes('ru'); });
+    if (ruVoice) utterance.voice = ruVoice;
+    window.speechSynthesis.speak(utterance);
+    toast('Озвучка запущена (Браузер)', 'ok');
+  } else {
+    toast('Озвучка недоступна', 'err');
+  }
 }
 function manageMatches(tid){
   var t=tourn(tid);
