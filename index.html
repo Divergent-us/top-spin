@@ -1942,6 +1942,14 @@ function trainingDelete(id, cb){
     }
   });
 }
+ function adminDelTraining(id){
+  if(!isAdminMode){ toast('Только для админа', 'err'); return; }
+  confirmBox('Удалить тренировку у всех игроков?', function(){
+    trainingDelete(id, function(){
+      toast('Тренировка удалена');
+    });
+  });
+}
 function newTraining(){
   var my = getPlayerByPhone(myPhone());
   var creatorName = my ? (my.firstName + ' ' + my.lastName) : (isAdminMode ? 'Админ' : 'Гость');
