@@ -1466,6 +1466,39 @@ function menuModal(){
                  
   document.body.classList.add('locked');
 }
+ function speakEncouragement(playerName, actionText){
+  // Массив случайных напутствий
+  var phrases = [
+    "Покажи им, где раки зимуют!",
+    "Победа будет за тобой!",
+    "Вперед к новым вершинам!",
+    "Только вперед, без страха!",
+    "Твой соперник уже дрожит!",
+    "Время собирать медали!",
+    "Бей сильно и точно!",
+    "Удачи на столе, чемпион!"
+  ];
+  var randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+  var text = playerName + ", " + actionText + ". " + randomPhrase;
+
+  // 1. Для APK (через Java-мост)
+  if (window.AndroidTTS && typeof window.AndroidTTS.speak === 'function') {
+    window.AndroidTTS.speak(text);
+    return;
+  }
+
+  // 2. Для браузера
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ru-RU';
+    utterance.rate = 1.0;
+    var voices = window.speechSynthesis.getVoices();
+    var ruVoice = voices.find(function(v){ return v.lang.includes('ru'); });
+    if (ruVoice) utterance.voice = ruVoice;
+    window.speechSynthesis.speak(utterance);
+  }
+}
  function speakMatchQueue(tid){
   
   var ms = state.matches.filter(function(m){ return m.tournamentId === tid && (!m.sets || m.sets.length === 0); });
