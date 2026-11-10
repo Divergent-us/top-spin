@@ -2674,6 +2674,24 @@ function settingsModal(){
   }
 }
 // Функция включения/выключения D-ID
+ function loadDIdScript() {
+  // Проверяем, не загружен ли скрипт уже
+  if(document.getElementById('d-id-script-tag')) return;
+  
+  // ВСТАВЬ СЮДА СВОИ РЕАЛЬНЫЕ КЛЮЧИ ИЗ D-ID!
+  var clientKey = 'ck_BHOdHCR7IG_zNSxNeQNpg'; 
+  var agentId = 'v2_agt_eD0y39X5';
+  
+  var script = document.createElement('script');
+  script.id = 'd-id-script-tag';
+  script.type = 'module';
+  script.src = 'https://agent.d-id.com/v2/index.js';
+  script.setAttribute('data-client-key', clientKey);
+  script.setAttribute('data-agent-id', agentId);
+  script.setAttribute('data-open-mode', 'compact'); // Свернутый режим (кнопка в углу)
+  
+  document.body.appendChild(script);
+}
 function toggleDIdAgent() {
   var current = lsGet('dIdEnabled') === 'true';
   var newState = !current;
