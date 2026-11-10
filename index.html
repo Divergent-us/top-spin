@@ -1467,7 +1467,7 @@ function menuModal(){
   document.body.classList.add('locked');
 }
 function speakEncouragement(playerName, actionText){
- alert('Мост TTS: ' + typeof window.AndroidTTS);
+ 
   var phrases = [
     "Покажи им, где раки зимуют!",
     "Победа будет за тобой!",
@@ -1907,7 +1907,7 @@ function viewTournamentDetail(tid){
   TRAIN_REF.child(tr.id).set(tr).then(function(){
     if(cb) cb();
   }).catch(function(e){
-    alert('Ошибка сохранения в Firebase: ' + e.message);
+    
     toast('Ошибка сохранения', 'err');
   });
 }
@@ -3626,7 +3626,7 @@ var ml=document.getElementById('manifestLink');if(ml)ml.href=URL.createObjectURL
 }catch(e){}
 })();
 (function init(){
- alert('Загрузка приложения! Мост TTS: ' + typeof window.AndroidTTS);
+ 
 try{var d=new Date();document.getElementById('todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()];}catch(e){}
 try{if(lsGet('theme')==='light')document.body.classList.add('light');if(lsGet('fontSize')==='big')document.body.classList.add('big-font');}catch(e){}
 try{var lb=document.getElementById('lightbox');if(lb){lb.addEventListener('click',function(){closeLightbox();});}document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeLightbox();}});}catch(e){}
