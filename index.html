@@ -2023,6 +2023,45 @@ function sendPushNotification(title, body, data){
     });
   });
 }
+ function confirmTraining(){
+  // Получаем данные о создателе
+  var my = getPlayerByPhone(myPhone());
+  var creatorId = my ? my.id : ('admin_' + myPhone());
+  var creatorName = my ? (my.firstName + ' ' + my.lastName) : (isAdminMode ? 'Админ' : 'Гость');
+
+  var d = (document.querySelector('#trD') ? document.querySelector('#trD').value : '');
+  var tm = (document.querySelector('#trT') ? document.querySelector('#trT').value : '');
+  
+  if(!d || !tm){ toast('Укажите дату и время', 'err'); return; }
+  
+  // Если связи с тренировками нет, пробуем восстановить
+  if(!TRAIN_REF && dbRef){
+    TRAIN_REF = firebase.database().ref('topspin/trainings');
+  }
+  
+  if(!TRAIN_REF){
+    toast('Нет связи с сервером. Проверьте интернет.', 'err');
+    return;
+  }
+  
+  var tr = {
+    date: d,
+    time: tm,
+    creatorId: creatorId,
+    creatorPhone: myPhone(),
+    participantIds: [creatorId],
+    createdBy: creatorName,
+    createdAt: Date.now()
+  };
+  
+  var newKey = TRAIN_REF.push().key;
+  tr.id = newKey;
+  
+  trainingWrite(tr, function(){
+    closeModal();
+    toast('Тренировка создана!', 'ok');
+  });
+}
 function joinTraining(id){
  alert('Кнопка записи нажата! ID тренировки: ' + id);
   var my = getPlayerByPhone(myPhone());
