@@ -3471,7 +3471,7 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
   var isVideo = type === 'video';
 
   var callScreen = document.getElementById('callScreen');
-  if (callScreen) callScreen.classList.add('active');
+  if (callScreen) { callScreen.style.display=''; callScreen.classList.add('active'); }
   var nameEl = document.getElementById('callName');
   if (nameEl) nameEl.textContent = partnerP.firstName + ' ' + partnerP.lastName;
   var statusEl = document.getElementById('callStatus');
@@ -3819,14 +3819,8 @@ function init(){
     if(el) dispatch(el);
   });
 
-  // 11. Очистка экрана звонка
-  setTimeout(function(){
-    var cs = document.getElementById('callScreen');
-    if (cs) { 
-      cs.classList.remove('active'); 
-      cs.style.display = 'none'; 
-    }
-  }, 100);
+  // 11. Экран звонка скрыт по умолчанию через CSS
+try{ var cs=document.getElementById('callScreen'); if(cs) cs.classList.remove('active'); }catch(e){}
 
 } // <--- ЗАКРЫВАЕМ ФУНКЦИЮ init
 
