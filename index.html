@@ -1625,7 +1625,14 @@ function completeLoginPlayer(phone){currentUser={phone:phone,role:'player'};lsSe
 try { listenIncomingCalls(); } catch(e) { console.error(e); }
 }
 function adminLogin(){var email=(document.getElementById('adminEmail')?document.getElementById('adminEmail').value:'').trim();var pass=(document.getElementById('adminPass')?document.getElementById('adminPass').value:'');var err=document.getElementById('loginError3');err.textContent='';if(!email||!pass){err.textContent='Введите email и пароль';return;}if(!authRef){err.textContent='Firebase не подключён';return;}authRef.signInWithEmailAndPassword(email,pass).then(function(){}).catch(function(e){err.textContent='Неверный email или пароль';});}
-function hideLoginScreen(){document.getElementById('loginScreen').style.display='none';document.getElementById('mainHeader').style.display='flex';document.getElementById('view').style.display='block';document.getElementById('mainTabbar').style.display='flex';}
+function hideLoginScreen(){
+try{ if(__bgRaf){ cancelAnimationFrame(__bgRaf); __bgRaf=null; } }catch(e){}
+try{ var lv=document.getElementById('loginVideo'); if(lv) lv.pause(); }catch(e){}
+document.getElementById('loginScreen').style.display='none';
+document.getElementById('mainHeader').style.display='flex';
+document.getElementById('view').style.display='block';
+document.getElementById('mainTabbar').style.display='flex';
+}
 function showLoginScreen(){document.getElementById('loginScreen').style.display='flex';document.getElementById('mainHeader').style.display='none';document.getElementById('view').style.display='none';document.getElementById('mainTabbar').style.display='none';showPhoneStep();}
 function logout(){dropPresence();if(authRef&&firebaseUser){authRef.signOut();}lsSet('topspin_session','');currentUser=null;isAdminMode=false;showLoginScreen();}
 function loadPlayerSession(){try{var s=JSON.parse(lsGet('topspin_session'));if(s&&s.role==='player')return s;}catch(e){}return null;}
