@@ -2325,7 +2325,7 @@ function viewPlayer(pid){
   var eng=engine();
   var st=playerStats(pid,eng);
   var history=eng.played.filter(function(m){return m.playerAId===pid||m.playerBId===pid;}).slice(-10).reverse();
-  var aw=playerAwards(pid).concat(computeAutoAwards(eng).filter(function(a){return a.playerId===pid;}));
+  var aw=awardsFor(pid,eng);
   
   var styleNames = { attack: 'Атакующий', defense: 'Защитный', universal: 'Универсальный' };
   var styleText = styleNames[p.playStyle || 'universal'];
