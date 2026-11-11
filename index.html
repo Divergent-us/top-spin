@@ -1055,6 +1055,27 @@ a.date = (ex && ex.date) ? ex.date : new Date().toISOString().slice(0,10);
 return awards;
 
 function playerAwards(pid){return state.awards.filter(function(a){return a.playerId===pid;});}
+  function awardsFor(pid, eng){
+var out = playerAwards(pid).slice();
+computeAutoAwards(eng).forEach(function(a){
+if(a.playerId !== pid) return;
+var dup = out.some(function(x){ return x.title === a.title; });
+if(!dup) out.push(a);
+});
+return out;
+}
+function syncAutoAwards(){
+if(!isAdminMode || !booted) return;
+try{
+var list = computeAutoAwards(engine());
+var changed = false;
+list.forEach(function(a){
+var ex = state.awards.find(function(x){ return x.auto && x.title===a.title && x.playerId===a.playerId; });
+if(!ex){ a.auto = true; a.date = new Date().toISOString().slice(0,10); state.awards.push(a); changed = true; }
+});
+if(changed) save();
+}catch(e){}
+}
 function countMatches(id){return state.matches.filter(function(m){return m.playerAId===id||m.playerBId===id;}).length;}
 function normalizeName(s){return String(s==null?'':s).replace(/\s+$/,'').replace(/\.+$/,'').trim();}
 function migratePlayers(){var changed=false;state.players.forEach(function(p){var nf=normalizeName(p.firstName),nl=normalizeName(p.lastName);if(nf!==p.firstName||nl!==p.lastName){p.firstName=nf;p.lastName=nl;changed=true;}});var byName={};state.players.forEach(function(p){var key=(p.firstName+' '+p.lastName).toLowerCase();(byName[key]=byName[key]||[]).push(p);});Object.keys(byName).forEach(function(key){var arr=byName[key];if(arr.length<2)return;var keeper=arr[0],kc=countMatches(keeper.id);arr.forEach(function(p){var c=countMatches(p.id);if(c>kc){keeper=p;kc=c;}});arr.forEach(function(p){if(p===keeper)return;changed=true;if(p.phone&&!keeper.phone)keeper.phone=p.phone;if(!keeper.avatar&&p.avatar)keeper.avatar=p.avatar;state.matches.forEach(function(m){if(m.playerAId===p.id)m.playerAId=keeper.id;if(m.playerBId===p.id)m.playerBId=keeper.id;});state.awards.forEach(function(a){if(a.playerId===p.id)a.playerId=keeper.id;});state.tournaments.forEach(function(t){t.playerIds=(t.playerIds||[]).map(function(x){return x===p.id?keeper.id:x;}).filter(function(x,i,arr){return arr.indexOf(x)===i;});});state.players=state.players.filter(function(x){return x.id!==p.id;});});});return changed;}
