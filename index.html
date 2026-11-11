@@ -3518,7 +3518,6 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
       });
     }
 
-    console.log('1. Запрос токена для:', roomName);
     var resp = await fetch('https://topspin-deno-token.divergent-us.deno.net/livekit-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -3526,27 +3525,19 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
     });
     var data = await resp.json();
     if (!data.token) throw new Error('Токен не получен');
-    console.log('2. Токен получен!');
 
     callRoom = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
 
+    // 1. ОБРАБОТКА ВХОДЯЩИХ ТРЕКОВ (АУДИО И ВИДЕО)
     callRoom.on(LivekitClient.RoomEvent.TrackSubscribed, function(track) {
       console.log('🔥 Получен трек:', track.kind);
-      if (statusEl) statusEl.textContent = 'Получен ' + track.kind + '!';
-      
       if (track.kind === LivekitClient.Track.Kind.Audio) {
         var audioEl = track.attach();
         audioEl.autoplay = true;
         audioEl.playsInline = true;
         audioEl.style.display = 'none';
         document.body.appendChild(audioEl);
-        audioEl.play().then(function() {
-          if (statusEl) statusEl.textContent = 'Звук пошёл! 🎧';
-        }).catch(function(e) {
-          if (statusEl) statusEl.textContent = 'Звук заблокирован! Нажми кнопку ниже';
-          var btn = document.getElementById('callAudioUnlockBtn');
-          if (btn) btn.style.display = 'inline-flex';
-        });
+        audioEl.play().catch(function(e){ console.warn('Audio play blocked', e); });
       } else if (track.kind === LivekitClient.Track.Kind.Video) {
         var remoteVideoEl = document.getElementById('remoteVideo');
         if (remoteVideoEl) {
@@ -3556,39 +3547,31 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
       }
     });
 
-    callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function() {
-      console.log('3. Собеседник подключился!');
-      if (statusEl) statusEl.textContent = 'Собеседник в комнате! Ждём звук...';
-      stopRingback();
+    // 2. ПРИНУДИТЕЛЬНАЯ ОСТАНОВКА ГУДКОВ ПРИ ПОДКЛЮЧЕНИИ
+    callRoom.on(LivekitClient.RoomEvent.ParticipantConnected, function(p) {
+      console.log('3. Собеседник подключился!', p.identity);
+      if (statusEl) statusEl.textContent = 'В сети';
+      stopRingback(); // ГАРАНТИРОВАННО ОСТАНАВЛИВАЕМ ГУДКИ
       if (!isIncoming && dbRef) dbRef.child('calls/' + roomName).update({ status: 'accepted' });
     });
 
     callRoom.on(LivekitClient.RoomEvent.ParticipantDisconnected, function(p) {
       console.log('❌ Собеседник отключился');
-      if (statusEl) statusEl.textContent = 'Собеседник вышел из комнаты';
+      if (statusEl) statusEl.textContent = 'Собеседник вышел';
       setTimeout(function() {
-        if (callRoom && callRoom.remoteParticipants.size === 0) {
-          endCall();
-        }
+        if (callRoom && callRoom.remoteParticipants.size === 0) endCall();
       }, 2000);
     });
 
-    callRoom.on(LivekitClient.RoomEvent.ConnectionStateChanged, function(state) {
-      console.log('Состояние соединения:', state);
-      if (state === 'disconnected') {
-        setTimeout(function() {
-          if (callRoom && callRoom.state === 'disconnected') endCall();
-        }, 5000);
-      }
-    });
+    callRoom.on(LivekitClient.RoomEvent.Disconnected, function() { endCall(); });
 
-    console.log('3. Подключаемся к LiveKit...');
     await callRoom.connect(LIVEKIT_URL, data.token);
     
-    console.log('4. Подключено! Включаем аудио...');
+    // Принудительная разблокировка звука
     try { await callRoom.startAudio(); } catch (e) { console.warn('startAudio error', e); }
     setTimeout(function(){ if(callRoom) callRoom.startAudio().catch(function(){}); }, 1000);
 
+    // Включаем микрофон
     try {
       await callRoom.localParticipant.setMicrophoneEnabled(true);
     } catch (micError) {
@@ -3596,8 +3579,8 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
       toast('Внимание: нет доступа к микрофону!', 'err');
     }
     
+    // Включаем камеру (если видео)
     if (isVideo) {
-      console.log('5. Включаем камеру...');
       try {
         var localPub = await callRoom.localParticipant.setCameraEnabled(true);
         if (localPub && localPub.videoTrack) {
@@ -3606,27 +3589,18 @@ async function startCall(type, targetId, isIncoming, existingRoom) {
         }
       } catch (camError) {
         console.warn('Камера не доступна:', camError);
-        toast('Камера недоступна, звонок продолжается без видео', 'err');
+        toast('Камера недоступна, звонок без видео', 'err');
         if (videoWrap) videoWrap.style.display = 'none';
       }
     }
 
     if (statusEl) statusEl.textContent = 'В сети';
 
+    // Страховка: если через 3 секунды собеседник в комнате, но гудки идут — выключаем
     setTimeout(function() {
       if (callRoom && callRoom.remoteParticipants.size > 0) {
         stopRingback();
-        callRoom.remoteParticipants.forEach(function(p) {
-          p.trackPublications.forEach(function(pub) {
-            if (pub.track && pub.track.kind === 'audio') {
-              var a = pub.track.attach();
-              a.autoplay = true; document.body.appendChild(a);
-            }
-          });
-        });
-      } else {
-        var btn = document.getElementById('callAudioUnlockBtn');
-        if (btn) btn.style.display = 'inline-flex';
+        if (statusEl) statusEl.textContent = 'В сети';
       }
     }, 3000);
 
