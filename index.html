@@ -3827,7 +3827,7 @@ function init(){
   var lc=document.getElementById('loginCode'); if(lc) lc.addEventListener('keydown',function(e){ if(e.key==='Enter')verifyPhoneCode(); });
   var ap=document.getElementById('adminPass'); if(ap) ap.addEventListener('keydown',function(e){ if(e.key==='Enter')adminLogin(); });
 
-  // 10. Обработчик всех кликов на странице (кнопки, аватарки)
+  // 10. Обработчик всех кликов на странице
   document.addEventListener('click',function(e){
     var av = e.target && e.target.closest ? e.target.closest('[data-avatar-src]') : null;
     if(av){ e.preventDefault(); e.stopPropagation(); openLightbox(av.getAttribute('data-avatar-src')); return; }
@@ -3844,7 +3844,8 @@ function init(){
       cs.style.display = 'none'; 
     }
   }, 100);
-}/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
+}
+})();/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
 var LIVEKIT_URL = "wss://topspin-club-lmgx3s0y.livekit.cloud";
 var callRoom = null;
 var isMuted = false;
