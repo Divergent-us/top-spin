@@ -817,6 +817,7 @@ iframe[src*="d-id"] {
 <button type="button" class="login-btn" id="adminLoginBtn" onclick="adminLogin()">Войти как админ</button>
 <div class="login-error" id="loginError3"></div>
 <div class="login-hint">Вход админа защищён Firebase Auth.<br>Код админа не хранится в коде.</div>
+ <div id="appVersionDisplay" style="margin-top: 25px; font-size: 11px; color: var(--dim); letter-spacing: 0.05em; text-align: center;"></div>
 </div>
 </div>
 </div>
@@ -914,6 +915,7 @@ function weight(s){if(!s)return 0;return (s.players?s.players.length:0)*3+(s.tou
 function loadState(){try{var s=JSON.parse(lsGet(LS_KEY));if(s)return norm(s);}catch(e){}return null;}
 function loadBackup(){try{var s=JSON.parse(lsGet(BAK_KEY));if(s)return norm(s);}catch(e){}return null;}
 var state=loadState()||loadBackup()||norm({});
+ var APP_VERSION = '1.5'; // МЕНЯЙ ЭТУ ЦИФРУ ПРИ КАЖДОМ ОБНОВЛЕНИИ!
 var ui={tab:'arena',tournamentId:null,playerId:null,ratingSort:'r'};
 var __cb=null,__emo='',__rmid=null,__pendingAvatar=null;
 var __saveTimer=null;
@@ -3743,7 +3745,13 @@ var blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'})
 var ml=document.getElementById('manifestLink');if(ml)ml.href=URL.createObjectURL(blob);
 }catch(e){}
 })();
-(function init(){
+function init(){
+ try {
+  var verEl = document.getElementById('appVersionDisplay');
+  if (verEl) {
+    verEl.innerHTML = 'ТОП-СПИН • Версия ' + APP_VERSION;
+  }
+} catch(e) {}
  
 try{var d=new Date();document.getElementById('todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()];}catch(e){}
 try{if(lsGet('theme')==='light')document.body.classList.add('light');if(lsGet('fontSize')==='big')document.body.classList.add('big-font');}catch(e){}
