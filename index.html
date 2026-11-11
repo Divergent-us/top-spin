@@ -2714,7 +2714,7 @@ function loadDIdScript() {
   if (!container) {
     container = document.createElement('div');
     container.id = 'd-id-container';
-    // Стили для контейнера (чтобы он был виден в профиле)
+    // Даем контейнеру явную высоту, иначе он будет невидим
     container.style.cssText = 'width:100%; height:450px; margin-top:15px; border-radius:16px; overflow:hidden; border:1px solid var(--line); background:#000; position:relative; z-index:10;';
     
     // Вставляем контейнер в профиль (после карточки с именем)
@@ -2722,22 +2722,21 @@ function loadDIdScript() {
     if (profileCard) {
       profileCard.parentNode.insertBefore(container, profileCard.nextSibling);
     } else {
-      // Если профиль не найден, вставляем в начало страницы
       document.querySelector('.app').prepend(container);
     }
   }
   
-  // 2. Вставляем скрипт D-ID с правильными атрибутами
+  // 2. Вставляем скрипт D-ID с правильными атрибутами для режима "full"
   var script = document.createElement('script');
   script.id = 'd-id-script-tag';
   script.type = 'module';
-  script.src = 'https://agent.d-id.com/v2/index.js';
+  script.src = 'https://agent.d-id.com/v2/index.js'; // Официальный адрес для embed
   
   // ВСТАВЬ СВОИ КЛЮЧИ СЮДА:
   script.setAttribute('data-client-key', 'ТВОЙ_CLIENT_KEY'); 
   script.setAttribute('data-agent-id', 'ТВОЙ_AGENT_ID');
   
-  // ВАЖНО: Режим "full" встраивает аватар в контейнер
+  // ВАЖНО: Режим "full" и указание контейнера
   script.setAttribute('data-mode', 'full');
   script.setAttribute('data-target-id', 'd-id-container'); 
   
