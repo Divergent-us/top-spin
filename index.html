@@ -1633,7 +1633,14 @@ document.getElementById('mainHeader').style.display='flex';
 document.getElementById('view').style.display='block';
 document.getElementById('mainTabbar').style.display='flex';
 }
-function showLoginScreen(){document.getElementById('loginScreen').style.display='flex';document.getElementById('mainHeader').style.display='none';document.getElementById('view').style.display='none';document.getElementById('mainTabbar').style.display='none';showPhoneStep();}
+function showLoginScreen(){
+document.getElementById('loginScreen').style.display='flex';
+document.getElementById('mainHeader').style.display='none';
+document.getElementById('view').style.display='none';
+document.getElementById('mainTabbar').style.display='none';
+showPhoneStep();
+try{ if(!__bgRaf){ var c=document.getElementById('loginFallback'); if(c) startBgAnim(c); } }catch(e){}
+}
 function logout(){dropPresence();if(authRef&&firebaseUser){authRef.signOut();}lsSet('topspin_session','');currentUser=null;isAdminMode=false;showLoginScreen();}
 function loadPlayerSession(){try{var s=JSON.parse(lsGet('topspin_session'));if(s&&s.role==='player')return s;}catch(e){}return null;}
 function updateSyncIndicator(status){
