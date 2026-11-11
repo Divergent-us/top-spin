@@ -3801,8 +3801,7 @@ function init(){
   
   try{ initLoginBg(); }catch(e){}
   
-  // 8. D-ID
-  try { if(lsGet('dIdEnabled') === 'true') loadDIdScript(); } catch(e) {}
+  
   
   try{ autoCloseCheck(); setInterval(autoCloseCheck,20000); }catch(e){}
 try{ setInterval(syncAutoAwards,60000); setTimeout(syncAutoAwards,8000); }catch(e){}
