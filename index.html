@@ -2158,7 +2158,7 @@ trainHtml+='<div class="train-list">';
 
 if(trains.length){
   trainHtml += trains.map(function(tr){
-    var my = getPlayerByPhone(myPhone());
+    var my = myForTraining;
     var joined = my && (tr.participantIds || []).indexOf(my.id) >= 0;
     var isCreator = my && (tr.creatorId === my.id);
     var d = new Date((tr.date || '2000-01-01') + 'T12:00');
