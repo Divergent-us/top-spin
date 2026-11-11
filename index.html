@@ -2032,9 +2032,14 @@ function sendPushNotification(title, body, data){
   var newKey = TRAIN_REF.push().key;
   tr.id = newKey;
   
-  trainingWrite(tr, function(){
+   trainingWrite(tr, function(){
     closeModal();
     toast('Тренировка создана!', 'ok');
+    
+    // ОЗВУЧКА ПРИ СОЗДАНИИ СВОЕЙ ТРЕНИРОВКИ
+    if (typeof speakEncouragement === 'function') {
+      speakEncouragement(creatorName, 'ты создал тренировку и записан на неё');
+    }
   });
 }
 function joinTraining(id){
