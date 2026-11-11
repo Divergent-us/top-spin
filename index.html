@@ -1044,35 +1044,15 @@ function podPhoto(p){var key=p?presKeyFor(p.phone||''):'';var ring='',pk='';if(k
     var newb = newcomers[0];
     awards.push({id:'auto_newcomer_'+newb.id,playerId:newb.id,title:'Лучший новичок',emoji:'🎓',auto:true,sub:'Рейтинг '+eng.R[newb.id]+' за ≤5 турниров'});
   }
-  // ФИКСАЦИЯ ДАТЫ ВЫДАЧИ АВТОНАГРАД (чтобы дата не менялась каждый день)
-  try {
-    if (typeof state !== 'undefined' && state.awards) {
-      var changed = false;
-      awards.forEach(function(a) {
-        // Ищем, есть ли уже такая автонаграда в базе
-        var existing = state.awards.find(function(x){ return x.auto && x.title === a.title && x.playerId === a.playerId; });
-        if (!existing) {
-          // Если награды нет, сохраняем её с сегодняшней датой
-          a.auto = true;
-          a.date = new Date().toISOString().slice(0, 10);
-          state.awards.push(a);
-          changed = true;
-        } else {
-          // Если награда уже есть в базе, берем её старую дату
-          a.date = existing.date;
-        }
-      });
-      
-      // Если появились новые награды, сохраняем в базу (без вызова render, чтобы не было цикла)
-      if (changed && typeof save === 'function') {
-        save(); 
-      }
-    }
-  } catch(e) {
-    console.warn('Ошибка фиксации автонаград:', e);
-  }
-  return awards;
-}
+  // Даты берём из уже сохранённых наград. В базу здесь НЕ пишем.
+try{
+var saved = state.awards || [];
+awards.forEach(function(a){
+var ex = saved.find(function(x){ return x.auto && x.title===a.title && x.playerId===a.playerId; });
+a.date = (ex && ex.date) ? ex.date : new Date().toISOString().slice(0,10);
+});
+}catch(e){}
+return awards;
 
 function playerAwards(pid){return state.awards.filter(function(a){return a.playerId===pid;});}
 function countMatches(id){return state.matches.filter(function(m){return m.playerAId===id||m.playerBId===id;}).length;}
