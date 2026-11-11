@@ -3749,6 +3749,16 @@ function init(){
  try {
   var verEl = document.getElementById('appVersionDisplay');
   if (verEl) {
+    var appVer = '1.0.0'; // Версия для браузера (запасная)
+    if (typeof window.AndroidVersion !== 'undefined') {
+      appVer = window.AndroidVersion.getVersionName(); // Берём версию из APK
+    }
+    verEl.innerHTML = 'ТОП-СПИН • Версия ' + appVer;
+  }
+} catch(e) {}
+ try {
+  var verEl = document.getElementById('appVersionDisplay');
+  if (verEl) {
     verEl.innerHTML = 'ТОП-СПИН • Версия ' + APP_VERSION;
   }
 } catch(e) {}
