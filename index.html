@@ -3746,65 +3746,97 @@ var ml=document.getElementById('manifestLink');if(ml)ml.href=URL.createObjectURL
 }catch(e){}
 })();
 function init(){
- try {
-  var verEl = document.getElementById('appVersionDisplay');
-  if (verEl) {
-    var appVer = '1.0.0'; // Версия для браузера (запасная)
-    if (typeof window.AndroidVersion !== 'undefined') {
-      appVer = window.AndroidVersion.getVersionName(); // Берём версию из APK
+  // 1. Вывод версии приложения
+  try {
+    var verEl = document.getElementById('appVersionDisplay');
+    if (verEl) {
+      var appVer = '1.0.0'; // Версия для браузера
+      if (typeof window.AndroidVersion !== 'undefined') {
+        appVer = window.AndroidVersion.getVersionName(); // Берем из APK
+      }
+      verEl.innerHTML = 'ТОП-СПИН • Версия ' + appVer;
     }
-    verEl.innerHTML = 'ТОП-СПИН • Версия ' + appVer;
-  }
-} catch(e) {}
- try {
-  var verEl = document.getElementById('appVersionDisplay');
-  if (verEl) {
-    verEl.innerHTML = 'ТОП-СПИН • Версия ' + APP_VERSION;
-  }
-} catch(e) {}
- 
-try{var d=new Date();document.getElementById('todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()];}catch(e){}
-try{if(lsGet('theme')==='light')document.body.classList.add('light');if(lsGet('fontSize')==='big')document.body.classList.add('big-font');}catch(e){}
-try{var lb=document.getElementById('lightbox');if(lb){lb.addEventListener('click',function(){closeLightbox();});}document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeLightbox();}});}catch(e){}
-var fbOk=false;try{fbOk=initFirebase();}catch(e){fbOk=false;}
-try{if(fbOk){initPresence();}}catch(e){}
-try{
-if(fbOk&&authRef){authRef.onAuthStateChanged(function(u){try{firebaseUser=u;isAdminMode=!!u;if(u){currentUser={email:u.email,role:'admin'};lsSet('topspin_session',JSON.stringify(currentUser));hideLoginScreen();beat();render();updateBadge(); try { listenIncomingCalls(); } catch(e) {}}else{var ps=loadPlayerSession();if(ps){currentUser=ps;isAdminMode=false;hideLoginScreen();beat();render();updateBadge();}else{currentUser=null;isAdminMode=false;showLoginScreen();}}}catch(e){try{showLoginScreen();}catch(e2){}}});}
-else{var ps2=loadPlayerSession();if(ps2){currentUser=ps2;isAdminMode=false;hideLoginScreen();beat();render();updateBadge(); try { listenIncomingCalls(); } catch(e) {}}else{showLoginScreen();}}
-}catch(e){try{showLoginScreen();}catch(e2){}}
-try{if(fbOk){loadFromFirebase();setupFirebaseListener();initMessages();initTrainings();try { listenIncomingCalls(); } catch(e) {}try { listenIncomingCalls(); } catch(e) { console.error('listenIncomingCalls error:', e); }}else{booted=true;initMessages();TRAIN_BOOT=true;}}catch(e){booted=true;TRAIN_BOOT=true;}
- try { listenIncomingCalls(); } catch(e) { console.error('listenIncomingCalls error:', e); }
-try{initLoginBg();}catch(e){}
- // Проверка на включенный ИИ-Аватар
-try { if(lsGet('dIdEnabled') === 'true') loadDIdScript(); } catch(e) {}
-try{autoCloseCheck();setInterval(autoCloseCheck,20000);}catch(e){}
- try{window.addEventListener('pagehide',function(){if(isAdminMode&&window.__st){clearTimeout(window.__st);saveToFirebase();}});document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&isAdminMode&&window.__st){clearTimeout(window.__st);saveToFirebase();}});}catch(e){}
- // Принудительное сохранение при закрытии/сворачивании
+  } catch(e) {}
 
-var mpb=document.getElementById('modePlayerBtn');if(mpb)mpb.addEventListener('click',showPhoneStep);
-var mab=document.getElementById('modeAdminBtn');if(mab)mab.addEventListener('click',showAdminStep);
-var sb=document.getElementById('loginSendBtn');if(sb)sb.addEventListener('click',sendPhoneCode);
-var vb=document.getElementById('loginVerifyBtn');if(vb)vb.addEventListener('click',verifyPhoneCode);
-var bb=document.getElementById('loginBackBtn');if(bb)bb.addEventListener('click',showPhoneStep);
-var ab=document.getElementById('adminLoginBtn');if(ab)ab.addEventListener('click',adminLogin);
-var lp=document.getElementById('loginPhone');if(lp)lp.addEventListener('keydown',function(e){if(e.key==='Enter')sendPhoneCode();});
-var lc=document.getElementById('loginCode');if(lc)lc.addEventListener('keydown',function(e){if(e.key==='Enter')verifyPhoneCode();});
-var ap=document.getElementById('adminPass');if(ap)ap.addEventListener('keydown',function(e){if(e.key==='Enter')adminLogin();});
-document.addEventListener('click',function(e){
-  // Принудительно прячем экран звонка при старте
-  try { 
-    var cs = document.getElementById('callScreen'); 
-    if(cs) { 
-      cs.classList.remove('active'); 
-      cs.style.display = 'none'; 
-    } 
-  } catch(e) {}var av=e.target&&e.target.closest?e.target.closest('[data-avatar-src]'):null;
-if(av){e.preventDefault();e.stopPropagation();openLightbox(av.getAttribute('data-avatar-src'));return;}
-var el=e.target&&e.target.closest?e.target.closest('[data-action]'):null;
-if(el)dispatch(el);
- try { if(lsGet('dIdEnabled') === 'true') loadDIdScript(); } catch(e) {}
-});
-   // Жесткая очистка экрана звонка при старте
+  // 2. Вывод даты
+  try{ var d=new Date(); document.getElementById('todayChip').textContent=d.toLocaleDateString('ru-RU',{weekday:'short'})+', '+d.getDate()+' '+MON[d.getMonth()]; }catch(e){}
+  
+  // 3. Тема и шрифт
+  try{ if(lsGet('theme')==='light')document.body.classList.add('light'); if(lsGet('fontSize')==='big')document.body.classList.add('big-font'); }catch(e){}
+  
+  // 4. Лайтбокс
+  try{ var lb=document.getElementById('lightbox'); if(lb){lb.addEventListener('click',function(){closeLightbox();});} document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeLightbox();}}); }catch(e){}
+  
+  // 5. Инициализация Firebase
+  var fbOk=false; try{ fbOk=initFirebase(); }catch(e){ fbOk=false; }
+  try{ if(fbOk){ initPresence(); } }catch(e){}
+  
+  // 6. Авторизация
+  try{
+    if(fbOk && authRef){
+      authRef.onAuthStateChanged(function(u){
+        try{
+          firebaseUser=u; isAdminMode=!!u;
+          if(u){
+            currentUser={email:u.email,role:'admin'}; lsSet('topspin_session',JSON.stringify(currentUser)); hideLoginScreen(); beat(); render(); updateBadge(); 
+            try { listenIncomingCalls(); } catch(e) {}
+          }else{
+            var ps=loadPlayerSession();
+            if(ps){ currentUser=ps; isAdminMode=false; hideLoginScreen(); beat(); render(); updateBadge(); try { listenIncomingCalls(); } catch(e) {} }
+            else{ currentUser=null; isAdminMode=false; showLoginScreen(); }
+          }
+        }catch(e){ try{showLoginScreen();}catch(e2){} }
+      });
+    } else {
+      var ps2=loadPlayerSession();
+      if(ps2){ currentUser=ps2; isAdminMode=false; hideLoginScreen(); beat(); render(); updateBadge(); try { listenIncomingCalls(); } catch(e) {} }
+      else{ showLoginScreen(); }
+    }
+  }catch(e){ try{showLoginScreen();}catch(e2){} }
+  
+  // 7. Загрузка данных и слушателей
+  try{
+    if(fbOk){
+      loadFromFirebase(); setupFirebaseListener(); initMessages(); initTrainings();
+      try { listenIncomingCalls(); } catch(e) {}
+    } else {
+      booted=true; initMessages(); TRAIN_BOOT=true;
+    }
+  }catch(e){ booted=true; TRAIN_BOOT=true; }
+  
+  try{ initLoginBg(); }catch(e){}
+  
+  // 8. Проверка на включенный ИИ-Аватар
+  try { if(lsGet('dIdEnabled') === 'true') loadDIdScript(); } catch(e) {}
+  
+  try{ autoCloseCheck(); setInterval(autoCloseCheck,20000); }catch(e){}
+  
+  try{ 
+    window.addEventListener('pagehide',function(){ if(isAdminMode&&window.__st){ clearTimeout(window.__st); saveToFirebase(); } }); 
+    document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden'&&isAdminMode&&window.__st){ clearTimeout(window.__st); saveToFirebase(); } }); 
+  }catch(e){}
+
+  // 9. Обработчики кнопок входа
+  var mpb=document.getElementById('modePlayerBtn'); if(mpb) mpb.addEventListener('click',showPhoneStep);
+  var mab=document.getElementById('modeAdminBtn'); if(mab) mab.addEventListener('click',showAdminStep);
+  var sb=document.getElementById('loginSendBtn'); if(sb) sb.addEventListener('click',sendPhoneCode);
+  var vb=document.getElementById('loginVerifyBtn'); if(vb) vb.addEventListener('click',verifyPhoneCode);
+  var bb=document.getElementById('loginBackBtn'); if(bb) bb.addEventListener('click',showPhoneStep);
+  var ab=document.getElementById('adminLoginBtn'); if(ab) ab.addEventListener('click',adminLogin);
+  var lp=document.getElementById('loginPhone'); if(lp) lp.addEventListener('keydown',function(e){ if(e.key==='Enter')sendPhoneCode(); });
+  var lc=document.getElementById('loginCode'); if(lc) lc.addEventListener('keydown',function(e){ if(e.key==='Enter')verifyPhoneCode(); });
+  var ap=document.getElementById('adminPass'); if(ap) ap.addEventListener('keydown',function(e){ if(e.key==='Enter')adminLogin(); });
+
+  // 10. Обработчик всех кликов на странице (кнопки, аватарки)
+  document.addEventListener('click',function(e){
+    var av = e.target && e.target.closest ? e.target.closest('[data-avatar-src]') : null;
+    if(av){ e.preventDefault(); e.stopPropagation(); openLightbox(av.getAttribute('data-avatar-src')); return; }
+    
+    var el = e.target && e.target.closest ? e.target.closest('[data-action]') : null;
+    if(el) dispatch(el);
+  });
+
+  // 11. Жесткая очистка экрана звонка при старте
   setTimeout(function(){
     var cs = document.getElementById('callScreen');
     if (cs) { 
@@ -3812,7 +3844,7 @@ if(el)dispatch(el);
       cs.style.display = 'none'; 
     }
   }, 100);
-})();/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
+}/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
 var LIVEKIT_URL = "wss://topspin-club-lmgx3s0y.livekit.cloud";
 var callRoom = null;
 var isMuted = false;
