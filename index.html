@@ -2706,35 +2706,42 @@ function settingsModal(){
 }
 // Функция включения/выключения D-ID
 function loadDIdScript() {
+  // Если скрипт уже загружен, не грузим повторно
   if(document.getElementById('d-id-script-tag')) return;
   
-  var clientKey = 'ТВОЙ_CLIENT_KEY'; // Вставь свои
-  var agentId = 'ТВОЙ_AGENT_ID';     // Вставь свои
-  
-  // Создаем контейнер для аватара прямо в Кабинете (если его нет)
+  // 1. Создаем контейнер для аватара
   var container = document.getElementById('d-id-container');
   if (!container) {
-    // Если контейнера нет, создаем его и вставляем в профиль
-    var profile = document.querySelector('.profile-card-premium') || document.querySelector('.app');
-    if (profile) {
-      container = document.createElement('div');
-      container.id = 'd-id-container';
-      container.style.cssText = 'width:100%; height:400px; margin-top:15px; border-radius:16px; overflow:hidden; border:1px solid var(--line);';
-      profile.parentNode.insertBefore(container, profile.nextSibling);
+    container = document.createElement('div');
+    container.id = 'd-id-container';
+    // Стили для контейнера (чтобы он был виден в профиле)
+    container.style.cssText = 'width:100%; height:450px; margin-top:15px; border-radius:16px; overflow:hidden; border:1px solid var(--line); background:#000; position:relative; z-index:10;';
+    
+    // Вставляем контейнер в профиль (после карточки с именем)
+    var profileCard = document.querySelector('.profile-card-premium') || document.querySelector('.profile-header-new');
+    if (profileCard) {
+      profileCard.parentNode.insertBefore(container, profileCard.nextSibling);
+    } else {
+      // Если профиль не найден, вставляем в начало страницы
+      document.querySelector('.app').prepend(container);
     }
   }
   
-  // Загружаем скрипт D-ID
+  // 2. Вставляем скрипт D-ID с правильными атрибутами
   var script = document.createElement('script');
   script.id = 'd-id-script-tag';
   script.type = 'module';
   script.src = 'https://agent.d-id.com/v2/index.js';
-  script.setAttribute('data-client-key', clientKey);
-  script.setAttribute('data-agent-id', agentId);
-  script.setAttribute('data-open-mode', 'inline'); // Встроенный режим
   
-  if (container) container.appendChild(script);
-  else document.body.appendChild(script);
+  // ВСТАВЬ СВОИ КЛЮЧИ СЮДА:
+  script.setAttribute('data-client-key', 'ТВОЙ_CLIENT_KEY'); 
+  script.setAttribute('data-agent-id', 'ТВОЙ_AGENT_ID');
+  
+  // ВАЖНО: Режим "full" встраивает аватар в контейнер
+  script.setAttribute('data-mode', 'full');
+  script.setAttribute('data-target-id', 'd-id-container'); 
+  
+  document.body.appendChild(script);
 }
 function toggleDIdAgent() {
   var current = lsGet('dIdEnabled') === 'true';
