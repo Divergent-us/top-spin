@@ -3003,7 +3003,27 @@ function saveMyProfile(){
   myPlayer.playStyle = window.__pendingStyle || 'universal';
   save();closeModal();render();toast('Обновлено','ok');
 }
-function registerToTournament(tid){var myPlayer=getPlayerByPhone(myPhone());if(!myPlayer){toast('Создайте профиль','err');return;}var t=tourn(tid);if(!t)return;if(tStatus(t)==='finished'){toast('Турнир завершён — запись закрыта','err');return;}if((t.playerIds||[]).indexOf(myPlayer.id)!==-1){toast('Вы уже записаны','err');return;}t.playerIds=t.playerIds||[];t.playerIds.push(myPlayer.id);save();render();toast('Вы записаны на «'+t.name+'»','ok');speakEncouragement(myPlayer.firstName, 'ты записан на турнир ' + t.name);}
+function registerToTournament(tid){
+  var myPlayer = getPlayerByPhone(myPhone());
+  if(!myPlayer){ toast('Создайте профиль', 'err'); return; }
+  
+  var t = tourn(tid);
+  if(!t) return;
+  
+  if(tStatus(t) === 'finished'){ toast('Турнир завершён — запись закрыта', 'err'); return; }
+  if((t.playerIds || []).indexOf(myPlayer.id) !== -1){ toast('Вы уже записаны', 'err'); return; }
+  
+  t.playerIds = t.playerIds || [];
+  t.playerIds.push(myPlayer.id);
+  save();
+  render();
+  toast('Вы записаны на «' + t.name + '»', 'ok');
+  
+  // ВЫЗОВ ОЗВУЧКИ
+  if (typeof speakEncouragement === 'function') {
+    speakEncouragement(myPlayer.firstName, 'ты записан на турнир ' + t.name);
+  }
+}
 function exportRatingCSV(){
   try{
     var eng=engine();
