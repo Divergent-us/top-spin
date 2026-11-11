@@ -2554,7 +2554,7 @@ function viewProfile(){
   var myPast=myTournaments.filter(function(t){return tStatus(t)==='finished';});
   var availableTournaments=state.tournaments.filter(function(t){return(t.playerIds||[]).indexOf(myPlayer.id)===-1&&tStatus(t)!=='finished';});
   var myTrainings=(state.trainings||[]).filter(function(tr){return (tr.participantIds||[]).indexOf(myPlayer.id)>=0&&trainingMs(tr)>=Date.now()-3600000;});
-  var aw=playerAwards(myPlayer.id).concat(computeAutoAwards(eng).filter(function(a){return a.playerId===myPlayer.id;}));
+  var aw=awardsFor(myPlayer.id,eng);
   
   var styleNames = { attack: 'Атакующий', defense: 'Защитный', universal: 'Универсальный' };
   var styleText = styleNames[myPlayer.playStyle || 'universal'];
