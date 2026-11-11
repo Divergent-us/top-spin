@@ -2038,6 +2038,7 @@ function sendPushNotification(title, body, data){
   });
 }
 function joinTraining(id){
+ alert('Проверка перед записью. Мост TTS: ' + typeof window.AndroidTTS);
   var my = getPlayerByPhone(myPhone());
   
   // Поддержка админа без профиля
