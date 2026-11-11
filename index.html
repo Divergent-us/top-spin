@@ -3808,6 +3808,7 @@ function init(){
   try { if(lsGet('dIdEnabled') === 'true') loadDIdScript(); } catch(e) {}
   
   try{ autoCloseCheck(); setInterval(autoCloseCheck,20000); }catch(e){}
+try{ setInterval(syncAutoAwards,60000); setTimeout(syncAutoAwards,8000); }catch(e){}
   
   try{ 
     window.addEventListener('pagehide',function(){ if(isAdminMode&&window.__st){ clearTimeout(window.__st); saveToFirebase(); } }); 
