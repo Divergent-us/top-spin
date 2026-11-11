@@ -3837,7 +3837,7 @@ function init(){
   });
 
   // 11. Жесткая очистка экрана звонка при старте
-  setTimeout(function(){
+   setTimeout(function(){
     var cs = document.getElementById('callScreen');
     if (cs) { 
       cs.classList.remove('active'); 
@@ -3845,7 +3845,10 @@ function init(){
     }
   }, 100);
 }
-})();/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
+
+})();
+
+/* ===== ЛОГИКА ЗВОНКОВ LIVeKIT ===== */
 var LIVEKIT_URL = "wss://topspin-club-lmgx3s0y.livekit.cloud";
 var callRoom = null;
 var isMuted = false;
