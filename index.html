@@ -2105,7 +2105,7 @@ function setRowHtml(i,a,b){return`<div class="setrow"><span class="setlabel">Ð¡Ð
 function addSetRow(){const w=$('#setsWrap');if(!w)return;
 w.insertAdjacentHTML('beforeend',setRowHtml(w.children.length,null,null));resultPreview();}
 function collectSets(){const s=[];let bad=false;document.querySelectorAll('#setsWrap .setrow').forEach(r=>{const a=r.querySelector('.pa').value,b=r.querySelector('.pb').value;
-if(a===''&&b==='')return;if(a===''||b===''||isNaN(+a)||isNaN(+b)||+a<0||+b<0||+a===+b){bad=true;return;}s.push([+a,+b]);});return{sets:s,bad};}
+if(a===''&&b==='')return;if(a===''||b===''||isNaN(+a)||isNaN(+b)||+a<0||+b<0){bad=true;return;}s.push([+a,+b]);});return{sets:s,bad};}
 function resultPreview(){const m=state.matches.find(x=>x.id===__rmid);if(!m)return;
 const cs=collectSets(),sc=setsCountArr(cs.sets),tb=$('#tallyBox');
 if(tb)tb.innerHTML=`<div class="who">${pName(m.playerAId)}</div><div class="n">${sc[0]}</div><div class="sep">:</div><div class="n">${sc[1]}</div><div class="who">${pName(m.playerBId)}</div>`;
