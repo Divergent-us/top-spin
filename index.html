@@ -1755,28 +1755,110 @@ function docCsv(){const rep=DOC.rep,q=v=>{v=String(v==null?'':v);return/[";\n]/.
 let s='\uFEFF'+rep.title+'\n'+rep.subtitle+'\n'+rep.cols.map(c=>q(c.label)).join(';')+'\n';
 rep.rows.forEach(r=>{s+=rep.cols.map(c=>q(r[c.k])).join(';')+'\n';});
 return new Blob([s],{type:'text/csv;charset=utf-8'});}
-function docXls(){const rep=DOC.rep;
-let h='<html><head><meta charset="utf-8"><style>td,th{border:1px solid #b8c4d0;padding:5px;font-family:Calibri,Arial}th{background:#0a1424;color:#fff}</style></head><body><table>';
-h+=`<tr><td colspan="${rep.cols.length}"><b>${esc(rep.title)}</b></td></tr><tr>'+rep.cols.map(c=>`<th>${esc(c.label)}</th>`).join('')+'</tr>';
-rep.rows.forEach(r=>{h+='<tr>'+rep.cols.map(c=>`<td>${esc(r[c.k]==null?'':r[c.k])}</td>`).join('')+'</tr>';});
-return new Blob(['\uFEFF'+h+'</table></body></html>'],{type:'application/vnd.ms-excel;charset=utf-8'});}
-function docPrint(){const rep=DOC.rep;if(!rep)return;
-if(window.AndroidBridge&&window.AndroidBridge.saveFile){deliverFile(jpegToPdf(docPages()),rep.file+'.pdf','application/pdf');return;}
-$('#docPrint').innerHTML=docHtml(rep);try{window.print();}catch(e){toast('Печать недоступна','err');}
-setTimeout(()=>{$('#docPrint').innerHTML='';},1500);}
-$('#docViewer').addEventListener('click',async e=>{const el=e.target.closest('[data-doc]');if(!el)return;const a=el.dataset.doc,rep=DOC.rep;
-if(a==='back'||a==='close')return closeDoc(a==='close');
-if(!rep)return;
-if(a==='pdf'){el.disabled=true;const old=el.innerHTML;el.innerHTML='⏳…';
-try{await new Promise(r=>setTimeout(r,20));deliverFile(jpegToPdf(docPages()),rep.file+'.pdf','application/pdf');}catch(x){toast('Не удалось собрать PDF','err');}
-el.disabled=false;el.innerHTML=old;return;}
-if(a==='csv')return void deliverFile(docCsv(),rep.file+'.csv','text/csv');
-if(a==='xls')return void deliverFile(docXls(),rep.file+'.xls','application/vnd.ms-excel');
-if(a==='print')return docPrint();
-if(a==='files')return filesHub();
-if(a==='share'){try{const b=jpegToPdf(docPages()),f=new File([b],rep.file+'.pdf',{type:'application/pdf'});
-if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:rep.title});
-else{const r=await deliverFile(b,rep.file+'.pdf','application/pdf');if(r)await shareFileRec(r.id);}}catch(x){}}});
+```javascript
+
+
+function docXls(){
+  const rep=DOC.rep;
+  if(!rep)return new Blob(['\uFEFFНет данных'],{type:'application/vnd.ms-excel;charset=utf-8'});
+
+  const cols=rep.cols||[],rows=rep.rows||[],n=cols.length||1;
+  const isNum=v=>typeof v==='number'?isFinite(v):/^-?\d+(?:[.,]\d+)?$/.test(String(v).trim());
+  const td=(v,cls)=>'<td'+(cls?' class="'+cls+'"':'')+'>'+esc(v==null?'':v)+'</td>';
+  const wide=(v,cls)=>'<tr><td colspan="'+n+'"'+(cls?' class="'+cls+'"':'')+'>'+esc(v==null?'':v)+'</td></tr>';
+  const p=[];
+
+  p.push('<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">');
+  p.push('<head><meta charset="utf-8"><meta http-equiv="content-type" content="text/html; charset=UTF-8">');
+  p.push('<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>ТОП-СПИН</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->');
+  p.push('<style>table{border-collapse:collapse}td,th{border:1px solid #b8c4d0;padding:5px;font-family:Calibri,Arial;font-size:11pt;vertical-align:top;mso-number-format:"\\@"}th{background:#0a1424;color:#fff;font-weight:bold}td.num{mso-number-format:"General";text-align:right}.t{font-size:15pt;font-weight:bold;color:#0a1424}.s{color:#5b6b85}.champ{background:#fff7e8;color:#7a5312;font-weight:bold}</style>');
+  p.push('</head><body><table>');
+
+  p.push(wide(rep.title,'t'));
+  if(rep.subtitle)p.push(wide(rep.subtitle,'s'));
+  if(rep.champ)p.push(wide('Победитель: '+(rep.champ.name||'')+(rep.champ.meta?' — '+rep.champ.meta:''),'champ'));
+  if(rep.kpis&&rep.kpis.length)p.push(wide(rep.kpis.map(function(k){return k.label+': '+k.value;}).join('  ·  '),'s'));
+  p.push('<tr></tr>');
+
+  p.push('<tr>'+cols.map(function(c){return'<th>'+esc(c.label)+'</th>';}).join('')+'</tr>');
+
+  if(!rows.length)p.push(wide('Нет данных','s'));
+  rows.forEach(function(r){
+    p.push('<tr>'+cols.map(function(c){
+      const v=r[c.k]==null?'':r[c.k];
+      return td(v,isNum(v)?'num':'');
+    }).join('')+'</tr>');
+  });
+
+  if(rep.note){p.push('<tr></tr>');p.push(wide(rep.note,'s'));}
+  p.push(wide('Сформировано '+new Date().toLocaleString('ru-RU')+' · ТОП-СПИН v'+(typeof APP_VERSION!=='undefined'?APP_VERSION:''),'s'));
+  p.push('</table></body></html>');
+
+  return new Blob(['\uFEFF'+p.join('')],{type:'application/vnd.ms-excel;charset=utf-8'});
+}
+
+function docPrint(){
+  const rep=DOC.rep;if(!rep)return;
+  if(window.AndroidBridge&&window.AndroidBridge.saveFile){deliverFile(jpegToPdf(docPages()),rep.file+'.pdf','application/pdf');return;}
+  const box=$('#docPrint');
+  if(!box){toast('Печать недоступна — сохраните PDF','err');return;}
+  box.innerHTML=docHtml(rep);
+  try{window.print();}catch(e){toast('Печать недоступна','err');}
+  setTimeout(function(){box.innerHTML='';},1500);
+}
+
+$('#docViewer').addEventListener('click',async function(e){
+  const el=e.target&&e.target.closest?e.target.closest('[data-doc]'):null;
+  if(!el)return;
+  const a=el.dataset.doc,rep=DOC.rep;
+
+  if(a==='back'||a==='close')return closeDoc(a==='close');
+  if(!rep)return;
+
+  if(a==='pdf'||a==='share'){
+    const old=el.innerHTML;
+    el.disabled=true;el.innerHTML='⏳…';
+    try{
+      await new Promise(function(r){setTimeout(r,20);});
+      const blob=jpegToPdf(docPages()),name=rep.file+'.pdf';
+      if(a==='pdf'){
+        await deliverFile(blob,name,'application/pdf');
+      }else{
+        let done=false;
+        try{
+          if(typeof File==='function'&&navigator.canShare){
+            const f=new File([blob],name,{type:'application/pdf'});
+            if(navigator.canShare({files:[f]})){await navigator.share({files:[f],title:rep.title});done=true;}
+          }
+        }catch(x){if(x&&x.name==='AbortError')done=true;}
+        if(!done){
+          const r=await deliverFile(blob,name,'application/pdf');
+          if(r&&typeof shareFileRec==='function')await shareFileRec(r.id);
+        }
+      }
+    }catch(x){
+      if(!x||x.name!=='AbortError')toast(a==='pdf'?'Не удалось собрать PDF':'Не удалось поделиться','err');
+    }
+    el.disabled=false;el.innerHTML=old;return;
+  }
+
+  if(a==='csv'){
+    try{deliverFile(docCsv(),rep.file+'.csv','text/csv');}
+    catch(x){toast('Не удалось собрать CSV','err');}
+    return;
+  }
+
+  if(a==='xls'){
+    try{deliverFile(docXls(),rep.file+'.xls','application/vnd.ms-excel');}
+    catch(x){toast('Не удалось собрать Excel','err');}
+    return;
+  }
+
+  if(a==='print')return docPrint();
+  if(a==='copy'){if(typeof docCopyText==='function')docCopyText();return;}
+  if(a==='files')return filesHub();
+});
+```
 function pdfHub(){let h='<button class="modal-x" data-action="closeModal">✕</button><h3>📄 Сохранить PDF</h3><div class="picker-list" style="margin-top:12px">';
 h+=`<div class="picker-item" data-action="docOpen" data-kind="rating"><span style="font-size:22px">📊</span><span class="nm">Рейтинг клуба</span></div>`;
 h+=`<div class="picker-item" data-action="docOpen" data-kind="awards"><span style="font-size:22px">🏆</span><span class="nm">Зал славы</span></div>`;
