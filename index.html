@@ -1755,8 +1755,6 @@ function docCsv(){const rep=DOC.rep,q=v=>{v=String(v==null?'':v);return/[";\n]/.
 let s='\uFEFF'+rep.title+'\n'+rep.subtitle+'\n'+rep.cols.map(c=>q(c.label)).join(';')+'\n';
 rep.rows.forEach(r=>{s+=rep.cols.map(c=>q(r[c.k])).join(';')+'\n';});
 return new Blob([s],{type:'text/csv;charset=utf-8'});}
-```javascript
-
 
 function docXls(){
   const rep=DOC.rep;
