@@ -2224,11 +2224,41 @@ g.save();g.translate(W/2+AV.ox*W/2,W/2+AV.oy*W/2);g.rotate(AV.rot*Math.PI/180);g
 g.drawImage(im,-im.width*s/2,-im.height*s/2,im.width*s,im.height*s);g.restore();}
 else{g.fillStyle='#5f7699';g.font='bold 26px "Golos Text",sans-serif';g.textAlign='center';g.fillText('Нет фото',W/2,W/2);}
 avPreviewFrom(c);}
-function avExport(){const c=$('#avCanvas');if(!c)return null;
-const o=document.createElement('canvas');o.width=o.height=AV.size;
-o.getContext('2d').drawImage(c,0,0,AV.size,AV.size);
-let out='';try{out=o.toDataURL('image/'+AV.fmt,.82);}catch(e){}
-if(!out||out.indexOf('data:image/'+AV.fmt)!==0)out=o.toDataURL('image/jpeg',.82);return out;}
+function avExport(){
+  const c=$('#avCanvas');if(!c)return null;
+  const S=AV.size;
+  const o=document.createElement('canvas');o.width=o.height=S;
+  const g=o.getContext('2d');
+  g.clearRect(0,0,S,S);
+  if(AV.shape==='round'){
+    g.save();
+    g.beginPath();
+    g.arc(S/2,S/2,S/2,0,Math.PI*2);
+    g.closePath();
+    g.clip();
+    g.drawImage(c,0,0,S,S);
+    g.restore();
+  }else{
+    g.drawImage(c,0,0,S,S);
+  }
+  let fmt=AV.fmt;
+  if(AV.shape==='round'&&fmt!=='png')fmt='png';
+  let out='';
+  try{out=o.toDataURL('image/'+fmt,.9);}catch(e){}
+  if(!out||out.indexOf('data:image/')!==0){
+    const o2=document.createElement('canvas');o2.width=o2.height=S;
+    const g2=o2.getContext('2d');
+    g2.fillStyle='#0d1a2d';g2.fillRect(0,0,S,S);
+    if(AV.shape==='round'){
+      g2.save();g2.beginPath();g2.arc(S/2,S/2,S/2,0,Math.PI*2);g2.closePath();g2.clip();
+      g2.drawImage(c,0,0,S,S);g2.restore();
+    }else{
+      g2.drawImage(c,0,0,S,S);
+    }
+    out=o2.toDataURL('image/jpeg',.85);
+  }
+  return out;
+}
 function avPreviewFrom(c){const d=avExport();if(!d)return;AV.pv=d;
 ['avPvS','avPvM','avPvL'].forEach(id=>{const e=$('#'+id);if(e)e.innerHTML=`<img src="${d}" alt="">`;});
 const i=$('#avInfo');if(i)i.textContent=`${AV.size}×${AV.size} px · ${fmtSize(Math.round(d.length*.75))}`;}
