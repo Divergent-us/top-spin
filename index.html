@@ -1278,6 +1278,34 @@ if(st[2]&&st[2].pts!==st[1].pts)txt+='Третье место — '+pNameRaw(st[
 txt+='Клуб ТОП-СПИН благодарит всех участников за игру, за борьбу и за любовь к настольному теннису. Спасибо каждому из вас! До новых встреч за столом!';
 if(speakText(txt)){toast('🔊 Объявлены итоги турнира','ok');return true;}
 return false;}
+     function speakSetResultFromMatch(m,setIndex){
+if(!m||!hasSets(m))return false;
+
+const i=(typeof setIndex==='number')?setIndex:m.sets.length-1;
+const s=m.sets[i];
+if(!s)return false;
+
+const a=Number(s[0]),b=Number(s[1]);
+if(!isFinite(a)||!isFinite(b)||a===b)return false;
+
+const winner=a>b?m.playerAId:m.playerBId;
+const sc=setsCountArr(m.sets.slice(0,i+1));
+const t=tourn(m.tournamentId);
+
+let txt='Сет номер '+(i+1)+' завершён. ';
+if(t)txt+='Турнир '+t.name+'. ';
+txt+='Победа за игроком '+pNameRaw(winner)+'. ';
+txt+='Счёт сета '+Math.max(a,b)+' — '+Math.min(a,b)+'. ';
+txt+='Общий счёт по сетам: '+pNameRaw(m.playerAId)+' '+sc[0]+', '+pNameRaw(m.playerBId)+' '+sc[1]+'. ';
+txt+='Готовится следующий сет.';
+
+if(speakText(txt)){
+toast('🔊 Озвучен итог сета '+(i+1),'ok');
+return true;
+}
+
+return false;
+}
 function toggleSoundBell(){const on=soundOn();lsSet('soundEnabled',on?'false':'true');paintBell();if(!on){playSound('msg');toast('Звук включён','ok');}else toast('Звук выключен');}
 
 /* ---------- МОДАЛКИ ---------- */
@@ -1841,9 +1869,28 @@ const startMs=t=>new Date((t.date||'2000-01-01')+'T'+(t.startTime||'00:00')+':00
 const endMs=t=>new Date((t.date||'2000-01-01')+'T'+(t.endTime||'23:59')+':00').getTime();
 const trainingMs=tr=>new Date((tr.date||'2000-01-01')+'T'+(tr.time||'00:00')+':00').getTime();
 const trainingIsPast=tr=>{const t=trainingMs(tr);return!t||isNaN(t)||t<Date.now()-14*864e5;};
-function autoCloseCheck(){if(!booted||!isAdminMode)return;const n=Date.now();let ch=false;const closed=[];
-state.tournaments.forEach(t=>{if(!t.closed&&t.date&&t.endTime&&n>endMs(t)&&!state.matches.some(m=>m.tournamentId===t.id&&matchLive(m))){t.closed=true;ch=true;closed.push(t.id);}});
-if(ch){save();render();if(LIVE.tid)renderLive();closed.forEach(id=>speakTournamentFinish(id));}}
+function autoCloseCheck(){
+if(!booted||!isAdminMode)return;
+
+const n=Date.now();
+let ch=false;
+const closed=[];
+
+state.tournaments.forEach(t=>{
+if(!t.closed&&t.date&&t.endTime&&n>endMs(t)&&!state.matches.some(m=>m.tournamentId===t.id&&matchLive(m))){
+t.closed=true;
+ch=true;
+closed.push(t.id);
+}
+});
+
+if(ch){
+save();
+render();
+if(LIVE.tid)renderLive();
+closed.forEach(id=>speakTournamentFinish(id));
+}
+}
 function tStatus(t){if(!t)return'finished';if(t.closed)return'finished';const n=Date.now();
 if(n<startMs(t))return'upcoming';if(n<=endMs(t))return'live';return'finished';}
 const statusChip=t=>`<span class="status-dot ${tStatus(t)}"></span>`;
@@ -2103,12 +2150,27 @@ if(a==='activatePair'){const mm=state.matches.find(x=>x.id===id);if(!mm||!t)retu
 delete t.playerState[mm.playerAId];delete t.playerState[mm.playerBId];save();renderLive();render();return toast('Оба активны','ok');}
 if(a==='docT')return openDoc('tournament',tid,()=>{openLive(tid);LIVE.tab='table';renderLive();});
 if(a==='teams')return manageTeamsModal(tid);
-if(a==='closeEarly'){if(!t)return;
+if(a==='closeEarly'){
+if(!t)return;
+
 const live=state.matches.filter(m=>m.tournamentId===t.id&&matchLive(m)).length;
-if(!t.closed&&live){toast('Сначала завершите матчи в игре: '+live,'err');return;}
-t.closed=!t.closed;save();renderLive();render();
+
+if(!t.closed&&live){
+toast('Сначала завершите матчи в игре: '+live,'err');
+return;
+}
+
+t.closed=!t.closed;
+save();
+renderLive();
+render();
+
 if(t.closed)speakTournamentFinish(tid);
-return toast(t.closed?'Турнир завершён':'Турнир открыт','ok');}
+
+toast(t.closed?'Турнир завершён':'Турнир открыт','ok');
+return;
+}
+                                            });                                             
 $('#livePanel').addEventListener('input',e=>{if(e.target.id==='liveSearch'){LIVE.q=e.target.value;
 const pos=e.target.selectionStart;renderLive();const i=$('#liveSearch');
 if(i){i.focus();try{i.setSelectionRange(pos,pos);}catch(x){}}}});
@@ -2153,16 +2215,62 @@ resultPreview();}
 function renumberSets(){const w=$('#setsWrap');if(!w)return;
 Array.from(w.children).forEach((r,i)=>{const l=r.querySelector('.setlabel');if(l)l.textContent='Сет '+(i+1);});
 const c=$('#setsCount');if(c)c.textContent='Сетов: '+w.children.length;}
-function addSetRow(n){const w=$('#setsWrap');if(!w)return;n=n||1;
+function addSetRow(n){
+const w=$('#setsWrap');
+if(!w)return;
+n=n||1;
+
 const before=w.children.length;
-const spoken=speakSetResult(__rmid,before-1);
-for(let i=0;i<n;i++)w.insertAdjacentHTML('beforeend',setRowHtml(w.children.length,null,null));
-renumberSets();resultPreview();w.scrollTop=w.scrollHeight;
-if(n===1&&w.lastElementChild){const inp=w.lastElementChild.querySelector('.pa');if(inp)inp.focus();}
-if(!spoken&&before>0){const m=state.matches.find(x=>x.id===__rmid);
-const r=w.children[before-1],av=r?r.querySelector('.pa').value.trim():'',bv=r?r.querySelector('.pb').value.trim():'';
-if(av===''||bv==='')toast('Заполните счёт предыдущего сета — тогда он будет озвучен','err');
-else if(+av===+bv)toast('Сет сыгран вничью — победителя нет','err');}}
+let spoken=false;
+
+if(before>0){
+const m=state.matches.find(x=>x.id===__rmid);
+const r=w.children[before-1];
+const av=r&&r.querySelector('.pa')?r.querySelector('.pa').value.trim():'';
+const bv=r&&r.querySelector('.pb')?r.querySelector('.pb').value.trim():'';
+
+if(m&&av!==''&&bv!==''){
+const a=Number(av),b=Number(bv);
+
+if(isFinite(a)&&isFinite(b)&&a>=0&&b>=0&&a===Math.floor(a)&&b===Math.floor(b)){
+if(a!==b){
+const prevSets=[];
+document.querySelectorAll('#setsWrap .setrow').forEach((row,idx)=>{
+if(idx>=before)return;
+const x=row.querySelector('.pa')?row.querySelector('.pa').value.trim():'';
+const y=row.querySelector('.pb')?row.querySelector('.pb').value.trim():'';
+if(x!==''&&y!==''){
+const xx=Number(x),yy=Number(y);
+if(isFinite(xx)&&isFinite(yy))prevSets.push([xx,yy]);
+}
+});
+
+const tmp=Object.assign({},m,{sets:prevSets});
+spoken=speakSetResultFromMatch(tmp,before-1);
+}else{
+toast('Сет сыгран вничью — победителя нет','err');
+}
+}else{
+toast('В предыдущем сете укажите целые числа','err');
+}
+}else if(before>0){
+toast('Заполните счёт предыдущего сета — тогда он будет озвучен','err');
+}
+}
+
+for(let i=0;i<n;i++){
+w.insertAdjacentHTML('beforeend',setRowHtml(w.children.length,null,null));
+}
+
+renumberSets();
+resultPreview();
+w.scrollTop=w.scrollHeight;
+
+if(n===1&&w.lastElementChild){
+const inp=w.lastElementChild.querySelector('.pa');
+if(inp)inp.focus();
+}
+}
 function clearAllSets(){const w=$('#setsWrap');if(!w)return;w.innerHTML=setRowHtml(0,null,null);renumberSets();resultPreview();}
 function collectSets(){const s=[];let bad=false;
 document.querySelectorAll('#setsWrap .setrow').forEach(r=>{
@@ -3118,10 +3226,18 @@ case'editTournament':tournamentModal(id);break;
 case'saveTournament':saveTournament(id||null);break;
 case'delTournament':delTournament(id);break;
 case'openTournament':openTournament(id);break;
-case'closeNow':{const t=tourn(id);if(t)confirmBox('Завершить турнир «'+esc(t.name)+'»?',()=>{
-t.closed=true;save();render();if(LIVE.tid)renderLive();toast('Турнир завершён','ok');
+case'closeNow':{
+const t=tourn(id);
+if(t)confirmBox('Завершить турнир «'+esc(t.name)+'»?',()=>{
+t.closed=true;
+save();
+render();
+if(LIVE.tid)renderLive();
+toast('Турнир завершён','ok');
 pushNotify('🏁 Турнир завершён',t.name,{type:'tournament'});
-speakTournamentFinish(id);});}break;
+speakTournamentFinish(id);
+});
+}break;
 case'reopen':{const t=tourn(id);if(t){t.closed=false;save();closeModal();render();toast('Турнир открыт','ok');}}break;
 case'addParticipant':addParticipantModal(tid);break;
 case'pickParticipant':pickParticipant(tid,id);break;
